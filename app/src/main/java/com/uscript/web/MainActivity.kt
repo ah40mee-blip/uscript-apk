@@ -37,12 +37,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         val ipInput = EditText(this).apply {
-            hint = "IP الريسيفر"
+            this.hint = "IP الريسيفر"
             setText("192.168.1.45")
         }
 
         val portInput = EditText(this).apply {
-            hint = "البورت"
+            this.hint = "البورت"
             setText("8080")
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
