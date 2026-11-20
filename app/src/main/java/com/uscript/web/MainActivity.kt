@@ -203,10 +203,12 @@ class MainActivity : AppCompatActivity() {
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#070B1F"))
             addView(setupLayout)
             addView(webView)
         }
         setContentView(container)
+        window.navigationBarColor = Color.parseColor("#070B1F")
 
         connectBtn.setOnClickListener {
             val ip = ipInput.text.toString().trim()
