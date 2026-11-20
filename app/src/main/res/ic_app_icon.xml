@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- الخلفية كحلي -->
+    <path
+        android:pathData="M0,0 H108 V108 H0 Z"
+        android:fillColor="#070B1F" />
+
+    <!-- حرف U بجريديانت بنفسجي - وردي - سماوي -->
+    <path android:pathData="M20,20 H40 V70 A14,14 0 0 0 68,70 V20 H88 V70 A34,34 0 0 1 20,70 Z">
+        <gradient
+            android:startX="20"
+            android:startY="20"
+            android:endX="88"
+            android:endY="104"
+            android:startColor="#A855F7"
+            android:centerColor="#EC4899"
+            android:endColor="#22D3EE"
+            android:type="linear" />
+    </path>
+
+    <!-- قوس الواي فاي -->
+    <path
+        android:pathData="M38,18 A16,16 0 0 1 70,18"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <path
+        android:pathData="M44,26 A10,10 0 0 1 64,26"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- نقطة الواي فاي -->
+    <path
+        android:pathData="M54,31 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#38BDF8" />
+</vector>
