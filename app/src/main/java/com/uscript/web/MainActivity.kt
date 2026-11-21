@@ -1,10 +1,12 @@
-package com.uscript.web
+package com.example.uscript
+// U-Script MERGED - MainActivity.kt
+// القايمة الأساسية: عرض الشاشة + ريموت | باقي القوايم: Backup / Channels / Streaming / Picons-EPG / Multiboot / Tools / Setting
+// الاسكريبت نفسه مش متعدل - التطبيق بيكلم WebUI بتاعه على نفس IP:8080 + Web PIN
+// المطلوب: 1) Manifest فيه usesCleartextTraffic + INTERNET  2) ملف ScriptInstaller.kt جنب الملف ده  3) الاسكريبت الأصلي في app/src/main/assets/uscript.sh
+// ملف الاسكريبت: حط نسخة الاسكريبت الأصلية في app/src/main/assets/uscript.sh (من غير أي تعديل)
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -13,841 +15,299 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Button
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import java.net.HttpURLConnection
+import java.net.URL
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يكون جنبه في نفس الفولدر
 
-    // ===== شاشة الافتتاح =====
-    private lateinit var splashView: View
-    private lateinit var splashLogo: ImageView
-    private lateinit var splashTitle: TextView
-    private lateinit var splashDivider: View
-    private lateinit var splashSub: TextView
-    private lateinit var splashE2: TextView
+    private lateinit var root: FrameLayout
+    private lateinit var prefs: android.content.SharedPreferences
+    private var ip = "192.168.1.45"; private var port = "8080"; private var pin = ""
+    private var webView: WebView? = null
+    private val handler = Handler(Looper.getMainLooper())
 
-    // ===== شاشة الـ IP =====
-    private lateinit var ipView: View
-    private lateinit var ipField: EditText
-    private lateinit var portField: EditText
-    private lateinit var pinField: EditText
-    private lateinit var connectBtn: Button
-    private lateinit var statusText: TextView
+    // ألوان U-Script
+    private val BG = Color.parseColor("#070B1F")
+    private val CARD = Color.parseColor("#0D1330")
+    private val BORDER = Color.parseColor("#2A3560")
+    private val PINK = Color.parseColor("#E879F9")
+    private val CYAN = Color.parseColor("#22D3EE")
+    private val GOLD = Color.parseColor("#FFD166")
+    private val GREEN = Color.parseColor("#4ADE80")
+    private val MUTED = Color.parseColor("#9AA3C7")
 
-    // ===== الشاشة الثابتة (Connecting) =====
-    private lateinit var welcomeView: View
-    private lateinit var welcomeLogo: ImageView
-    private lateinit var welcomeTitle: TextView
-    private lateinit var welcomeConnecting: TextView
-    private lateinit var progressTrack: View
-    private lateinit var progressFill: View
-
-    // ===== الـ WebView + شاشة عدم الاتصال =====
-    private lateinit var webView: WebView
-    private lateinit var disconnectedView: View
-    private lateinit var retryBtn: Button
-
-    private lateinit var welcomeConnectedView: View
-    private lateinit var wcWelcome: TextView
-    private lateinit var wcTo: TextView
-    private lateinit var wcU: TextView
-    private lateinit var wcMessage: TextView
-    private lateinit var wcSub: TextView
-
-    private var baseUrl = ""
-    private var connectStarted = false
-    private var loadFailed = false
-    private var welcomeShown = false
-
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-
-    private fun spacer(h: Int) = View(this).apply {
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(h)
-        )
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // ملء الشاشة بالكامل - من غير شريط علوي ولا سفلي
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.statusBars())
-            hide(WindowInsetsCompat.Type.navigationBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-
-        val root = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#070B1F"))
-        }
+        prefs = getSharedPreferences("uscript", Context.MODE_PRIVATE)
+        ip = prefs.getString("ip", "192.168.1.45") ?: "192.168.1.45"
+        port = prefs.getString("port", "8080") ?: "8080"
+        pin = prefs.getString("pin", "") ?: ""
+        root = FrameLayout(this).apply { setBackgroundColor(BG); layoutParams = ViewGroup.LayoutParams(-1, -1) }
         setContentView(root)
+        showSplash()
+    }
 
-        // ================= 1) شاشة الافتتاح (Fade In) =================
-        val splashBox = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#070B1F"))
-        }
-        splashView = splashBox
+    // ---------- أدوات UI ----------
+    private fun bgDrawable(color: Int, radius: Float, stroke: Int = 0, strokeColor: Int = 0): GradientDrawable {
+        return GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = radius; setColor(color); if (stroke > 0) setStroke(stroke, strokeColor) }
+    }
+    private fun txt(text: String, size: Float = 16f, color: Int = Color.WHITE, bold: Boolean = false): TextView {
+        return TextView(this).apply { this.text = text; textSize = size; setTextColor(color); typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
+    }
+    private fun btn(text: String, bg: Int = CARD, fg: Int = Color.WHITE, radius: Float = 32f, stroke: Int = 0, strokeColor: Int = 0, onClick: () -> Unit): Button {
+        return Button(this).apply { this.text = text; textSize = 15f; setTextColor(fg); typeface = Typeface.DEFAULT_BOLD; background = bgDrawable(bg, radius, stroke, strokeColor); setOnClickListener { onClick() }; stateListAnimator = null }
+    }
+    private fun input(hint: String, value: String): EditText {
+        return EditText(this).apply { setHint(hint); setText(value); setHintTextColor(MUTED); setTextColor(Color.WHITE); textSize = 16f; background = bgDrawable(CARD, 28f, 2, BORDER); setPadding(40, 30, 40, 30) }
+    }
+    private fun clearRoot() { root.removeAllViews(); webView?.destroy(); webView = null }
+    private fun centerWrap(view: View): FrameLayout {
+        return FrameLayout(this).apply { addView(view, FrameLayout.LayoutParams(-1, -1).apply { gravity = Gravity.CENTER }) }
+    }
 
-        val splashCenter = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply { gravity = Gravity.CENTER }
-        }
+    // ---------- 1) Splash 5 ثواني ----------
+    private fun showSplash() {
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(60, 60, 60, 60) }
+        lay.addView(txt("U", 90f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script", 48f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("Control Enigma World", 18f, MUTED).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("E2", 14f, MUTED).apply { gravity = Gravity.CENTER })
+        root.addView(centerWrap(lay))
+        handler.postDelayed({ showConnect() }, 5000)
+    }
 
-        splashLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
-            alpha = 0f
-            scaleX = 0.8f
-            scaleY = 0.8f
-            layoutParams = LinearLayout.LayoutParams(dp(150), dp(150))
-        }
+    // ---------- 2) شاشة IP + Port + PIN ----------
+    private fun showConnect() {
+        clearRoot()
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(60, 60, 60, 60) }
+        lay.addView(txt("U", 70f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script", 40f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        val ipIn = input("Receiver IP  (192.168.1.45)", ip); val portIn = input("Port  (8080)", port); val pinIn = input("Web PIN  (optional)", pin)
+        lay.addView(ipIn); lay.addView(txt("", 6f)); lay.addView(portIn); lay.addView(txt("", 6f)); lay.addView(pinIn); lay.addView(txt("", 10f))
+        lay.addView(btn("Connect", PINK, Color.WHITE, 32f) {
+            ip = ipIn.text.toString().trim().ifEmpty { "192.168.1.45" }
+            port = portIn.text.toString().trim().ifEmpty { "8080" }
+            pin = pinIn.text.toString().trim()
+            prefs.edit().putString("ip", ip).putString("port", port).putString("pin", pin).apply()
+            showConnecting()
+        })
+        root.addView(centerWrap(lay))
+    }
 
-        splashTitle = TextView(this).apply {
-            text = "U-Script"
-            textSize = 48f
-            typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
-            letterSpacing = 0.02f
-            gravity = Gravity.CENTER
-            alpha = 0f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            post {
-                paint.shader = LinearGradient(
-                    0f, 0f, dp(300).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
-                    null, Shader.TileMode.CLAMP
-                )
+    // ---------- 3) Connecting ----------
+    private fun showConnecting() {
+        clearRoot()
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(60, 60, 60, 60) }
+        lay.addView(txt("U", 70f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script", 40f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        val capsule = TextView(this).apply { text = "Connecting..."; textSize = 20f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; background = bgDrawable(PINK, 60f); setPadding(80, 30, 80, 30) }
+        lay.addView(capsule); lay.addView(txt("", 8f))
+        val bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { isIndeterminate = true }
+        lay.addView(bar)
+        root.addView(centerWrap(lay))
+        // اختبار الاتصال: بنجرب WebUI بتاع الاسكريبت
+        Thread {
+            val ok = pingWebUI()
+            handler.post {
+                if (ok) showWelcome()
+                else showAutoInstall() // مش متصل -> جرب تثبيت الاسكريبت أوتوماتيك
             }
-        }
+        }.start()
+    }
+    private fun pingWebUI(): Boolean {
+        return try {
+            val c = URL("http://$ip:$port/").openConnection() as HttpURLConnection
+            c.connectTimeout = 4000; c.readTimeout = 4000; c.requestMethod = "GET"; c.connect(); c.responseCode in 200..499
+        } catch (e: Exception) { false }
+    }
 
-        splashDivider = View(this).apply {
-            alpha = 0f
-            layoutParams = LinearLayout.LayoutParams(dp(140), dp(3)).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
+
+    // ---------- 3.5) التثبيت الأوتوماتيك ----------
+    private fun showAutoInstall() {
+        clearRoot()
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(60, 60, 60, 60) }
+        lay.addView(txt("U", 70f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script", 40f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        val statusTxt = txt("Installing U-Script on receiver...", 18f, Color.WHITE, true).apply { gravity = Gravity.CENTER }
+        val detailTxt = txt("Step 1/3: Uploading script via FTP...", 14f, MUTED).apply { gravity = Gravity.CENTER }
+        lay.addView(statusTxt); lay.addView(txt("", 6f)); lay.addView(detailTxt); lay.addView(txt("", 10f))
+        val bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { isIndeterminate = true }
+        lay.addView(bar)
+        val retryBtn = btn("Retry Install", PINK, Color.WHITE, 32f) { showAutoInstall() }.apply { visibility = View.GONE }
+        val backBtn = btn("Back to Connect", CARD, Color.WHITE, 32f, 2, BORDER) { showConnect() }
+        lay.addView(txt("", 10f)); lay.addView(retryBtn); lay.addView(txt("", 4f)); lay.addView(backBtn)
+        root.addView(centerWrap(lay))
+        Thread {
+            val result = ScriptInstaller.autoInstall(this, ip, port, pin) { step ->
+                handler.post { detailTxt.text = step }
             }
-            background = GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
-            ).apply { cornerRadius = dp(2).toFloat() }
-        }
-
-        splashSub = TextView(this).apply {
-            text = "Control Enigma World"
-            textSize = 20f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0.25f
-            setTextColor(Color.parseColor("#E5E7EB"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        splashCenter.addView(splashLogo)
-        splashCenter.addView(spacer(16))
-        splashCenter.addView(splashTitle)
-        splashCenter.addView(spacer(24))
-        splashCenter.addView(splashDivider)
-        splashCenter.addView(spacer(16))
-        splashCenter.addView(splashSub)
-
-        // E2 آخر الشاشة تحت - أكبر ومرسومة
-        splashE2 = TextView(this).apply {
-            text = "E2"
-            textSize = 30f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0.3f
-            gravity = Gravity.CENTER
-            alpha = 0f
-            setShadowLayer(dp(14).toFloat(), 0f, 0f, Color.parseColor("#E879F9"))
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                bottomMargin = dp(32)
-            }
-            post {
-                paint.shader = LinearGradient(
-                    0f, 0f, width.toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
-                    null, Shader.TileMode.CLAMP
-                )
-            }
-        }
-
-        splashBox.addView(splashCenter)
-        splashBox.addView(splashE2)
-        root.addView(splashBox)
-
-        // ================= 2) شاشة الـ IP =================
-        val ipScroll = ScrollView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#070B1F"))
-            visibility = View.GONE
-        }
-        ipView = ipScroll
-
-        val ipCenter = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(32), dp(48), dp(32), dp(32))
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val ipLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
-            layoutParams = LinearLayout.LayoutParams(dp(110), dp(110))
-        }
-
-        val ipTitle = TextView(this).apply {
-            text = "U-Script"
-            textSize = 34f
-            typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
-            letterSpacing = 0.02f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            post {
-                paint.shader = LinearGradient(
-                    0f, 0f, dp(200).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
-                    null, Shader.TileMode.CLAMP
-                )
-            }
-        }
-
-        val ipSub = TextView(this).apply {
-            text = "Enter your receiver IP"
-            textSize = 15f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            setTextColor(Color.parseColor("#8A93B2"))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val savedIp = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("ip", "") ?: ""
-        val savedPort = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("port", "8080") ?: "8080"
-        val savedPin = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("pin", "") ?: ""
-
-        ipField = EditText(this).apply {
-            hint = "Receiver IP  ( 192.168.1.45 )"
-            setText(savedIp)
-            setHintTextColor(Color.parseColor("#5A6378"))
-            setTextColor(Color.parseColor("#FFFFFF"))
-            textSize = 16f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(8) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#0D1330"))
-                setStroke(dp(1), Color.parseColor("#2A3560"))
-            }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-
-        portField = EditText(this).apply {
-            hint = "Port  ( 8080 )"
-            setText(savedPort)
-            setHintTextColor(Color.parseColor("#5A6378"))
-            setTextColor(Color.parseColor("#FFFFFF"))
-            textSize = 16f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(12) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#0D1330"))
-                setStroke(dp(1), Color.parseColor("#2A3560"))
-            }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-
-        pinField = EditText(this).apply {
-            hint = "PIN  ( اختياري )"
-            setText(savedPin)
-            setHintTextColor(Color.parseColor("#5A6378"))
-            setTextColor(Color.parseColor("#FFFFFF"))
-            textSize = 16f
-            gravity = Gravity.CENTER
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(12) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#0D1330"))
-                setStroke(dp(1), Color.parseColor("#2A3560"))
-            }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-
-        connectBtn = Button(this).apply {
-            text = "CONNECT"
-            textSize = 16f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0.2f
-            setTextColor(Color.parseColor("#FFFFFF"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(24) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#E879F9"))
-            }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            setOnClickListener { onConnectClicked() }
-        }
-
-        statusText = TextView(this).apply {
-            text = ""
-            textSize = 14f
-            setTextColor(Color.parseColor("#F472B6"))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(16) }
-        }
-
-        ipCenter.addView(ipLogo)
-        ipCenter.addView(spacer(16))
-        ipCenter.addView(ipTitle)
-        ipCenter.addView(spacer(8))
-        ipCenter.addView(ipSub)
-        ipCenter.addView(spacer(24))
-        ipCenter.addView(ipField)
-        ipCenter.addView(portField)
-        ipCenter.addView(pinField)
-        ipCenter.addView(connectBtn)
-        ipCenter.addView(statusText)
-        ipScroll.addView(ipCenter)
-        root.addView(ipScroll)
-
-        // ================= 3) الشاشة الثابتة (Connecting) =================
-        val welcomeBox = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#070B1F"))
-            visibility = View.GONE
-        }
-        welcomeView = welcomeBox
-
-        // ================= 3.5) شاشة الترحيب بعد الاتصال (Welcome into U-Script) =================
-        val wcBox = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#070B1F"))
-            visibility = View.GONE
-        }
-        welcomeConnectedView = wcBox
-
-        val wcCenter = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                topMargin = dp(150)
-            }
-        }
-
-        wcWelcome = TextView(this).apply {
-            text = "welcome"
-            textSize = 120f
-            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
-            letterSpacing = 0.05f
-            setTextColor(Color.parseColor("#FFD166"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-        }
-
-        wcTo = TextView(this).apply {
-            text = "To"
-            textSize = 36f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.3f
-            setTextColor(Color.parseColor("#9AA3C7"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-        }
-
-        wcU = TextView(this).apply {
-            text = "U-Script"
-            textSize = 140f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0f
-            setTextColor(Color.parseColor("#F472B6"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-            scaleX = 0.9f
-            scaleY = 0.9f
-        }
-        // تدرج لوني بريميوم على اسم U-Script (سماوي -> بينك)
-        wcU.post {
-            val shader = android.graphics.LinearGradient(
-                0f, 0f, wcU.width.toFloat(), 0f,
-                intArrayOf(Color.parseColor("#22D3EE"), Color.parseColor("#F472B6")),
-                null, android.graphics.Shader.TileMode.CLAMP
-            )
-            wcU.paint.shader = shader
-            wcU.invalidate()
-        }
-
-        wcMessage = TextView(this).apply {
-            text = "You are now connected to your receiver"
-            textSize = 20f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.05f
-            setTextColor(Color.parseColor("#C7CDDE"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-        }
-
-        wcSub = TextView(this).apply {
-            text = "Control Ur Enigma"
-            textSize = 22f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.3f
-            setTextColor(Color.parseColor("#9AA3C7"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-        }
-
-        // توهج ملون بريميوم في الخلفية (وردي فوق + سماوي تحت)
-        val wcGlowTop = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(320), dp(320)).apply {
-                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                topMargin = dp(-90)
-            }
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                gradientType = GradientDrawable.RADIAL_GRADIENT
-                gradientRadius = dp(160).toFloat()
-                colors = intArrayOf(Color.parseColor("#33F472B6"), Color.parseColor("#00F472B6"))
-            }
-        }
-        val wcGlowBottom = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(320), dp(320)).apply {
-                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                bottomMargin = dp(-90)
-            }
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                gradientType = GradientDrawable.RADIAL_GRADIENT
-                gradientRadius = dp(160).toFloat()
-                colors = intArrayOf(Color.parseColor("#3322D3EE"), Color.parseColor("#0022D3EE"))
-            }
-        }
-
-        wcCenter.addView(wcWelcome)
-        wcCenter.addView(spacer(28))
-        wcCenter.addView(wcTo)
-        wcCenter.addView(spacer(36))
-        wcCenter.addView(wcU)
-        wcCenter.addView(spacer(24))
-        wcCenter.addView(wcMessage)
-        wcCenter.addView(spacer(20))
-        wcCenter.addView(wcSub)
-        wcBox.addView(wcGlowTop)
-        wcBox.addView(wcGlowBottom)
-        wcBox.addView(wcCenter)
-        root.addView(wcBox)
-
-        val welcomeCenter = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply { gravity = Gravity.CENTER }
-        }
-
-        welcomeLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
-            alpha = 0f
-            scaleX = 0.8f
-            scaleY = 0.8f
-            layoutParams = LinearLayout.LayoutParams(dp(150), dp(150))
-        }
-
-        welcomeTitle = TextView(this).apply {
-            text = "U-Script"
-            textSize = 44f
-            typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
-            letterSpacing = 0.02f
-            gravity = Gravity.CENTER
-            alpha = 0f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            post {
-                paint.shader = LinearGradient(
-                    0f, 0f, dp(260).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
-                    null, Shader.TileMode.CLAMP
-                )
-            }
-        }
-
-        welcomeConnecting = TextView(this).apply {
-            text = "Connecting..."
-            textSize = 18f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.2f
-            setTextColor(Color.parseColor("#8A93B2"))
-            gravity = Gravity.CENTER
-            alpha = 0f
-        }
-
-        progressTrack = FrameLayout(this).apply {
-            alpha = 0f
-            layoutParams = LinearLayout.LayoutParams(dp(240), dp(14)).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-            }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(7).toFloat()
-                setColor(Color.parseColor("#1E2A4A"))
-            }
-        }
-
-        // البار المتحرك - تدرج مباشر
-        progressFill = View(this).apply {
-            alpha = 0f
-            layoutParams = FrameLayout.LayoutParams(0, dp(14)).apply {
-                gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            }
-            background = GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
-            ).apply {
-                cornerRadius = dp(7).toFloat()
-            }
-        }
-        (progressTrack as FrameLayout).addView(progressFill)
-
-        // الكبسولة حوالين Connecting والبار - مرسومة جوّه الكود (من غير ملف بره)
-        val connectCard = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(dp(300), LinearLayout.LayoutParams.WRAP_CONTENT)
-            background = GradientDrawable().apply {
-                cornerRadius = dp(28).toFloat()
-                setColor(Color.parseColor("#0D1330"))
-                setStroke(dp(1), Color.parseColor("#2A3560"))
-            }
-            setPadding(dp(24), dp(26), dp(24), dp(26))
-        }
-        welcomeConnecting.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        connectCard.addView(welcomeConnecting)
-        connectCard.addView(spacer(16))
-        connectCard.addView(progressTrack)
-
-        welcomeCenter.addView(welcomeLogo)
-        welcomeCenter.addView(spacer(6))
-        welcomeCenter.addView(welcomeTitle)
-        welcomeCenter.addView(spacer(36))
-        welcomeCenter.addView(connectCard)
-
-        welcomeBox.addView(welcomeCenter)
-        root.addView(welcomeBox)
-
-        // ================= 4) الـ WebView =================
-        webView = WebView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            visibility = View.GONE
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.loadWithOverviewMode = true
-            settings.useWideViewPort = true
-            settings.builtInZoomControls = false
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    // لو التحميل فشل: متعرضش الـ WebView خالص، خلّي شاشة عدم الاتصال هي اللي ظاهرة
-                    if (connectStarted && !loadFailed && !welcomeShown) {
-                        welcomeShown = true
-                        welcomeView.visibility = View.GONE
-                        disconnectedView.visibility = View.GONE
-                        showWelcomeConnected()
+            handler.post {
+                when {
+                    result.ok -> showWelcome()
+                    else -> {
+                        statusTxt.text = "Install failed"
+                        detailTxt.text = result.error
+                        retryBtn.visibility = View.VISIBLE
                     }
                 }
-
-                override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
-                ) {
-                    super.onReceivedError(view, request, error)
-                    if (request?.isForMainFrame == true) {
-                        loadFailed = true
-                        connectStarted = false
-                        view?.stopLoading()
-                        showDisconnected()
-                    }
-                }
-
-                @Suppress("DEPRECATION")
-                override fun onReceivedError(
-                    view: WebView?,
-                    errorCode: Int,
-                    description: String?,
-                    failingUrl: String?
-                ) {
-                    super.onReceivedError(view, errorCode, description, failingUrl)
-                    loadFailed = true
-                    connectStarted = false
-                    view?.stopLoading()
-                    showDisconnected()
-                }
             }
-        }
-        root.addView(webView)
-
-        // ================= 5) شاشة عدم الاتصال =================
-        val discBox = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#070B1F"))
-            setPadding(dp(32), dp(32), dp(32), dp(32))
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            visibility = View.GONE
-        }
-        disconnectedView = discBox
-
-        val discIcon = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
-            layoutParams = LinearLayout.LayoutParams(dp(130), dp(130))
-        }
-
-        val discTitle = TextView(this).apply {
-            text = "U-Script is not connected"
-            textSize = 20f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            setTextColor(Color.parseColor("#FFFFFF"))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        retryBtn = Button(this).apply {
-            text = "إعادة محاولة الاتصال"
-            textSize = 14f
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0f
-            setTextColor(Color.parseColor("#FFFFFF"))
-            layoutParams = LinearLayout.LayoutParams(
-                dp(240),
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(24) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#E879F9"))
-            }
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-            setOnClickListener { onConnectClicked() }
-        }
-
-        discBox.addView(discIcon)
-        discBox.addView(spacer(20))
-        discBox.addView(discTitle)
-        discBox.addView(retryBtn)
-        root.addView(discBox)
-
-        // ابدأ بشاشة الافتتاح
-        startSplash()
+        }.start()
     }
 
-    // ===== حركة شاشة الافتتاح =====
-    private fun startSplash() {
-        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
-            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
-        splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
-        splashDivider.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
-        splashSub.animate().alpha(1f).setDuration(700).setStartDelay(450).start()
-        // E2 بيظهر مع الباقي
-        splashE2.animate().alpha(1f)
-            .setDuration(900).setStartDelay(900).start()
-        Handler(Looper.getMainLooper()).postDelayed({ showIpScreen() }, 5000)
+    // ---------- 4) Not Connected ----------
+    private fun showNotConnected() {
+        clearRoot()
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(60, 60, 60, 60) }
+        lay.addView(txt("U", 60f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script is not connected", 20f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("Check Wi-Fi + IP + Port + Web PIN", 14f, MUTED).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("", 10f))
+        lay.addView(btn("Reconnect", PINK, Color.WHITE, 32f) { showConnecting() })
+        lay.addView(txt("", 6f))
+        lay.addView(btn("Change IP / PIN", CARD, Color.WHITE, 32f, 2, BORDER) { showConnect() })
+        root.addView(centerWrap(lay))
     }
 
-    private fun showIpScreen() {
-        splashView.visibility = View.GONE
-        ipView.visibility = View.VISIBLE
+    // ---------- 5) Welcome 3 ثواني ----------
+    private fun showWelcome() {
+        clearRoot()
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(40, 40, 40, 40) }
+        lay.addView(txt("welcome", 60f, GOLD, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("To", 36f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("U-Script", 70f, PINK, true).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("You are now connected to your receiver", 16f, MUTED).apply { gravity = Gravity.CENTER })
+        lay.addView(txt("Control Ur Enigma", 22f, Color.WHITE, true).apply { gravity = Gravity.CENTER })
+        root.addView(centerWrap(lay))
+        handler.postDelayed({ showMain() }, 3000)
     }
 
-    // ===== زرار CONNECT =====
-    private fun onConnectClicked() {
-        val ip = ipField.text.toString().trim()
-        val port = portField.text.toString().trim().ifEmpty { "8080" }
-        val pin = pinField.text.toString().trim()
-        if (ip.isEmpty()) {
-            statusText.text = "Please enter the receiver IP"
-            return
+    // ---------- 6) القايمة الأساسية + باقي القوايم ----------
+    private var contentHolder: FrameLayout? = null
+    private fun showMain() {
+        clearRoot()
+        val main = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        // هيدر
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(40, 30, 40, 20) }
+        head.addView(txt("U-Script", 26f, Color.WHITE, true))
+        head.addView(txt("  •  $ip", 14f, MUTED))
+        main.addView(head)
+        // منطقة المحتوى (بتتغير حسب القايمة)
+        contentHolder = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(-1, 0, 1f) }
+        main.addView(contentHolder)
+        // شريط القوايم تحت
+        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(CARD); setPadding(10, 14, 10, 14) }
+        val tabs = listOf("MAIN" to { showMainTab() }, "BACKUP" to { showMenuTab("BACKUP", listOf("Backup Ur Data" to "/?action=backup-data", "Backup Ur Files" to "/?action=backup-files", "Smart Restore" to "/?action=smart-restore", "Custom Restore" to "/?action=custom-restore", "Backup Image" to "/?action=backup-image", "Backup Manager" to "/?action=backup-manager")) },
+            "CHANNELS" to { showMenuTab("CHANNEL EDITOR", listOf("Renew Channel List" to "/?action=channellist-renew", "Bouquet Editor" to "/?action=bouquet", "Transponder Update" to "/?action=transponder")) },
+            "STREAM" to { showMenuTab("STREAMING", listOf("Sharing Servers" to "/?action=servers", "My IPTV (Xtream / M3U)" to "/?action=iptv", "My Servers (CCcam / Mgcamd)" to "/?action=servers")) },
+            "MEDIA" to { showMenuTab("PICONS / EPG", listOf("Download Picons" to "/?action=picons", "Download EPG" to "/?action=epg-download", "EPG Auto-Refresh" to "/?action=epg-auto")) },
+            "BOOT" to { showMenuTab("MULTIBOOT / IMAGE", listOf("Multiboot Manager" to "/?action=multiboot", "Image Update" to "/?action=image-update", "Download Image" to "/?action=image-links", "Backup Image" to "/?action=backup-image")) },
+            "TOOLS" to { showMenuTab("ENIGMA TOOLS", listOf("Enigma Tools" to "/?action=tools", "Skin Changer" to "/?action=skin", "Factory Reset" to "/?action=factory", "Self-Test" to "/?action=selftest")) },
+            "SET" to { showMenuTab("U-SCRIPT SETTING", listOf("Owner PIN / Lock" to "/?action=device-pin", "MAC Lock" to "/?action=mac-lock", "Device Setting" to "/?action=setup", "Web PIN" to "/?action=webpin")) })
+        for ((label, action) in tabs) {
+            val b = Button(this).apply { text = label; textSize = 11f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; background = bgDrawable(CARD, 24f); setPadding(10, 10, 10, 10); setOnClickListener { action() }; stateListAnimator = null }
+            nav.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
-        getSharedPreferences("uscript_prefs", MODE_PRIVATE)
-            .edit().putString("ip", ip).putString("port", port).putString("pin", pin).apply()
-        // لو فيه PIN: يدخل بيه ككلمة سر للريسيفر (root:PIN) — لو مفيش: يدخل عادي
-        baseUrl = if (pin.isNotEmpty()) "http://root:$pin@$ip:$port" else "http://$ip:$port"
+        main.addView(nav)
+        root.addView(main)
+        showMainTab()
+    }
 
-        ipView.visibility = View.GONE
-        disconnectedView.visibility = View.GONE
-        welcomeView.visibility = View.VISIBLE
-
-        // تصفير عناصر الشاشة الثابتة
-        welcomeLogo.alpha = 0f
-        welcomeLogo.scaleX = 0.8f
-        welcomeLogo.scaleY = 0.8f
-        welcomeTitle.alpha = 0f
-        welcomeConnecting.alpha = 0f
-        progressTrack.alpha = 0f
-        progressFill.alpha = 0f
-        progressFill.layoutParams.width = 0
-        progressFill.requestLayout()
-
-        // ظهور العناصر
-        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
-            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
-        welcomeTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
-        welcomeConnecting.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
-        progressTrack.animate().alpha(1f).setDuration(700).setStartDelay(400).start()
-        progressFill.animate().alpha(1f).setDuration(700).setStartDelay(400).start()
-
-        // حركة البار المتحرك
-        val barAnim = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 2200
-            addUpdateListener { anim ->
-                val f = anim.animatedValue as Float
-                progressFill.layoutParams.width = (dp(240) * f).toInt()
-                progressFill.requestLayout()
-            }
+    // ----- القايمة الأساسية: عرض الشاشة + ريموت -----
+    private fun showMainTab() {
+        val holder = contentHolder ?: return
+        holder.removeAllViews()
+        val scroll = ScrollView(this)
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 10, 40, 20) }
+        // عرض الشاشة
+        val screenBox = FrameLayout(this).apply { background = bgDrawable(Color.BLACK, 28f, 3, BORDER); setPadding(20, 20, 20, 20) }
+        val screenTxt = txt("LIVE  •  $ip\nTap Play to open Live Stream (Port 8001)", 14f, Color.WHITE)
+        screenBox.addView(screenTxt)
+        lay.addView(screenBox); lay.addView(txt("", 6f))
+        lay.addView(btn("▶  Play Live Screen", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:8001/") })
+        lay.addView(txt("", 6f))
+        // أزرار سريعة
+        val quick = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for ((t, cmd) in listOf("CH +" to "channelup", "CH -" to "channeldown", "VOL +" to "volumeup", "VOL -" to "volumedown", "Mute" to "mute")) {
+            val b = btn(t, CARD, CYAN, 28f, 2, CYAN) { sendRemote(cmd) }
+            quick.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 0, 4, 0) })
         }
-        barAnim.start()
-
-        // افتح صفحة الريسيفر
-        loadFailed = false
-        welcomeShown = false
-        welcomeConnectedView.visibility = View.GONE
-        connectStarted = true
-        webView.loadUrl(baseUrl)
-    }
-
-    // ===== شاشة الترحيب المتحركة: Fade In ثم Fade Out ثم دخول مباشر على الريسيفر =====
-    private fun showWelcomeConnected() {
-        welcomeConnectedView.visibility = View.VISIBLE
-        wcWelcome.alpha = 0f
-        wcTo.alpha = 0f
-        wcU.alpha = 0f
-        wcU.scaleX = 0.9f
-        wcU.scaleY = 0.9f
-        wcMessage.alpha = 0f
-        wcSub.alpha = 0f
-
-        // Fade In متدرج
-        wcWelcome.animate().alpha(1f).setDuration(800).start()
-        wcTo.animate().alpha(1f).setDuration(800).setStartDelay(200).start()
-        wcU.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setStartDelay(400).setInterpolator(DecelerateInterpolator()).start()
-        wcMessage.animate().alpha(1f).setDuration(800).setStartDelay(600).start()
-        wcSub.animate().alpha(1f).setDuration(800).setStartDelay(750).start()
-
-        // الشاشة كلها تقعد 3 ثواني: Fade Out يبدأ بعد 2.3 ثانية
-        Handler(Looper.getMainLooper()).postDelayed({
-            wcWelcome.animate().alpha(0f).setDuration(700).start()
-            wcTo.animate().alpha(0f).setDuration(700).start()
-            wcU.animate().alpha(0f).setDuration(700).start()
-            wcMessage.animate().alpha(0f).setDuration(700).start()
-            wcSub.animate().alpha(0f).setDuration(700).start()
-            // بعد الاختفاء: دخول مباشر على صفحة الريسيفر — من غير أي شاشة وسيطة
-            Handler(Looper.getMainLooper()).postDelayed({
-                welcomeConnectedView.visibility = View.GONE
-                webView.visibility = View.VISIBLE
-            }, 700)
-        }, 2000)
-    }
-
-    private fun showDisconnected() {
-        welcomeView.visibility = View.GONE
-        welcomeConnectedView.visibility = View.GONE
-        webView.visibility = View.GONE
-        disconnectedView.visibility = View.VISIBLE
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
-            webView.goBack()
-        } else if (webView.visibility == View.VISIBLE) {
-            webView.visibility = View.GONE
-            ipView.visibility = View.VISIBLE
-        } else {
-            super.onBackPressed()
+        lay.addView(quick); lay.addView(txt("", 10f))
+        // الريموت
+        lay.addView(txt("Remote Control", 20f, Color.WHITE, true))
+        lay.addView(txt("", 4f))
+        val remote = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; background = bgDrawable(CARD, 36f, 2, BORDER); setPadding(30, 30, 30, 30) }
+        remote.addView(btn("⏻  Power", Color.parseColor("#FF5B5B"), Color.WHITE, 60f) { sendRemote("power") })
+        remote.addView(txt("", 6f))
+        // الأسهم + OK
+        val upRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        upRow.addView(btn("▲", CARD, Color.WHITE, 28f) { sendRemote("up") })
+        remote.addView(upRow)
+        val midRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        midRow.addView(btn("◀", CARD, Color.WHITE, 28f) { sendRemote("left") })
+        midRow.addView(btn("OK", PINK, Color.WHITE, 60f) { sendRemote("ok") })
+        midRow.addView(btn("▶", CARD, Color.WHITE, 28f) { sendRemote("right") })
+        remote.addView(midRow)
+        val dnRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        dnRow.addView(btn("▼", CARD, Color.WHITE, 28f) { sendRemote("down") })
+        remote.addView(dnRow); remote.addView(txt("", 6f))
+        val sysRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        for ((t, cmd) in listOf("MENU" to "menu", "EXIT" to "exit", "INFO" to "info", "EPG" to "epg")) {
+            val b = btn(t, CARD, CYAN, 28f, 2, CYAN) { sendRemote(cmd) }
+            sysRow.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 0, 4, 0) })
         }
+        remote.addView(sysRow); remote.addView(txt("", 6f))
+        // أرقام 1-9
+        for (r in 0..2) {
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+            for (c in 0..2) { val n = (r * 3 + c + 1).toString(); val b = btn(n, CARD, Color.WHITE, 28f) { sendRemote(n) }; row.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 4, 4, 4) }) }
+            remote.addView(row)
+        }
+        lay.addView(remote); lay.addView(txt("", 10f))
+        lay.addView(btn("Open Full Web Panel  —  كل حاجة زي ما هي", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
+        scroll.addView(lay); holder.addView(scroll)
+    }
+
+    // ----- باقي القوايم: زرارير بتكلم الاسكريبت -----
+    private fun showMenuTab(title: String, items: List<Pair<String, String>>) {
+        val holder = contentHolder ?: return
+        holder.removeAllViews()
+        val scroll = ScrollView(this)
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 10, 40, 20) }
+        lay.addView(txt(title, 24f, Color.WHITE, true)); lay.addView(txt("", 6f))
+        for ((label, path) in items) {
+            lay.addView(btn(label, CARD, Color.WHITE, 28f, 2, BORDER) { openWebPanel("http://$ip:$port$path") })
+            lay.addView(txt("", 4f))
+        }
+        lay.addView(txt("", 6f))
+        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
+        scroll.addView(lay); holder.addView(scroll)
+    }
+
+    // ----- فتح Web Panel -----
+    private fun openWebPanel(url: String) {
+        val holder = contentHolder ?: return
+        holder.removeAllViews()
+        val wv = WebView(this).apply { settings.javaScriptEnabled = true; settings.domStorageEnabled = true; webViewClient = WebViewClient(); loadUrl(url) }
+        webView = wv
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(20, 10, 20, 10) }
+        bar.addView(btn("←  Back to Menus", CARD, Color.WHITE, 28f) { showMainTab() }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(bar); col.addView(wv, LinearLayout.LayoutParams(-1, 0, 1f))
+        holder.addView(col)
+    }
+
+    // ----- الريموت: بيكلم OpenWebif على نفس الريسيفر -----
+    private fun sendRemote(cmd: String) {
+        Thread {
+            try {
+                val u = URL("http://$ip/web/remotecontrol?command=$cmd")
+                (u.openConnection() as HttpURLConnection).apply { connectTimeout = 3000; readTimeout = 3000; connect(); responseCode }
+            } catch (e: Exception) { }
+        }.start()
+        Toast.makeText(this, cmd, Toast.LENGTH_SHORT).show()
     }
 }
