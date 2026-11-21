@@ -1,5 +1,5 @@
 package com.uscript.web
-// U-Script MERGED - MainActivity.kt
+// U-Script MERGED v3 - MainActivity.kt - توزيع منظم
 // القايمة الأساسية: عرض الشاشة + ريموت | باقي القوايم: Backup / Channels / Streaming / Picons-EPG / Multiboot / Tools / Setting
 // الاسكريبت نفسه مش متعدل - التطبيق بيكلم WebUI بتاعه على نفس IP:8080 + Web PIN
 // المطلوب: 1) Manifest فيه usesCleartextTraffic + INTERNET  2) ملف ScriptInstaller.kt جنب الملف ده  3) الاسكريبت الأصلي في app/src/main/assets/uscript.sh
@@ -198,8 +198,9 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
         // منطقة المحتوى (بتتغير حسب القايمة)
         contentHolder = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(-1, 0, 1f) }
         main.addView(contentHolder)
-        // شريط القوايم تحت
-        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(CARD); setPadding(10, 14, 10, 14) }
+        // شريط القوايم تحت: Scroll أفقي عشان مفيش حاجة تتزنق أو تتقسم على سطرين
+        val navScroll = HorizontalScrollView(this).apply { setBackgroundColor(CARD); isHorizontalScrollBarEnabled = false }
+        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(16, 14, 16, 14) }
         val tabs = listOf("MAIN" to { showMainTab() }, "BACKUP" to { showMenuTab("BACKUP", listOf("Backup Ur Data" to "/?action=backup-data", "Backup Ur Files" to "/?action=backup-files", "Smart Restore" to "/?action=smart-restore", "Custom Restore" to "/?action=custom-restore", "Backup Image" to "/?action=backup-image", "Backup Manager" to "/?action=backup-manager")) },
             "CHANNELS" to { showMenuTab("CHANNEL EDITOR", listOf("Renew Channel List" to "/?action=channellist-renew", "Bouquet Editor" to "/?action=bouquet", "Transponder Update" to "/?action=transponder")) },
             "STREAM" to { showMenuTab("STREAMING", listOf("Sharing Servers" to "/?action=servers", "My IPTV (Xtream / M3U)" to "/?action=iptv", "My Servers (CCcam / Mgcamd)" to "/?action=servers")) },
@@ -207,67 +208,157 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
             "BOOT" to { showMenuTab("MULTIBOOT / IMAGE", listOf("Multiboot Manager" to "/?action=multiboot", "Image Update" to "/?action=image-update", "Download Image" to "/?action=image-links", "Backup Image" to "/?action=backup-image")) },
             "TOOLS" to { showMenuTab("ENIGMA TOOLS", listOf("Enigma Tools" to "/?action=tools", "Skin Changer" to "/?action=skin", "Factory Reset" to "/?action=factory", "Self-Test" to "/?action=selftest")) },
             "SET" to { showMenuTab("U-SCRIPT SETTING", listOf("Owner PIN / Lock" to "/?action=device-pin", "MAC Lock" to "/?action=mac-lock", "Device Setting" to "/?action=setup", "Web PIN" to "/?action=webpin")) })
+        // MAIN هو اللي شغال في الأول
+        var selectedTab = "MAIN"
         for ((label, action) in tabs) {
-            val b = Button(this).apply { text = label; textSize = 11f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; background = bgDrawable(CARD, 24f); setPadding(10, 10, 10, 10); setOnClickListener { action() }; stateListAnimator = null }
-            nav.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            val isSel = label == selectedTab
+            val b = Button(this).apply {
+                text = label; textSize = 13f; setTextColor(if (isSel) Color.WHITE else MUTED); typeface = Typeface.DEFAULT_BOLD
+                background = bgDrawable(if (isSel) PINK else CARD, 28f); setPadding(36, 18, 36, 18)
+                isSingleLine = true
+                setOnClickListener {
+                    selectedTab = label
+                    // نلون الزرار اللي اتداس ونطفي الباقي
+                    for (i in 0 until nav.childCount) {
+                        val cb = nav.getChildAt(i) as Button
+                        val on = cb.text.toString() == label
+                        cb.setTextColor(if (on) Color.WHITE else MUTED)
+                        cb.background = bgDrawable(if (on) PINK else CARD, 28f)
+                    }
+                    action()
+                }
+                stateListAnimator = null
+            }
+            // عرض ثابت + مسافة ثابتة بين كل زرار والتاني - مفيش زرار بيتقسم
+            nav.addView(b, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { setMargins(8, 0, 8, 0) })
         }
-        main.addView(nav)
+        navScroll.addView(nav)
+        main.addView(navScroll)
         root.addView(main)
         showMainTab()
     }
 
-    // ----- القايمة الأساسية: عرض الشاشة + ريموت -----
+    // ----- القايمة الأساسية: عرض الشاشة + ريموت - توزيع منظم -----
     private fun showMainTab() {
         val holder = contentHolder ?: return
         holder.removeAllViews()
         val scroll = ScrollView(this)
         val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 10, 40, 20) }
-        // عرض الشاشة
-        val screenBox = FrameLayout(this).apply { background = bgDrawable(Color.BLACK, 28f, 3, BORDER); setPadding(20, 20, 20, 20) }
-        val screenTxt = txt("LIVE  •  $ip\nTap Play to open Live Stream (Port 8001)", 14f, Color.WHITE)
-        screenBox.addView(screenTxt)
-        lay.addView(screenBox); lay.addView(txt("", 6f))
-        lay.addView(btn("▶  Play Live Screen", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:8001/") })
-        lay.addView(txt("", 6f))
-        // أزرار سريعة
-        val quick = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        for ((t, cmd) in listOf("CH +" to "channelup", "CH -" to "channeldown", "VOL +" to "volumeup", "VOL -" to "volumedown", "Mute" to "mute")) {
-            val b = btn(t, CARD, CYAN, 28f, 2, CYAN) { sendRemote(cmd) }
-            quick.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 0, 4, 0) })
+
+        // ===== 1) عرض الشاشة: نسبة 16:9 ثابتة =====
+        val screenBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            background = bgDrawable(Color.BLACK, 28f, 3, BORDER); setPadding(30, 40, 30, 40)
         }
-        lay.addView(quick); lay.addView(txt("", 10f))
-        // الريموت
-        lay.addView(txt("Remote Control", 20f, Color.WHITE, true))
+        screenBox.addView(txt("LIVE  •  $ip", 14f, Color.parseColor("#FF5B5B"), true).apply { gravity = Gravity.CENTER })
+        screenBox.addView(txt("Tap Play to open Live Stream", 15f, Color.WHITE).apply { gravity = Gravity.CENTER })
+        screenBox.addView(txt("Port 8001", 13f, MUTED).apply { gravity = Gravity.CENTER })
+        lay.addView(screenBox); lay.addView(txt("", 8f))
+        lay.addView(btn("▶  PLAY LIVE SCREEN", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:8001/") })
+        lay.addView(txt("", 16f))
+
+        // ===== 2) القناة والصوت: مجموعتين واضحين جنب بعض =====
+        lay.addView(txt("Channel  /  Volume", 15f, MUTED, true))
         lay.addView(txt("", 4f))
-        val remote = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; background = bgDrawable(CARD, 36f, 2, BORDER); setPadding(30, 30, 30, 30) }
-        remote.addView(btn("⏻  Power", Color.parseColor("#FF5B5B"), Color.WHITE, 60f) { sendRemote("power") })
-        remote.addView(txt("", 6f))
-        // الأسهم + OK
-        val upRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        upRow.addView(btn("▲", CARD, Color.WHITE, 28f) { sendRemote("up") })
-        remote.addView(upRow)
-        val midRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        midRow.addView(btn("◀", CARD, Color.WHITE, 28f) { sendRemote("left") })
-        midRow.addView(btn("OK", PINK, Color.WHITE, 60f) { sendRemote("ok") })
-        midRow.addView(btn("▶", CARD, Color.WHITE, 28f) { sendRemote("right") })
-        remote.addView(midRow)
-        val dnRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        dnRow.addView(btn("▼", CARD, Color.WHITE, 28f) { sendRemote("down") })
-        remote.addView(dnRow); remote.addView(txt("", 6f))
-        val sysRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        for ((t, cmd) in listOf("MENU" to "menu", "EXIT" to "exit", "INFO" to "info", "EPG" to "epg")) {
-            val b = btn(t, CARD, CYAN, 28f, 2, CYAN) { sendRemote(cmd) }
-            sysRow.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 0, 4, 0) })
+        // صف القناة
+        val chRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val chMinus = btn("CH  −", CARD, CYAN, 28f, 2, CYAN) { sendRemote("channeldown") }
+        val chPlus = btn("CH  +", CARD, CYAN, 28f, 2, CYAN) { sendRemote("channelup") }
+        chRow.addView(chMinus, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 8, 0) })
+        chRow.addView(chPlus, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(8, 0, 0, 0) })
+        lay.addView(chRow); lay.addView(txt("", 8f))
+        // صف الصوت
+        val volRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val vMinus = btn("VOL  −", CARD, CYAN, 28f, 2, CYAN) { sendRemote("volumedown") }
+        val vPlus = btn("VOL  +", CARD, CYAN, 28f, 2, CYAN) { sendRemote("volumeup") }
+        val mute = btn("MUTE", CARD, Color.WHITE, 28f, 2, BORDER) { sendRemote("mute") }
+        volRow.addView(vMinus, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0, 0, 8, 0) })
+        volRow.addView(vPlus, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(8, 0, 8, 0) })
+        volRow.addView(mute, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(8, 0, 0, 0) })
+        lay.addView(volRow); lay.addView(txt("", 20f))
+
+        // ===== 3) الريموت: كارت واحد منظم =====
+        lay.addView(txt("Remote Control", 20f, Color.WHITE, true)); lay.addView(txt("", 6f))
+        val remote = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            background = bgDrawable(CARD, 36f, 2, BORDER); setPadding(40, 30, 40, 30)
         }
-        remote.addView(sysRow); remote.addView(txt("", 6f))
-        // أرقام 1-9
+        // باور - عرضه ثابت ومتوسطن
+        val powerWrap = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        val powerBtn = btn("⏻   POWER", Color.parseColor("#FF5B5B"), Color.WHITE, 60f) { sendRemote("power") }
+        powerWrap.addView(powerBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        remote.addView(powerWrap); remote.addView(txt("", 16f))
+
+        // D-Pad: 3 صفوف مظبوطة - فوق / شمال-OK-يمين / تحت - OK دايرة في النص
+        fun dpadBtn(text: String, cmd: String, isOk: Boolean = false): Button {
+            return Button(this).apply {
+                this.text = text; textSize = if (isOk) 18f else 20f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD
+                background = if (isOk) {
+                    GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(PINK) }
+                } else {
+                    bgDrawable(Color.parseColor("#1A2145"), 28f, 2, BORDER)
+                }
+                setOnClickListener { sendRemote(cmd) }; stateListAnimator = null
+            }
+        }
+        // صف فوق
+        val upRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        upRow.addView(dpadBtn("▲", "up"), LinearLayout.LayoutParams(150, 110))
+        remote.addView(upRow)
+        // صف النص: شمال - OK - يمين (OK دايرة 140×140)
+        val midRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        midRow.addView(dpadBtn("◀", "left"), LinearLayout.LayoutParams(150, 110).apply { setMargins(0, 0, 20, 0) })
+        midRow.addView(dpadBtn("OK", "ok", true), LinearLayout.LayoutParams(150, 150).apply { setMargins(20, 0, 20, 0) })
+        midRow.addView(dpadBtn("▶", "right"), LinearLayout.LayoutParams(150, 110).apply { setMargins(20, 0, 0, 0) })
+        remote.addView(midRow)
+        // صف تحت
+        val dnRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        dnRow.addView(dpadBtn("▼", "down"), LinearLayout.LayoutParams(150, 110))
+        remote.addView(dnRow); remote.addView(txt("", 16f))
+
+        // MENU / EXIT / INFO / EPG - 4 زرارير متساوية بالظبط
+        val sysRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for ((t, cmd) in listOf("MENU" to "menu", "EXIT" to "exit", "INFO" to "info", "EPG" to "epg")) {
+            val b = btn(t, Color.parseColor("#1A2145"), CYAN, 24f, 2, CYAN) { sendRemote(cmd) }
+            sysRow.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(6, 0, 6, 0) })
+        }
+        remote.addView(sysRow); remote.addView(txt("", 16f))
+
+        // الأرقام: Grid 3×3 - كل زرار ليه خلفية وحجم ثابت
         for (r in 0..2) {
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-            for (c in 0..2) { val n = (r * 3 + c + 1).toString(); val b = btn(n, CARD, Color.WHITE, 28f) { sendRemote(n) }; row.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4, 4, 4, 4) }) }
+            for (c in 0..2) {
+                val n = (r * 3 + c + 1).toString()
+                val b = Button(this).apply {
+                    text = n; textSize = 20f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD
+                    background = bgDrawable(Color.parseColor("#1A2145"), 28f, 2, BORDER)
+                    setOnClickListener { sendRemote(n) }; stateListAnimator = null
+                }
+                row.addView(b, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+            }
             remote.addView(row)
         }
-        lay.addView(remote); lay.addView(txt("", 10f))
-        lay.addView(btn("Open Full Web Panel  —  كل حاجة زي ما هي", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
+        // صف 0
+        val zeroRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        val zeroBtn = Button(this).apply {
+            text = "0"; textSize = 20f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD
+            background = bgDrawable(Color.parseColor("#1A2145"), 28f, 2, BORDER)
+            setOnClickListener { sendRemote("0") }; stateListAnimator = null
+        }
+        zeroRow.addView(zeroBtn, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        // مكانين فاضيين عشان الـ 0 يبقى في النص
+        val spacer1 = View(this); val spacer2 = View(this)
+        zeroRow.addView(spacer1, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        zeroRow.addView(spacer2, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        // نرتب: فاضي - 0 - فاضي عشان يبقى في النص بالظبط
+        zeroRow.removeAllViews()
+        zeroRow.addView(spacer1, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        zeroRow.addView(zeroBtn, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        zeroRow.addView(spacer2, LinearLayout.LayoutParams(0, 110).apply { weight = 1f; setMargins(8, 8, 8, 8) })
+        remote.addView(zeroRow)
+
+        lay.addView(remote); lay.addView(txt("", 14f))
+        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
         scroll.addView(lay); holder.addView(scroll)
     }
 
