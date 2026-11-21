@@ -1,4 +1,4 @@
-package com.uscript.app
+package com.uscript.web
 
 import android.content.Context
 import android.graphics.Color
