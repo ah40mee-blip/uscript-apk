@@ -6,7 +6,7 @@ android {
     namespace 'com.uscript.web'
     compileSdk 34
     defaultConfig {
-        applicationId 'com.uscript.web'
+        applicationId 'com.uscript.panel'
         minSdk 24
         targetSdk 34
         versionCode 1
