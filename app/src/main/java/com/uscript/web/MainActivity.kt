@@ -1,5 +1,9 @@
+// U-Script - آخر تعديل قبل الدمج (نقطة رجوع)
+// دي النسخة اللي الشات ده واقف عندها - لو حبيت ترجع لها، انسخ الملف ده كله في MainActivity.kt وامسح ScriptInstaller.kt
+// وبعدها Commit - Actions ✅ - امسح القديم - Restart - ثبت الجديد
+
 package com.uscript.web
-// U-Script NATIVE v5.1 - Fixed Build - منفصل - Auto-Login - MainActivity.kt - توزيع منظم
+// U-Script BEFORE-MERGE - آخر تعديل قبل الدمج - Auto-Login - MainActivity.kt - توزيع منظم
 // القايمة الأساسية: عرض الشاشة + ريموت | باقي القوايم: Backup / Channels / Streaming / Picons-EPG / Multiboot / Tools / Setting
 // الاسكريبت نفسه مش متعدل - التطبيق بيكلم WebUI بتاعه على نفس IP:8080 + Web PIN
 // المطلوب: 1) Manifest فيه usesCleartextTraffic + INTERNET  2) ملف ScriptInstaller.kt جنب الملف ده  3) الاسكريبت الأصلي في app/src/main/assets/uscript.sh
@@ -254,7 +258,7 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
         screenBox.addView(txt("Tap Play to open Live Stream", 15f, Color.WHITE).apply { gravity = Gravity.CENTER })
         screenBox.addView(txt("Port 8001", 13f, MUTED).apply { gravity = Gravity.CENTER })
         lay.addView(screenBox); lay.addView(txt("", 8f))
-        lay.addView(btn("▶  PLAY LIVE SCREEN", PINK, Color.WHITE, 32f) { openWebPanelLegacy("http://$ip:8001/") })
+        lay.addView(btn("▶  PLAY LIVE SCREEN", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:8001/") })
         lay.addView(txt("", 16f))
 
         // ===== 2) القناة والصوت: مجموعتين واضحين جنب بعض =====
@@ -358,7 +362,7 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
         remote.addView(zeroRow)
 
         lay.addView(remote); lay.addView(txt("", 14f))
-        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanelLegacy("http://$ip:$port/") })
+        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
         scroll.addView(lay); holder.addView(scroll)
     }
 
@@ -370,83 +374,47 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
         val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 10, 40, 20) }
         lay.addView(txt(title, 24f, Color.WHITE, true)); lay.addView(txt("", 6f))
         for ((label, path) in items) {
-            lay.addView(btn(label, CARD, Color.WHITE, 28f, 2, BORDER) { val act = path.substringAfter("action=").substringBefore("&"); runWebAction(act, label) })
+            lay.addView(btn(label, CARD, Color.WHITE, 28f, 2, BORDER) { openWebPanel("http://$ip:$port$path") })
             lay.addView(txt("", 4f))
         }
         lay.addView(txt("", 6f))
-        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanelLegacy("http://$ip:$port/") })
+        lay.addView(btn("Open Full Web Panel", PINK, Color.WHITE, 32f) { openWebPanel("http://$ip:$port/") })
         scroll.addView(lay); holder.addView(scroll)
     }
 
-    // ===== النسخة المنفصلة v5 - مفيش WebView خالص =====
-    // الفكرة: التطبيق بقى Native - كل زرار بيبعت أمر HTTP في الخلفية للريسيفر
-    // والريسيفر بينفذ - والتطبيق بيعرض النتيجة في كارد Native - مش بيفتح صفحة ويب
-    private fun openNativeTab(tab: String) {
+    // ----- فتح Web Panel + Auto-Login بالـ PIN -----
+    // السبب: الـ WebUI بتاع الاسكريبت بيطلب PIN عن طريق Cookie اسمها uscript_pin
+    // الحل: التطبيق بيحط الـ Cookie دي في الـ WebView قبل ما يفتح الصفحة - فمفيش شاشة Login تاني
+    private fun openWebPanel(url: String) {
         val holder = contentHolder ?: return
         holder.removeAllViews()
-        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 24, 32, 32) }
-        lay.addView(txt(tab, 24f, Color.WHITE, true))
-        lay.addView(txt("Native - بيتنفذ على الريسيفر من غير ما يفتح صفحة ويب", 13f, MUTED))
-        lay.addView(txt("", 16f))
-        val items: List<Pair<String,String>> = when (tab) {
-            "BACKUP" -> listOf("Backup Data" to "backup-data", "Backup Files" to "backup-files", "Backup Image" to "backup-image", "Smart Restore" to "smart-restore")
-            "CHANNELS" -> listOf("Backup Bouquet" to "bouquet-backup", "List Bouquets" to "bouquet-list", "Renew Channellist" to "channellist-renew")
-            "STREAM" -> listOf("EPG Refresh" to "epg-refresh", "EPG Auto Now" to "epg-auto-now")
-            "MEDIA" -> listOf("Picons - SNP" to "picons-snp", "Picons - SRP" to "picons-srp", "Picons - E-Moati" to "picons-emoati")
-            "BOOT" -> listOf("Multiboot Show" to "multiboot-show", "Multiboot Backup" to "multiboot-backup", "Multiboot Diagnose" to "multiboot-diagnose")
-            "TOOLS" -> listOf("Self Test" to "self-test", "Enigma Restart" to "enigma-restart", "Reboot Receiver" to "reboot")
-            "SET" -> listOf("U-Script Setting" to "setting", "Setup Enigma" to "setup", "Favourite Setup" to "fav")
-            else -> listOf("Open Dashboard" to "setting")
-        }
-        for ((label, action) in items) {
-            val card = btn(label, CARD, Color.WHITE, 28f, 2, BORDER) {
-                runWebAction(action, label)
-            }
-            lay.addView(card); lay.addView(txt("", 10f))
-        }
-        // زرار واحد بس اختياري: لو حبيت تشوف صفحة الويب الأصلية
-        lay.addView(txt("", 16f))
-        lay.addView(txt("لو حبيت تشوف صفحة الويب الأصلية بتاعة الاسكريبت - دوس هنا", 12f, MUTED).apply { gravity = Gravity.CENTER })
-        lay.addView(txt("", 8f))
-        lay.addView(btn("Open Original Web Page (اختياري)", CARD, MUTED, 24f, 2, BORDER) { openWebPanelLegacy("http://$ip:$port/") })
-        val sv = ScrollView(this); sv.addView(lay); holder.addView(sv)
-    }
-    // تنفيذ أمر على الريسيفر من غير WebView - HTTP في الخلفية
-    private fun runWebAction(action: String, label: String) {
-        Thread {
-            try {
-                val webPin = if (pin.isNotEmpty()) pin else "1234"
-                val url = URL("http://$ip:$port/run?action=$action")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.setRequestProperty("Cookie", "uscript_pin=$webPin")
-                conn.connectTimeout = 8000
-                conn.readTimeout = 15000
-                val codeResp = conn.responseCode
-                try { conn.inputStream.close() } catch (e: Exception) { }
-                conn.disconnect()
-                runOnUiThread {
-                    val msg = if (codeResp in 200..399) label + " - تم إرسال الأمر للريسيفر" else label + " - الريسيفر رد بكود " + codeResp
-                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                runOnUiThread { Toast.makeText(this, "مش قادر أوصل للريسيفر", Toast.LENGTH_LONG).show() }
-            }
-        }.start()
-    }
-    // الـ WebView القديم - موجود بس كخيار اختياري، مش هو الأساس
-    private fun openWebPanelLegacy(url: String) {
-        val holder = contentHolder ?: return
-        holder.removeAllViews()
+        // الـ PIN اللي كتبته في شاشة الاتصال - ولو فاضي بنجرب الافتراضي 1234
         val webPin = if (pin.isNotEmpty()) pin else "1234"
+        // نحط كوكي الدخول قبل فتح الصفحة
         try {
             val cm = android.webkit.CookieManager.getInstance()
-            cm.setAcceptCookie(true); cm.setCookie("http://$ip:$port/", "uscript_pin=$webPin; Path=/"); cm.flush()
+            cm.setAcceptCookie(true)
+            cm.setAcceptThirdPartyCookies(null, true)
+            // لازم نحط الكوكي على دومين الريسيفر نفسه
+            cm.setCookie("http://$ip:$port/", "uscript_pin=$webPin; Path=/")
+            cm.flush()
         } catch (e: Exception) { }
-        val wv = WebView(this).apply { settings.javaScriptEnabled = true; settings.domStorageEnabled = true; webViewClient = WebViewClient(); loadUrl(url) }
-        holder.addView(wv, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT))
+        val wv = WebView(this).apply {
+            settings.javaScriptEnabled = true; settings.domStorageEnabled = true
+            // نخلي الكوكيز تفضل محفوظة طول ما التطبيق شغال
+            settings.databaseEnabled = true
+            webViewClient = WebViewClient()
+            loadUrl(url)
+        }
+        webView = wv
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(20, 10, 20, 10) }
+        bar.addView(btn("←  Back to Menus", CARD, Color.WHITE, 28f) { showMainTab() }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(bar); col.addView(wv, LinearLayout.LayoutParams(-1, 0, 1f))
+        holder.addView(col)
     }
 
+    // ----- الريموت: بيكلم OpenWebif على نفس الريسيفر -----
     private fun sendRemote(cmd: String) {
         Thread {
             try {
