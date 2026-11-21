@@ -1,5 +1,5 @@
-package com.uscript.panel
-// U-Script NATIVE v5 - منفصل - Auto-Login - MainActivity.kt - توزيع منظم
+package com.uscript.web
+// U-Script NATIVE v5.1 - Fixed Build - منفصل - Auto-Login - MainActivity.kt - توزيع منظم
 // القايمة الأساسية: عرض الشاشة + ريموت | باقي القوايم: Backup / Channels / Streaming / Picons-EPG / Multiboot / Tools / Setting
 // الاسكريبت نفسه مش متعدل - التطبيق بيكلم WebUI بتاعه على نفس IP:8080 + Web PIN
 // المطلوب: 1) Manifest فيه usesCleartextTraffic + INTERNET  2) ملف ScriptInstaller.kt جنب الملف ده  3) الاسكريبت الأصلي في app/src/main/assets/uscript.sh
@@ -415,26 +415,22 @@ class MainActivity : AppCompatActivity() { // + ScriptInstaller.kt لازم يك
     private fun runWebAction(action: String, label: String) {
         Thread {
             try {
-                val url = java.net.URL("http://$ip:$port/run?action=$action")
-                val conn = url.openConnection() as java.net.HttpURLConnection
-                conn.requestMethod = "GET"
                 val webPin = if (pin.isNotEmpty()) pin else "1234"
+                val url = URL("http://$ip:$port/run?action=$action")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
                 conn.setRequestProperty("Cookie", "uscript_pin=$webPin")
-                conn.connectTimeout = 8000; conn.readTimeout = 15000
+                conn.connectTimeout = 8000
+                conn.readTimeout = 15000
                 val codeResp = conn.responseCode
-                val body = try { conn.inputStream.bufferedReader().readText() } catch (e: Exception) { "" }
+                try { conn.inputStream.close() } catch (e: Exception) { }
+                conn.disconnect()
                 runOnUiThread {
-                    val msg = if (codeResp in 200..399) "$label - تم إرسال الأمر للريسيفر ✅" else "$label - الريسيفر رد بكود $codeResp"
-                    android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_LONG).show()
-                    // نعرض نتيجة مختصرة في Dialog Native - مش صفحة ويب
-                    val dlg = android.app.AlertDialog.Builder(this)
-                        .setTitle(label)
-                        .setMessage(if (body.isNotEmpty()) body.replace(Regex("<[^>]*>"), " ").take(800) else msg)
-                        .setPositiveButton("OK", null)
-                        .create(); dlg.show()
+                    val msg = if (codeResp in 200..399) label + " - تم إرسال الأمر للريسيفر" else label + " - الريسيفر رد بكود " + codeResp
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
-                runOnUiThread { android.widget.Toast.makeText(this, "مش قادر أوصل للريسيفر: ${e.message}", android.widget.Toast.LENGTH_LONG).show() }
+                runOnUiThread { Toast.makeText(this, "مش قادر أوصل للريسيفر", Toast.LENGTH_LONG).show() }
             }
         }.start()
     }
