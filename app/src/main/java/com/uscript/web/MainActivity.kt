@@ -1,4 +1,4 @@
-package com.uscript.web 
+package com.uscript.web
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -117,12 +117,12 @@ class MainActivity : AppCompatActivity() {
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
-            layoutParams = LinearLayout.LayoutParams(dp(180), dp(180))
+            layoutParams = LinearLayout.LayoutParams(dp(150), dp(150))
         }
 
         splashTitle = TextView(this).apply {
             text = "U-Script"
-            textSize = 56f
+            textSize = 48f
             typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
             letterSpacing = 0.02f
             gravity = Gravity.CENTER
@@ -578,7 +578,7 @@ class MainActivity : AppCompatActivity() {
         // E2 بيظهر مع الباقي
         splashE2.animate().alpha(1f)
             .setDuration(900).setStartDelay(900).start()
-        Handler(Looper.getMainLooper()).postDelayed({ showIpScreen() }, 3000)
+        Handler(Looper.getMainLooper()).postDelayed({ showIpScreen() }, 5000)
     }
 
     private fun showIpScreen() {
