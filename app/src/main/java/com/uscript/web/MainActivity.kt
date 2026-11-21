@@ -1,4 +1,4 @@
-package com.example.uscript
+package com.uscript.web
 // U-Script MERGED - MainActivity.kt
 // القايمة الأساسية: عرض الشاشة + ريموت | باقي القوايم: Backup / Channels / Streaming / Picons-EPG / Multiboot / Tools / Setting
 // الاسكريبت نفسه مش متعدل - التطبيق بيكلم WebUI بتاعه على نفس IP:8080 + Web PIN
