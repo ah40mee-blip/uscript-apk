@@ -1,4 +1,4 @@
-package com.uscript.panel
+package com.uscript.web
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -410,34 +410,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // البار المتحرك - تدرج مباشر
         progressFill = View(this).apply {
             alpha = 0f
             layoutParams = FrameLayout.LayoutParams(0, dp(14)).apply {
                 gravity = Gravity.START or Gravity.CENTER_VERTICAL
             }
-            background = GradientDrawable().apply {
+            background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
+            ).apply {
                 cornerRadius = dp(7).toFloat()
-                setColor(Color.parseColor("#F472B6"))
-            }
-            post {
-                (background as GradientDrawable).colors =
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
-                (background as GradientDrawable).orientation =
-                    GradientDrawable.Orientation.LEFT_RIGHT
             }
         }
         (progressTrack as FrameLayout).addView(progressFill)
 
-        // الكبسولة حوالين Connecting والبار
+        // الكبسولة حوالين Connecting والبار - مرسومة جوّه الكود (من غير ملف بره)
         val connectCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(dp(300), LinearLayout.LayoutParams.WRAP_CONTENT)
-                        background = GradientDrawable().apply {
+            background = GradientDrawable().apply {
                 cornerRadius = dp(28).toFloat()
                 setColor(Color.parseColor("#0D1330"))
                 setStroke(dp(1), Color.parseColor("#2A3560"))
-                        }
+            }
             setPadding(dp(24), dp(26), dp(24), dp(26))
         }
         welcomeConnecting.layoutParams = LinearLayout.LayoutParams(
