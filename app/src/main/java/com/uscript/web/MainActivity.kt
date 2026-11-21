@@ -1,4 +1,4 @@
-package com.uscript.web
+package com.uscript.web 
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     private var baseUrl = ""
     private var connectStarted = false
+    private var loadFailed = false
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -469,7 +470,8 @@ class MainActivity : AppCompatActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    if (connectStarted) {
+                    // لو التحميل فشل: متعرضش الـ WebView خالص، خلّي شاشة عدم الاتصال هي اللي ظاهرة
+                    if (connectStarted && !loadFailed) {
                         welcomeView.visibility = View.GONE
                         disconnectedView.visibility = View.GONE
                         webView.visibility = View.VISIBLE
@@ -482,9 +484,26 @@ class MainActivity : AppCompatActivity() {
                     error: WebResourceError?
                 ) {
                     super.onReceivedError(view, request, error)
-                    if (request?.isForMainFrame == true && webView.visibility != View.VISIBLE) {
+                    if (request?.isForMainFrame == true) {
+                        loadFailed = true
+                        connectStarted = false
+                        view?.stopLoading()
                         showDisconnected()
                     }
+                }
+
+                @Suppress("DEPRECATION")
+                override fun onReceivedError(
+                    view: WebView?,
+                    errorCode: Int,
+                    description: String?,
+                    failingUrl: String?
+                ) {
+                    super.onReceivedError(view, errorCode, description, failingUrl)
+                    loadFailed = true
+                    connectStarted = false
+                    view?.stopLoading()
+                    showDisconnected()
                 }
             }
         }
@@ -614,6 +633,7 @@ class MainActivity : AppCompatActivity() {
         barAnim.start()
 
         // افتح صفحة الريسيفر
+        loadFailed = false
         connectStarted = true
         webView.loadUrl(baseUrl)
     }
