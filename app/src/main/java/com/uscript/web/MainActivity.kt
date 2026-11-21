@@ -433,7 +433,11 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(dp(300), LinearLayout.LayoutParams.WRAP_CONTENT)
-            setBackgroundResource(R.drawable.connect_card_bg)
+                        background = GradientDrawable().apply {
+                cornerRadius = dp(28).toFloat()
+                setColor(Color.parseColor("#0D1330"))
+                setStroke(dp(1), Color.parseColor("#2A3560"))
+                        }
             setPadding(dp(24), dp(26), dp(24), dp(26))
         }
         welcomeConnecting.layoutParams = LinearLayout.LayoutParams(
