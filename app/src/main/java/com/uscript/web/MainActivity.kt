@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipView: View
     private lateinit var ipField: EditText
     private lateinit var portField: EditText
+    private lateinit var pinField: EditText
     private lateinit var connectBtn: Button
     private lateinit var statusText: TextView
 
@@ -61,9 +62,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var disconnectedView: View
     private lateinit var retryBtn: Button
 
+    private lateinit var welcomeConnectedView: View
+    private lateinit var wcWelcome: TextView
+    private lateinit var wcTo: TextView
+    private lateinit var wcU: TextView
+    private lateinit var wcMessage: TextView
+    private lateinit var wcSub: TextView
+
     private var baseUrl = ""
     private var connectStarted = false
     private var loadFailed = false
+    private var welcomeShown = false
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -261,6 +270,7 @@ class MainActivity : AppCompatActivity() {
 
         val savedIp = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("ip", "") ?: ""
         val savedPort = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("port", "8080") ?: "8080"
+        val savedPin = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("pin", "") ?: ""
 
         ipField = EditText(this).apply {
             hint = "Receiver IP  ( 192.168.1.45 )"
@@ -288,6 +298,26 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.parseColor("#FFFFFF"))
             textSize = 16f
             gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(12) }
+            background = GradientDrawable().apply {
+                cornerRadius = dp(14).toFloat()
+                setColor(Color.parseColor("#0D1330"))
+                setStroke(dp(1), Color.parseColor("#2A3560"))
+            }
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+        }
+
+        pinField = EditText(this).apply {
+            hint = "PIN  ( اختياري )"
+            setText(savedPin)
+            setHintTextColor(Color.parseColor("#5A6378"))
+            setTextColor(Color.parseColor("#FFFFFF"))
+            textSize = 16f
+            gravity = Gravity.CENTER
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -337,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         ipCenter.addView(spacer(24))
         ipCenter.addView(ipField)
         ipCenter.addView(portField)
+        ipCenter.addView(pinField)
         ipCenter.addView(connectBtn)
         ipCenter.addView(statusText)
         ipScroll.addView(ipCenter)
@@ -352,6 +383,131 @@ class MainActivity : AppCompatActivity() {
             visibility = View.GONE
         }
         welcomeView = welcomeBox
+
+        // ================= 3.5) شاشة الترحيب بعد الاتصال (Welcome into U-Script) =================
+        val wcBox = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.parseColor("#070B1F"))
+            visibility = View.GONE
+        }
+        welcomeConnectedView = wcBox
+
+        val wcCenter = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                topMargin = dp(150)
+            }
+        }
+
+        wcWelcome = TextView(this).apply {
+            text = "welcome"
+            textSize = 120f
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
+            letterSpacing = 0.05f
+            setTextColor(Color.parseColor("#FFD166"))
+            gravity = Gravity.CENTER
+            alpha = 0f
+        }
+
+        wcTo = TextView(this).apply {
+            text = "To"
+            textSize = 36f
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.3f
+            setTextColor(Color.parseColor("#9AA3C7"))
+            gravity = Gravity.CENTER
+            alpha = 0f
+        }
+
+        wcU = TextView(this).apply {
+            text = "U-Script"
+            textSize = 140f
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            letterSpacing = 0f
+            setTextColor(Color.parseColor("#F472B6"))
+            gravity = Gravity.CENTER
+            alpha = 0f
+            scaleX = 0.9f
+            scaleY = 0.9f
+        }
+        // تدرج لوني بريميوم على اسم U-Script (سماوي -> بينك)
+        wcU.post {
+            val shader = android.graphics.LinearGradient(
+                0f, 0f, wcU.width.toFloat(), 0f,
+                intArrayOf(Color.parseColor("#22D3EE"), Color.parseColor("#F472B6")),
+                null, android.graphics.Shader.TileMode.CLAMP
+            )
+            wcU.paint.shader = shader
+            wcU.invalidate()
+        }
+
+        wcMessage = TextView(this).apply {
+            text = "You are now connected to your receiver"
+            textSize = 20f
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.05f
+            setTextColor(Color.parseColor("#C7CDDE"))
+            gravity = Gravity.CENTER
+            alpha = 0f
+        }
+
+        wcSub = TextView(this).apply {
+            text = "Control Ur Enigma"
+            textSize = 22f
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.3f
+            setTextColor(Color.parseColor("#9AA3C7"))
+            gravity = Gravity.CENTER
+            alpha = 0f
+        }
+
+        // توهج ملون بريميوم في الخلفية (وردي فوق + سماوي تحت)
+        val wcGlowTop = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(320), dp(320)).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                topMargin = dp(-90)
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                gradientType = GradientDrawable.RADIAL_GRADIENT
+                gradientRadius = dp(160).toFloat()
+                colors = intArrayOf(Color.parseColor("#33F472B6"), Color.parseColor("#00F472B6"))
+            }
+        }
+        val wcGlowBottom = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(320), dp(320)).apply {
+                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                bottomMargin = dp(-90)
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                gradientType = GradientDrawable.RADIAL_GRADIENT
+                gradientRadius = dp(160).toFloat()
+                colors = intArrayOf(Color.parseColor("#3322D3EE"), Color.parseColor("#0022D3EE"))
+            }
+        }
+
+        wcCenter.addView(wcWelcome)
+        wcCenter.addView(spacer(28))
+        wcCenter.addView(wcTo)
+        wcCenter.addView(spacer(36))
+        wcCenter.addView(wcU)
+        wcCenter.addView(spacer(24))
+        wcCenter.addView(wcMessage)
+        wcCenter.addView(spacer(20))
+        wcCenter.addView(wcSub)
+        wcBox.addView(wcGlowTop)
+        wcBox.addView(wcGlowBottom)
+        wcBox.addView(wcCenter)
+        root.addView(wcBox)
 
         val welcomeCenter = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -471,10 +627,11 @@ class MainActivity : AppCompatActivity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     // لو التحميل فشل: متعرضش الـ WebView خالص، خلّي شاشة عدم الاتصال هي اللي ظاهرة
-                    if (connectStarted && !loadFailed) {
+                    if (connectStarted && !loadFailed && !welcomeShown) {
+                        welcomeShown = true
                         welcomeView.visibility = View.GONE
                         disconnectedView.visibility = View.GONE
-                        webView.visibility = View.VISIBLE
+                        showWelcomeConnected()
                     }
                 }
 
@@ -590,13 +747,15 @@ class MainActivity : AppCompatActivity() {
     private fun onConnectClicked() {
         val ip = ipField.text.toString().trim()
         val port = portField.text.toString().trim().ifEmpty { "8080" }
+        val pin = pinField.text.toString().trim()
         if (ip.isEmpty()) {
             statusText.text = "Please enter the receiver IP"
             return
         }
         getSharedPreferences("uscript_prefs", MODE_PRIVATE)
-            .edit().putString("ip", ip).putString("port", port).apply()
-        baseUrl = "http://$ip:$port"
+            .edit().putString("ip", ip).putString("port", port).putString("pin", pin).apply()
+        // لو فيه PIN: يدخل بيه ككلمة سر للريسيفر (root:PIN) — لو مفيش: يدخل عادي
+        baseUrl = if (pin.isNotEmpty()) "http://root:$pin@$ip:$port" else "http://$ip:$port"
 
         ipView.visibility = View.GONE
         disconnectedView.visibility = View.GONE
@@ -634,12 +793,48 @@ class MainActivity : AppCompatActivity() {
 
         // افتح صفحة الريسيفر
         loadFailed = false
+        welcomeShown = false
+        welcomeConnectedView.visibility = View.GONE
         connectStarted = true
         webView.loadUrl(baseUrl)
     }
 
+    // ===== شاشة الترحيب المتحركة: Fade In ثم Fade Out ثم دخول مباشر على الريسيفر =====
+    private fun showWelcomeConnected() {
+        welcomeConnectedView.visibility = View.VISIBLE
+        wcWelcome.alpha = 0f
+        wcTo.alpha = 0f
+        wcU.alpha = 0f
+        wcU.scaleX = 0.9f
+        wcU.scaleY = 0.9f
+        wcMessage.alpha = 0f
+        wcSub.alpha = 0f
+
+        // Fade In متدرج
+        wcWelcome.animate().alpha(1f).setDuration(800).start()
+        wcTo.animate().alpha(1f).setDuration(800).setStartDelay(200).start()
+        wcU.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setStartDelay(400).setInterpolator(DecelerateInterpolator()).start()
+        wcMessage.animate().alpha(1f).setDuration(800).setStartDelay(600).start()
+        wcSub.animate().alpha(1f).setDuration(800).setStartDelay(750).start()
+
+        // الشاشة كلها تقعد 3 ثواني: Fade Out يبدأ بعد 2.3 ثانية
+        Handler(Looper.getMainLooper()).postDelayed({
+            wcWelcome.animate().alpha(0f).setDuration(700).start()
+            wcTo.animate().alpha(0f).setDuration(700).start()
+            wcU.animate().alpha(0f).setDuration(700).start()
+            wcMessage.animate().alpha(0f).setDuration(700).start()
+            wcSub.animate().alpha(0f).setDuration(700).start()
+            // بعد الاختفاء: دخول مباشر على صفحة الريسيفر — من غير أي شاشة وسيطة
+            Handler(Looper.getMainLooper()).postDelayed({
+                welcomeConnectedView.visibility = View.GONE
+                webView.visibility = View.VISIBLE
+            }, 700)
+        }, 2000)
+    }
+
     private fun showDisconnected() {
         welcomeView.visibility = View.GONE
+        welcomeConnectedView.visibility = View.GONE
         webView.visibility = View.GONE
         disconnectedView.visibility = View.VISIBLE
     }
