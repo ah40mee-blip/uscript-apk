@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
-            layoutParams = LinearLayout.LayoutParams(dp(150), dp(150))
+            layoutParams = LinearLayout.LayoutParams(dp(180), dp(180))
         }
 
         splashTitle = TextView(this).apply {
@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity() {
 
         val ipLogo = ImageView(this).apply {
             setImageResource(R.drawable.ic_app_icon)
-            layoutParams = LinearLayout.LayoutParams(dp(90), dp(90))
+            layoutParams = LinearLayout.LayoutParams(dp(110), dp(110))
         }
 
         val ipTitle = TextView(this).apply {
@@ -366,7 +366,7 @@ class MainActivity : AppCompatActivity() {
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
-            layoutParams = LinearLayout.LayoutParams(dp(120), dp(120))
+            layoutParams = LinearLayout.LayoutParams(dp(150), dp(150))
         }
 
         welcomeTitle = TextView(this).apply {
@@ -493,7 +493,7 @@ class MainActivity : AppCompatActivity() {
         // ================= 5) شاشة عدم الاتصال =================
         val discBox = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
+            gravity = Gravity.CENTER
             setBackgroundColor(Color.parseColor("#070B1F"))
             setPadding(dp(32), dp(32), dp(32), dp(32))
             layoutParams = FrameLayout.LayoutParams(
@@ -506,11 +506,11 @@ class MainActivity : AppCompatActivity() {
 
         val discIcon = ImageView(this).apply {
             setImageResource(R.drawable.ic_app_icon)
-            layoutParams = LinearLayout.LayoutParams(dp(100), dp(100))
+            layoutParams = LinearLayout.LayoutParams(dp(130), dp(130))
         }
 
         val discTitle = TextView(this).apply {
-            text = "U-Script Panel is disconnected"
+            text = "U-Script is not connected"
             textSize = 20f
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             setTextColor(Color.parseColor("#FFFFFF"))
@@ -521,41 +521,27 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val discSub = TextView(this).apply {
-            text = "Check the receiver IP and try again"
-            textSize = 14f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            setTextColor(Color.parseColor("#8A93B2"))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
         retryBtn = Button(this).apply {
-            text = "TRY AGAIN"
-            textSize = 15f
+            text = "إعادة محاولة الاتصال"
+            textSize = 14f
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0.2f
+            letterSpacing = 0f
             setTextColor(Color.parseColor("#FFFFFF"))
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(240),
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(24) }
             background = GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
                 setColor(Color.parseColor("#E879F9"))
             }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
             setOnClickListener { onConnectClicked() }
         }
 
         discBox.addView(discIcon)
         discBox.addView(spacer(20))
         discBox.addView(discTitle)
-        discBox.addView(spacer(8))
-        discBox.addView(discSub)
         discBox.addView(retryBtn)
         root.addView(discBox)
 
@@ -573,7 +559,7 @@ class MainActivity : AppCompatActivity() {
         // E2 بيظهر مع الباقي
         splashE2.animate().alpha(1f)
             .setDuration(900).setStartDelay(900).start()
-        Handler(Looper.getMainLooper()).postDelayed({ showIpScreen() }, 1600)
+        Handler(Looper.getMainLooper()).postDelayed({ showIpScreen() }, 3000)
     }
 
     private fun showIpScreen() {
