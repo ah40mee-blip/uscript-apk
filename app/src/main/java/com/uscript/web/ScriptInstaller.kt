@@ -1,4 +1,4 @@
-package com.uscript.web
+package com.uscript.panel
 
 // ScriptInstaller.kt — التثبيت الأوتوماتيك
 // الفكرة: الاسكريبت موجود جوه الـ APK في app/src/main/assets/uscript.sh (من غير أي تعديل)
