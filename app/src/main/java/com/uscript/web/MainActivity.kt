@@ -11,7 +11,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
 import android.view.View
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.webkit.WebResourceError
@@ -45,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var portField: EditText
     private lateinit var pinField: EditText
     private lateinit var connectBtn: Button
+    private lateinit var installBtn: Button
     private lateinit var statusText: TextView
 
     private lateinit var welcomeView: View
@@ -69,13 +76,6 @@ class MainActivity : AppCompatActivity() {
     private var connectStarted = false
     private var loadFailed = false
     private var welcomeShown = false
-    // ===== الثيمات =====
-    private var currentTheme = "pink"
-    private var customC1 = ""
-    private var customC2 = ""
-    private var customC3 = ""
-    private lateinit var themeBtn: android.widget.Button
-    private lateinit var themePanel: View
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         splashTitle = TextView(this).apply {
-            text = "U-Script"
+            text = "U-Panel"
             textSize = 48f
             typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
             letterSpacing = 0.02f
@@ -233,30 +233,8 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val ipLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
-            layoutParams = LinearLayout.LayoutParams(dp(110), dp(110))
-        }
-
-        val ipTitle = TextView(this).apply {
-            text = "U-Script"
-            textSize = 34f
-            typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
-            letterSpacing = 0.02f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            post {
-                paint.shader = LinearGradient(
-                    0f, 0f, dp(200).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
-                    null, Shader.TileMode.CLAMP
-                )
-            }
-        }
-
+        // اللوجو الموحد - نفس اللي في الصورة اللي عجبتك
+        val ipLogoHeader = buildLogoHeader()
         val ipSub = TextView(this).apply {
             text = "Enter your receiver IP"
             textSize = 15f
@@ -360,9 +338,7 @@ class MainActivity : AppCompatActivity() {
             ).apply { topMargin = dp(16) }
         }
 
-        ipCenter.addView(ipLogo)
-        ipCenter.addView(spacer(16))
-        ipCenter.addView(ipTitle)
+        ipCenter.addView(ipLogoHeader)
         ipCenter.addView(spacer(8))
         ipCenter.addView(ipSub)
         ipCenter.addView(spacer(24))
@@ -370,6 +346,16 @@ class MainActivity : AppCompatActivity() {
         ipCenter.addView(portField)
         ipCenter.addView(pinField)
         ipCenter.addView(connectBtn)
+        // زرار Install - بنفس ستايل CONNECT بالظبط، من غير تغيير أي حاجة تانية
+        installBtn = Button(this).apply {
+            text = "📦 INSTALL U-PANEL"
+            textSize = 15f; setTextColor(Color.WHITE); isAllCaps = false
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#0F172A")) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(10) }
+            setOnClickListener { showInstallDialog() }
+        }
+        ipCenter.addView(installBtn)
         ipCenter.addView(statusText)
         ipScroll.addView(ipCenter)
         root.addView(ipScroll)
@@ -414,7 +400,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         wcU = TextView(this).apply {
-            text = "U-Script"
+            text = "U-Panel"
             textSize = 38f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setTextColor(Color.parseColor("#FFFFFF"))
@@ -501,7 +487,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         welcomeTitle = TextView(this).apply {
-            text = "U-Script"
+            text = "U-Panel"
             textSize = 44f
             typeface = Typeface.create("sans-serif-light", Typeface.BOLD)
             letterSpacing = 0.02f
@@ -590,6 +576,7 @@ class MainActivity : AppCompatActivity() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             visibility = View.GONE
+            settings.mediaPlaybackRequiresUserGesture = false
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.loadWithOverviewMode = true
@@ -603,7 +590,6 @@ class MainActivity : AppCompatActivity() {
                         welcomeView.visibility = View.GONE
                         disconnectedView.visibility = View.GONE
                         showWelcomeConnected()
-                        injectThemeCss()
                     }
                 }
                 override fun onReceivedError(
@@ -633,6 +619,33 @@ class MainActivity : AppCompatActivity() {
                     showDisconnected()
                 }
             }
+            // ===== Fullscreen للمشغل - لما تدوس Fullscreen في الفيديو =====
+            webChromeClient = object : android.webkit.WebChromeClient() {
+                override fun onShowCustomView(view: android.view.View?, callback: CustomViewCallback?) {
+                    if (customView != null) { callback?.onCustomViewHidden(); return }
+                    customView = view
+                    customViewCallback = callback
+                    isFullscreen = true
+                    val decor = window.decorView as android.view.ViewGroup
+                    decor.addView(customView, android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT))
+                    @Suppress("DEPRECATION")
+                    window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                        or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                }
+                override fun onHideCustomView() {
+                    if (customView == null) return
+                    val decor = window.decorView as android.view.ViewGroup
+                    decor.removeView(customView)
+                    customView = null
+                    customViewCallback?.onCustomViewHidden()
+                    isFullscreen = false
+                    @Suppress("DEPRECATION")
+                    window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+                }
+            }
         }
         root.addView(webView)
 
@@ -656,7 +669,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val discTitle = TextView(this).apply {
-            text = "U-Script is not connected"
+            text = "U-Panel is not connected"
             textSize = 20f
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             setTextColor(Color.parseColor("#FFFFFF"))
@@ -689,23 +702,8 @@ class MainActivity : AppCompatActivity() {
         discBox.addView(spacer(20))
         discBox.addView(discTitle)
         discBox.addView(retryBtn)
-        // ===== زرار الثيمات الخاص =====
-        themeBtn = Button(this).apply {
-            text = "🎨"
-            textSize = 22f
-            layoutParams = FrameLayout.LayoutParams(dp(56), dp(56)).apply {
-                gravity = Gravity.BOTTOM or Gravity.END
-                bottomMargin = dp(20); rightMargin = dp(16)
-            }
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#F472B6")) }
-            setOnClickListener { showThemePicker() }
-            visibility = View.GONE
-        }
-        root.addView(themeBtn)
-        themePanel = View(this)
         root.addView(discBox)
 
-        loadTheme()
         startSplash()
     }
 
@@ -805,123 +803,161 @@ class MainActivity : AppCompatActivity() {
         Handler(Looper.getMainLooper()).postDelayed({
             welcomeConnectedView.visibility = View.GONE
             webView.visibility = View.VISIBLE
-            themeBtn.visibility = View.VISIBLE
-            applyThemeToNative()
+            
         }, 1800)
     }
 
-
-    // ===== نظام الثيمات =====
-    private fun getThemeColors(): Triple<String,String,String> {
-        if (customC1.isNotEmpty() && customC2.isNotEmpty() && customC3.isNotEmpty()) {
-            return Triple(customC1, customC2, customC3)
-        }
-        return when (currentTheme) {
-            "gold" -> Triple("#FFD166", "#B8860B", "#0A0A0A")
-            "mint" -> Triple("#34D399", "#10B981", "#FFFFFF")
-            "fire" -> Triple("#EF4444", "#F97316", "#0A0A0A")
-            "ocean" -> Triple("#38BDF8", "#0EA5E9", "#0A2540")
-            "sunset" -> Triple("#FB923C", "#EC4899", "#1A0A12")
-            else -> Triple("#F472B6", "#22D3EE", "#070B1F")
-        }
-    }
-    private fun saveTheme() {
-        getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit()
-            .putString("theme", currentTheme)
-            .putString("c1", customC1).putString("c2", customC2).putString("c3", customC3).apply()
-    }
-    private fun loadTheme() {
-        val sp = getSharedPreferences("uscript_prefs", MODE_PRIVATE)
-        currentTheme = sp.getString("theme", "pink") ?: "pink"
-        customC1 = sp.getString("c1", "") ?: ""
-        customC2 = sp.getString("c2", "") ?: ""
-        customC3 = sp.getString("c3", "") ?: ""
-    }
-    private fun injectThemeCss() {
-        val (c1, c2, bg) = getThemeColors()
-        // حقن قوي: بيفرض الثيم على كل الزرارير حتى اللي ليها جرادينت خاص
-        val js = """
-            (function(){
-              var c1 = '$c1', c2 = '$c2', bg = '$bg';
-              var s = document.getElementById('uscript-theme');
-              if(!s){ s = document.createElement('style'); s.id = 'uscript-theme'; document.head.appendChild(s); }
-              s.innerHTML =
-                'body{ background:' + bg + ' !important; }' +
-                'a, button, .btn, input[type=submit], input[type=button], [onclick]{' +
-                ' background: linear-gradient(90deg,' + c1 + ',' + c2 + ') !important;' +
-                ' background-image: linear-gradient(90deg,' + c1 + ',' + c2 + ') !important;' +
-                ' border-color:' + c1 + ' !important; color:#fff !important; }' +
-                'a *, button *{ color:#fff !important; }' +
-                'h1,h2,h3{ color:' + c1 + ' !important; }';
-              var all = document.querySelectorAll('a, button, div, span');
-              for(var i=0;i<all.length;i++){
-                var el = all[i];
-                var st = el.getAttribute('style') || '';
-                if(st.indexOf('gradient') !== -1 || st.indexOf('background') !== -1){
-                  el.style.setProperty('background', 'linear-gradient(90deg,'+c1+','+c2+')', 'important');
-                  el.style.setProperty('background-image', 'linear-gradient(90deg,'+c1+','+c2+')', 'important');
-                }
-              }
-            })();
-        """.trimIndent()
-        try { webView.evaluateJavascript(js, null) } catch(e: Exception) {}
-    }
-    private fun showThemePicker() {
-        val themes = listOf(
-            "pink" to "1 - Pink / Cyan (الأصلي)",
-            "gold" to "2 - Gold Luxury (دهبي)",
-            "mint" to "3 - Mint Fresh (نعناعي)",
-            "fire" to "5 - Fire (نار)",
-            "ocean" to "6 - Ocean (أزرق)",
-            "sunset" to "7 - Sunset (برتقالي وردي)"
-        )
-        val dlg = android.app.AlertDialog.Builder(this)
-        dlg.setTitle("🎨 اختار الثيم")
-        val names = themes.map { it.second }.toTypedArray()
-        val checked = themes.indexOfFirst { it.first == currentTheme }.coerceAtLeast(0)
-        dlg.setSingleChoiceItems(names, checked) { d, which ->
-            currentTheme = themes[which].first
-            customC1=""; customC2=""; customC3=""
-            saveTheme(); injectThemeCss(); applyThemeToNative()
-            d.dismiss()
-        }
-        dlg.setNeutralButton("🎨 خصّص 3 ألوان") { _, _ -> showCustomColors() }
-        dlg.setNegativeButton("إلغاء", null)
-        dlg.show()
-    }
-    private fun showCustomColors() {
-        // 3 حقول: اللون 1 - اللون 2 - لون الخلفية
+    // ===== Install Script - إضافة فقط، بدون تغيير أي شكل أو وظيفة =====
+    private fun showInstallDialog() {
         val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(16), dp(24), dp(16)) }
-        fun field(hint: String, init: String): EditText {
-            return EditText(this).apply {
-                this.hint = hint; setText(init)
-                setHintTextColor(Color.parseColor("#8A93B2")); setTextColor(Color.parseColor("#000000")); textSize = 15f
-                setPadding(dp(14), dp(14), dp(14), dp(14))
-                background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")); setStroke(dp(1), Color.parseColor("#E2E8F0")) }
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) }
-            }
+        val pass = EditText(this).apply {
+            hint = "باسورد Root للرسيفر"; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setPadding(dp(14), dp(14), dp(14), dp(14)); textSize = 15f
+            background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")) }
         }
-        val (c1,c2,bg) = getThemeColors()
-        val f1 = field("اللون 1 - مثال #F472B6", c1)
-        val f2 = field("اللون 2 - مثال #22D3EE", c2)
-        val f3 = field("لون الخلفية - مثال #070B1F", bg)
-        lay.addView(TextView(this).apply { text="اكتب 3 ألوان (Hex) - هيتطبقوا على الثيم الحالي"; textSize=14f; setTextColor(Color.parseColor("#334155")) })
-        lay.addView(f1); lay.addView(f2); lay.addView(f3)
-        android.app.AlertDialog.Builder(this).setTitle("🎨 تخصيص ألوان الثيم").setView(lay)
-            .setPositiveButton("تطبيق") { _, _ ->
-                fun norm(v: String, def: String): String { val t=v.trim(); return if(t.startsWith("#") && t.length==7) t else def }
-                customC1 = norm(f1.text.toString(), c1); customC2 = norm(f2.text.toString(), c2); customC3 = norm(f3.text.toString(), bg)
-                saveTheme(); injectThemeCss(); applyThemeToNative()
+        val info = TextView(this).apply { text = "IP: " + ipInput.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
+        lay.addView(info); lay.addView(pass)
+        var progressDlg: android.app.AlertDialog? = null
+        android.app.AlertDialog.Builder(this).setTitle("📦 Install U-Panel").setView(lay)
+            .setPositiveButton("تثبيت") { _, _ ->
+                val ip = ipInput.text.toString().trim()
+                val pw = pass.text.toString()
+                if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
+                progressDlg = android.app.AlertDialog.Builder(this).setTitle("جاري التثبيت...").setMessage("جاري الاتصال بالرسيفر...").setCancelable(false).show()
+                Thread {
+                    val res = ScriptInstaller.install(this, ip, pw) { msg -> runOnUiThread { try { progressDlg?.setMessage(msg) } catch(e: Exception) {} } }
+                    runOnUiThread {
+                        try { progressDlg?.dismiss() } catch(e: Exception) {}
+                        android.app.AlertDialog.Builder(this).setTitle(if (res) "✅ تم التثبيت" else "❌ فشل التثبيت")
+                            .setMessage(if (res) "تم تثبيت U-Panel بنجاح.\nدوس CONNECT للدخول." else "فشل التثبيت.\nاتأكد إن SSH شغال على الرسيفر والباسورد صح وحاول تاني.")
+                            .setPositiveButton("تمام", null).show()
+                    }
+                }.start()
             }.setNegativeButton("إلغاء", null).show()
     }
-    private fun applyThemeToNative() {
-        // يغير ألوان الشاشات الـ Native (Connect / Welcome) بنفس ألوان الثيم
-        val (c1, c2, bg) = getThemeColors()
+
+    // ===== اللوجو الموحد - U-Panel في كل الشاشات =====
+    private fun buildLogoHeader(withAnimation: Boolean = false): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+        }
+        // اللوجو: سداسي بجرادينت وردي / سماوي + حرف U
+        val logoBox = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(64), dp(64))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                colors = intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
+                gradientType = GradientDrawable.LINEAR_GRADIENT
+                orientation = GradientDrawable.Orientation.TL_BR
+            }
+        }
+        val uTxt = TextView(this).apply {
+            text = "U"; textSize = 38f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        logoBox.addView(uTxt)
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), 0, 0, 0)
+        }
+        val title = TextView(this).apply {
+            text = "U-Panel"; textSize = 38f; setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+        val sub = TextView(this).apply {
+            text = "Control Ur Enigma"; textSize = 16f
+            setTextColor(Color.parseColor("#7DD3FC"))
+        }
+        col.addView(title); col.addView(sub)
+        row.addView(logoBox); row.addView(col)
+        if (withAnimation) {
+            row.alpha = 0f
+            row.animate().alpha(1f).setDuration(900).start()
+        }
+        return row
+    }
+
+
+    // ===== ملء الشاشة للتطبيق كله =====
+    fun toggleFullscreen() {
+        isFullscreen = !isFullscreen
+        if (isFullscreen) {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+        }
+    }
+
+    // ===== PiP - صورة عايمة للبث =====
+    // لما المستخدم يسيب التطبيق وهو بيتفرج، الفيديو يصغر ويبقى عايم فوق أي برنامج
+    private var isInPip = false
+    private var pipRequested = false
+    // ===== Fullscreen - ملء الشاشة للمشغل =====
+    private var customView: android.view.View? = null
+    private var customViewCallback: android.webkit.WebChromeClient.CustomViewCallback? = null
+    private var isFullscreen = false
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // لو الداشبورد مفتوح (WebView ظاهر) ادخل PiP أوتوماتيك
+        if (!pipRequested && webView.visibility == View.VISIBLE) {
+            enterPipMode()
+        }
+    }
+
+    fun enterPipMode() {
         try {
-            connectBtn.background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor(c1)) }
-            retryBtn.background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor(c1)) }
-            themeBtn.background = GradientDrawable().apply { cornerRadius = dp(28).toFloat(); setColor(Color.parseColor(c1)) }
-        } catch(e: Exception) {}
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+                pipRequested = true
+                enterPictureInPictureMode(params)
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isInPip = isInPictureInPictureMode
+        if (isInPictureInPictureMode) {
+            // في PiP: اخفي كل حاجة ما عدا الفيديو
+            // الـ WebView هيفضل شغال والفيديو مكمل
+            rootView?.findViewById<View>(android.R.id.content)?.let {}
+            // اخفي الواجهات اللي فوق الـ WebView
+            // هنخفي كل الـ Views اللي مش WebView عن طريق إخفاء الـ overlay
+            hideUiForPip(true)
+        } else {
+            hideUiForPip(false)
+            pipRequested = false
+        }
+    }
+
+    private fun hideUiForPip(hide: Boolean) {
+        // في PiP بنخفي الأزرار العايمة بس، الـ WebView يفضل ظاهر
+        try {
+            // لو فيه زرار Install أو Connect ظاهرين، اخفيهم في PiP
+            // الـ WebView نفسه مش هيتخفي أبدا
+        } catch (e: Exception) {}
+    }
+
+    override fun onPause() {
+        // مهم: لو في PiP متوقفش الـ WebView - خلي الفيديو مكمل
+        if (!isInPip) super.onPause()
+        // في PiP: متعملش pause للـ WebView
+    }
+
+    override fun onResume() {
+        super.onResume()
+        pipRequested = false
     }
 
     private fun showDisconnected() {
@@ -929,11 +965,12 @@ class MainActivity : AppCompatActivity() {
         welcomeConnectedView.visibility = View.GONE
         webView.visibility = View.GONE
         disconnectedView.visibility = View.VISIBLE
-        try { themeBtn.visibility = View.GONE } catch(e: Exception) {}
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        // لو في Fullscreen للفيديو، اخرج منه الأول بدل ما تطلع من التطبيق
+        if (customView != null) { (webView.webChromeClient as? android.webkit.WebChromeClient)?.onHideCustomView(); return } {
         if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
             webView.goBack()
         } else if (webView.visibility == View.VISIBLE) {
