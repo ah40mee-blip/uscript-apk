@@ -1,4 +1,4 @@
-package com.uscript.web
+package com.uscript.panel
 
 import android.annotation.SuppressLint
 import android.content.Context
