@@ -5,7 +5,7 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_app_icon"
-        android:label="U-Script"
+        android:label="U-Panel"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:hardwareAccelerated="true">
