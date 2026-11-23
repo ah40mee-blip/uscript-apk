@@ -11,9 +11,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
-import android.app.PictureInPictureParams
-import android.content.res.Configuration
-import android.util.Rational
 import android.view.View
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
@@ -815,12 +812,12 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(14), dp(14), dp(14), dp(14)); textSize = 15f
             background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")) }
         }
-        val info = TextView(this).apply { text = "IP: " + ipInput.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
+        val info = TextView(this).apply { text = "IP: " + ipField.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
         lay.addView(info); lay.addView(pass)
         var progressDlg: android.app.AlertDialog? = null
         android.app.AlertDialog.Builder(this).setTitle("📦 Install U-Panel").setView(lay)
             .setPositiveButton("تثبيت") { _, _ ->
-                val ip = ipInput.text.toString().trim()
+                val ip = ipField.text.toString().trim()
                 val pw = pass.text.toString()
                 if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 progressDlg = android.app.AlertDialog.Builder(this).setTitle("جاري التثبيت...").setMessage("جاري الاتصال بالرسيفر...").setCancelable(false).show()
