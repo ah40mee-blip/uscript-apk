@@ -4,20 +4,26 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
-// U-Panel - نسخة مصغرة جذري: بدون أي Imports متضاربة
-// PiP بيتنده باسمه الكامل جوه الكود
+// U-Panel - الشاشات المتحركة رجعت + البار المتحرك
+// صغير (مفيش Imports متضاربة) ومتوافق مع ScriptInstaller المصغر
 class MainActivity : AppCompatActivity() {
 
     private lateinit var ipField: EditText
@@ -28,38 +34,41 @@ class MainActivity : AppCompatActivity() {
     private lateinit var configureBtn: Button
     private lateinit var statusText: TextView
     private lateinit var webView: WebView
+    private lateinit var splashView: View
+    private lateinit var ipView: View
+    private lateinit var welcomeView: View
+    private lateinit var welcomeTitle: TextView
+    private lateinit var welcomeConnecting: TextView
+    private lateinit var progressFill: View
+    private lateinit var discView: View
     private var baseUrl = ""
+    private var barAnim: android.animation.ValueAnimator? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
+    private fun box(): GradientDrawable = GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(Color.parseColor("#0D1330"))
+        setStroke(dp(1), Color.parseColor("#2A3560"))
+    }
+
     private fun field(hint: String, text: String, isPw: Boolean = false): EditText {
         return EditText(this).apply {
-            this.hint = hint
-            setText(text)
-            setHintTextColor(Color.parseColor("#5A6378"))
-            setTextColor(Color.WHITE)
-            textSize = 16f
-            gravity = Gravity.CENTER
+            this.hint = hint; setText(text)
+            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.WHITE)
+            textSize = 16f; gravity = Gravity.CENTER
             if (isPw) inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#0D1330"))
-                setStroke(dp(1), Color.parseColor("#2A3560"))
-            }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = box(); setPadding(dp(16), dp(16), dp(16), dp(16))
         }
     }
 
     private fun btn(text: String, color: String, onClick: () -> Unit): Button {
         return Button(this).apply {
-            this.text = text
-            textSize = 16f
-            setTextColor(Color.WHITE)
+            this.text = text; textSize = 16f; setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) }
             background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor(color)) }
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            setOnClickListener { onClick() }
+            setPadding(dp(16), dp(16), dp(16), dp(16)); setOnClickListener { onClick() }
         }
     }
 
@@ -72,33 +81,82 @@ class MainActivity : AppCompatActivity() {
         val savedUser = prefs.getString("ssh_user", "root") ?: "root"
         val savedPw = prefs.getString("root_pw", "root") ?: "root"
 
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor("#070B1E")); setPadding(dp(20), dp(40), dp(20), dp(20)) }
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#070B1E")) }
+
+        // ===== 1) Splash متحرك =====
+        val splashLogo = TextView(this).apply { text = "U"; textSize = 72f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 36f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val splashCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            addView(splashLogo); addView(splashTitle); addView(splashSub)
+        }
+        splashView = FrameLayout(this).apply { addView(splashCol) }
+
+        // ===== 2) صفحة الخانات =====
         val title = TextView(this).apply { text = "U-Panel"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         val sub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
-
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
         portField = field("Port  ( 8080 )", savedPort)
         usernameField = field("Username  ( root )", savedUser)
         passwordField = field("Password  ( root )", savedPw, true)
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
-
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
         configureBtn = btn("CONFIGURE PANEL", "#0D1330") { onConfigureClicked() }
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
+            addView(title); addView(sub); addView(ipField); addView(portField)
+            addView(usernameField); addView(passwordField); addView(connectBtn); addView(configureBtn); addView(statusText)
+        }
+        ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
+        // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
+        val wLogo = TextView(this).apply { text = "U"; textSize = 64f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 28f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 16f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val track = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(240), dp(6)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#1E2A55")) }
+        }
+        progressFill = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(0, dp(6))
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#E879F9")) }
+        }
+        track.addView(progressFill)
+        val wCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            addView(wLogo); addView(welcomeTitle); addView(welcomeConnecting); addView(track)
+        }
+        welcomeView = FrameLayout(this).apply { addView(wCol); visibility = View.GONE }
+
+        // ===== 4) شاشة Disconnected - ثابتة =====
+        val dTitle = TextView(this).apply { text = "Disconnected"; textSize = 26f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val dSub = TextView(this).apply { text = "Check connection and try again"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val dBack = btn("BACK", "#0D1330") { discView.visibility = View.GONE; ipView.visibility = View.VISIBLE }
+        val dCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(20), dp(40), dp(20), dp(20))
+            addView(dTitle); addView(dSub); addView(dBack)
+        }
+        discView = FrameLayout(this).apply { addView(dCol); visibility = View.GONE }
+
+        // ===== WebView =====
         webView = WebView(this).apply {
-            visibility = View.GONE
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
+            visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             webViewClient = WebViewClient()
         }
 
-        val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        form.addView(title); form.addView(sub)
-        form.addView(ipField); form.addView(portField); form.addView(usernameField); form.addView(passwordField)
-        form.addView(connectBtn); form.addView(configureBtn); form.addView(statusText)
-        val scroll = ScrollView(this).apply { addView(form) }
-        root.addView(scroll); root.addView(webView)
+        root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(webView)
         setContentView(root)
+
+        // أنيميشن الـ Splash
+        splashLogo.alpha = 0f; splashLogo.scaleX = 0.7f; splashLogo.scaleY = 0.7f
+        splashTitle.alpha = 0f; splashSub.alpha = 0f
+        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(700).setInterpolator(OvershootInterpolator(1.3f)).start()
+        splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
+        splashSub.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
+        Handler(Looper.getMainLooper()).postDelayed({
+            splashView.visibility = View.GONE; ipView.visibility = View.VISIBLE
+        }, 1600)
     }
 
     private fun saveFields(): Triple<String, String, String> {
@@ -110,6 +168,31 @@ class MainActivity : AppCompatActivity() {
             .putString("ip", ip).putString("port", port).putString("ssh_user", user).putString("root_pw", pw).apply()
         baseUrl = "http://$ip:$port"
         return Triple(ip, port, pw)
+    }
+
+    // البار المتحرك
+    private fun startBar() {
+        barAnim?.cancel()
+        barAnim = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2200; repeatCount = android.animation.ValueAnimator.INFINITE
+            addUpdateListener { a ->
+                val f = a.animatedValue as Float
+                progressFill.layoutParams.width = (dp(240) * f).toInt()
+                progressFill.requestLayout()
+            }
+        }
+        barAnim?.start()
+    }
+    private fun stopBar() { barAnim?.cancel(); barAnim = null }
+
+    private fun showWelcome(msg: String) {
+        ipView.visibility = View.GONE; discView.visibility = View.GONE; webView.visibility = View.GONE
+        welcomeView.visibility = View.VISIBLE
+        welcomeConnecting.text = msg
+        // أنيميشن دخول شاشة Connecting
+        welcomeView.alpha = 0f
+        welcomeView.animate().alpha(1f).setDuration(400).setInterpolator(DecelerateInterpolator()).start()
+        startBar()
     }
 
     // CONNECT: اختبار بس - يفضل في الصفحة ويقول Connected وميدخلش البانل
@@ -132,26 +215,30 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 connectBtn.isEnabled = true
                 if (ok) { statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Connected ✅ to $ip" }
-                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip:$port - check IP / Port" }
+                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip:$port" }
             }
         }.start()
     }
 
-    // CONFIGURE PANEL: تثبيت + دخول مع بعض - ويقول Panel configured
+    // CONFIGURE PANEL: تثبيت + دخول - مع شاشة Configuring + بار متحرك
     private fun onConfigureClicked() {
         val (ip, _, pw) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configuring U-Panel..."
+        showWelcome("Configuring U-Panel")
         Thread {
             val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
             runOnUiThread {
+                stopBar()
                 if (ok) {
                     statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Panel configured ✅"
                     Toast.makeText(this, "Panel configured ✅", Toast.LENGTH_LONG).show()
+                    welcomeView.visibility = View.GONE
                     try { webView.clearCache(true) } catch (e: Exception) {}
                     webView.visibility = View.VISIBLE
                     webView.loadUrl(baseUrl)
                 } else {
+                    welcomeView.visibility = View.GONE
+                    ipView.visibility = View.VISIBLE
                     statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configure failed: $err"
                 }
             }
@@ -160,12 +247,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // PiP باسمه الكامل - من غير Import
         try {
             if (webView.visibility == View.VISIBLE) {
-                val params = android.app.PictureInPictureParams.Builder()
-                    .setAspectRatio(android.util.Rational(16, 9)).build()
-                enterPictureInPictureMode(params)
+                val p = android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build()
+                enterPictureInPictureMode(p)
             }
         } catch (e: Exception) {}
     }
