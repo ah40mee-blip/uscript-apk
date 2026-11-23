@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         splashLogo = ImageView(this).apply {
-            setImageResource(R.drawable.upanel_logo)
+            setImageResource(R.drawable.ic_app_icon)
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
@@ -389,7 +389,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val wcLogo = ImageView(this).apply {
-            setImageResource(R.drawable.upanel_logo)
+            setImageResource(R.drawable.ic_app_icon)
             alpha = 0f
             scaleX = 0.85f
             scaleY = 0.85f
@@ -476,7 +476,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         welcomeLogo = ImageView(this).apply {
-            setImageResource(R.drawable.upanel_logo)
+            setImageResource(R.drawable.ic_app_icon)
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
@@ -661,7 +661,7 @@ class MainActivity : AppCompatActivity() {
         disconnectedView = discBox
 
         val discIcon = ImageView(this).apply {
-            setImageResource(R.drawable.upanel_logo)
+            setImageResource(R.drawable.ic_app_icon)
             layoutParams = LinearLayout.LayoutParams(dp(130), dp(130))
         }
 
@@ -893,12 +893,22 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setPadding(dp(16), dp(8), dp(16), dp(8))
         }
-        // اللوجو: صورة PNG نفسها - عشان يطلع نسخة طبق الأصل من الصورة، مش رسم بالكود
-        val logoBox = android.widget.ImageView(this).apply {
+        // اللوجو: مرسوم بالكود بنفس تدرج الصورة الجديدة (من غير ملف PNG - عشان الـ Build ميقفش لو الملف JPG)
+        val logoBox = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(dp(72), dp(72))
-            setImageResource(R.drawable.upanel_logo)
-            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                colors = intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
+                gradientType = GradientDrawable.LINEAR_GRADIENT
+                orientation = GradientDrawable.Orientation.TL_BR
+            }
         }
+        val uTxt = TextView(this).apply {
+            text = "U"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        logoBox.addView(uTxt)
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
