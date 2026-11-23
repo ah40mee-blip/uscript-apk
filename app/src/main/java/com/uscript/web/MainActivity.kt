@@ -15,6 +15,9 @@ import android.app.PictureInPictureParams
 import android.content.res.Configuration
 import android.util.Rational
 import android.view.View
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.webkit.WebResourceError
@@ -48,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var portField: EditText
     private lateinit var pinField: EditText
     private lateinit var connectBtn: Button
+    private lateinit var installBtn: Button
     private lateinit var statusText: TextView
 
     private lateinit var welcomeView: View
@@ -72,9 +76,6 @@ class MainActivity : AppCompatActivity() {
     private var connectStarted = false
     private var loadFailed = false
     private var welcomeShown = false
-    // ===== Auto-Install =====
-    private var autoInstallAttempted = false
-    private var autoInstallEnabled = true
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, dp(300).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -157,7 +158,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
             ).apply { cornerRadius = dp(2).toFloat() }
         }
 
@@ -201,7 +202,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, width.toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -345,7 +346,16 @@ class MainActivity : AppCompatActivity() {
         ipCenter.addView(portField)
         ipCenter.addView(pinField)
         ipCenter.addView(connectBtn)
-        // مفيش زرار INSTALL - التثبيت أوتوماتيك مع CONNECT
+        // زرار Install - بنفس ستايل CONNECT بالظبط، من غير تغيير أي حاجة تانية
+        installBtn = Button(this).apply {
+            text = "📦 INSTALL U-PANEL"
+            textSize = 15f; setTextColor(Color.WHITE); isAllCaps = false
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#0F172A")) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(10) }
+            setOnClickListener { showInstallDialog() }
+        }
+        ipCenter.addView(installBtn)
         ipCenter.addView(statusText)
         ipScroll.addView(ipCenter)
         root.addView(ipScroll)
@@ -429,7 +439,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
             ).apply { cornerRadius = dp(2).toFloat() }
         }
 
@@ -490,7 +500,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, dp(260).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -524,7 +534,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
             ).apply {
                 cornerRadius = dp(7).toFloat()
             }
@@ -698,8 +708,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSplash() {
-        // اللوجو يطلع من صغير لنطة خفيفة (Overshoot) - أنعم من Fade العادي
-        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(android.view.animation.OvershootInterpolator(1.4f)).start()
+        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
         splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         splashDivider.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         splashSub.animate().alpha(1f).setDuration(700).setStartDelay(450).start()
@@ -739,7 +749,8 @@ class MainActivity : AppCompatActivity() {
         progressFill.layoutParams.width = 0
         progressFill.requestLayout()
 
-        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(700).setInterpolator(android.view.animation.OvershootInterpolator(1.3f)).start()
+        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
         welcomeTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         welcomeConnecting.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         progressTrack.animate().alpha(1f).setDuration(700).setStartDelay(400).start()
@@ -796,71 +807,33 @@ class MainActivity : AppCompatActivity() {
         }, 1800)
     }
 
-    // ===== Auto-Install: لو الـ WebUI مش متثبت، ثبته أوتوماتيك من غير ما المستخدم يدوس INSTALL =====
-    private fun autoInstallAndRetry() {
-        if (!autoInstallEnabled || autoInstallAttempted) { showDisconnected(); return }
-        autoInstallAttempted = true
-        val ip = ipField.text.toString().trim()
-        if (ip.isEmpty()) { showDisconnected(); return }
-        val savedPw = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "") ?: ""
-        // مربع شيك واحد بس: Configuring U-Panel + بار متحرك - من غير أي رسايل تفصيلية
-        statusText.text = ""
-        disconnectedView.visibility = View.GONE
-        welcomeConnectedView.visibility = View.GONE
-        webView.visibility = View.GONE
-        welcomeView.visibility = View.VISIBLE
-        welcomeConnecting.text = "Configuring U-Panel"
-        welcomeConnecting.alpha = 1f
-        progressTrack.alpha = 1f
-        progressFill.alpha = 1f
-        val barAnim2 = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 2200
-            repeatCount = android.animation.ValueAnimator.INFINITE
-            repeatMode = android.animation.ValueAnimator.RESTART
-            addUpdateListener { anim ->
-                val f = anim.animatedValue as Float
-                progressFill.layoutParams.width = (dp(240) * f).toInt()
-                progressFill.requestLayout()
-            }
-        }
-        barAnim2.start()
-        Thread {
-            val (ok, errMsg) = ScriptInstaller.installWithError(this, ip, savedPw) { _ -> }
-            runOnUiThread {
-                barAnim2.cancel()
-                if (ok) {
-                    getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putBoolean("installed", true).apply()
-                    statusText.text = ""
-                    connectStarted = true
-                    loadFailed = false
-                    webView.loadUrl(baseUrl)
-                } else {
-                    if (errMsg.contains("SSH") || errMsg.contains("password") || errMsg.contains("Auth") || errMsg.contains("باسورد")) {
-                        askRootPasswordAndRetry()
-                    } else {
-                        showDisconnected()
-                        statusText.text = "فشل التثبيت الأوتوماتيك: " + errMsg
-                    }
-                }
-            }
-        }.start()
-    }
-
-    // ===== تثبيت أوتوماتيك: مفيش زرار Install - يطلب الباسورد مرة واحدة ويكمل لوحده =====
-    private fun askRootPasswordAndRetry() {
+    // ===== Install Script - إضافة فقط، بدون تغيير أي شكل أو وظيفة =====
+    private fun showInstallDialog() {
+        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(16), dp(24), dp(16)) }
         val pass = EditText(this).apply {
             hint = "باسورد Root للرسيفر"; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             setPadding(dp(14), dp(14), dp(14), dp(14)); textSize = 15f
             background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")) }
         }
-        android.app.AlertDialog.Builder(this).setTitle("باسورد الرسيفر").setMessage("اكتب باسورد Root عشان التثبيت يكمل أوتوماتيك")
-            .setView(pass)
-            .setPositiveButton("كمّل أوتوماتيك") { _, _ ->
+        val info = TextView(this).apply { text = "IP: " + ipInput.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
+        lay.addView(info); lay.addView(pass)
+        var progressDlg: android.app.AlertDialog? = null
+        android.app.AlertDialog.Builder(this).setTitle("📦 Install U-Panel").setView(lay)
+            .setPositiveButton("تثبيت") { _, _ ->
+                val ip = ipInput.text.toString().trim()
                 val pw = pass.text.toString()
-                getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("root_pw", pw).apply()
-                autoInstallAttempted = false
-                autoInstallAndRetry()
-            }.setNegativeButton("إلغاء") { _, _ -> showDisconnected() }.show()
+                if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
+                progressDlg = android.app.AlertDialog.Builder(this).setTitle("جاري التثبيت...").setMessage("جاري الاتصال بالرسيفر...").setCancelable(false).show()
+                Thread {
+                    val res = ScriptInstaller.install(this, ip, pw) { msg -> runOnUiThread { try { progressDlg?.setMessage(msg) } catch(e: Exception) {} } }
+                    runOnUiThread {
+                        try { progressDlg?.dismiss() } catch(e: Exception) {}
+                        android.app.AlertDialog.Builder(this).setTitle(if (res) "✅ تم التثبيت" else "❌ فشل التثبيت")
+                            .setMessage(if (res) "تم تثبيت U-Panel بنجاح.\nدوس CONNECT للدخول." else "فشل التثبيت.\nاتأكد إن SSH شغال على الرسيفر والباسورد صح وحاول تاني.")
+                            .setPositiveButton("تمام", null).show()
+                    }
+                }.start()
+            }.setNegativeButton("إلغاء", null).show()
     }
 
     // ===== اللوجو الموحد - U-Panel في كل الشاشات =====
@@ -870,18 +843,18 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setPadding(dp(16), dp(8), dp(16), dp(8))
         }
-        // اللوجو: مرسوم بالكود بنفس تدرج الصورة الجديدة (من غير ملف PNG - عشان الـ Build ميقفش لو الملف JPG)
+        // اللوجو: سداسي بجرادينت وردي / سماوي + حرف U
         val logoBox = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(72), dp(72))
+            layoutParams = LinearLayout.LayoutParams(dp(64), dp(64))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                colors = intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
+                colors = intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
                 gradientType = GradientDrawable.LINEAR_GRADIENT
                 orientation = GradientDrawable.Orientation.TL_BR
             }
         }
         val uTxt = TextView(this).apply {
-            text = "U"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
+            text = "U"; textSize = 38f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         }
@@ -952,7 +925,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    @Deprecated("Deprecated in Java")
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         isInPip = isInPictureInPictureMode
@@ -978,11 +950,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        super.onPause()
-        // في PiP: رجّع الـ WebView يشتغل تاني عشان الفيديو ميقفش
-        if (isInPip) {
-            try { webView.onResume() } catch (e: Exception) {}
-        }
+        // مهم: لو في PiP متوقفش الـ WebView - خلي الفيديو مكمل
+        if (!isInPip) super.onPause()
+        // في PiP: متعملش pause للـ WebView
     }
 
     override fun onResume() {
@@ -991,11 +961,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDisconnected() {
-        // لو لسه مجربناش Auto-Install، جرّبه الأول بدل ما نعرض "مش متصل" على طول
-        if (!autoInstallAttempted && connectStarted && autoInstallEnabled) {
-            autoInstallAndRetry()
-            return
-        }
         welcomeView.visibility = View.GONE
         welcomeConnectedView.visibility = View.GONE
         webView.visibility = View.GONE
@@ -1005,7 +970,7 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // لو في Fullscreen للفيديو، اخرج منه الأول بدل ما تطلع من التطبيق
-        if (customView != null) { try { webView.webChromeClient?.onHideCustomView() } catch (e: Exception) {}; return }
+        if (customView != null) { (webView.webChromeClient as? android.webkit.WebChromeClient)?.onHideCustomView(); return }
         if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
             webView.goBack()
         } else if (webView.visibility == View.VISIBLE) {
