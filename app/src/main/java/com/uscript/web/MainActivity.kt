@@ -73,6 +73,9 @@ class MainActivity : AppCompatActivity() {
     private var connectStarted = false
     private var loadFailed = false
     private var welcomeShown = false
+    // ===== Auto-Install =====
+    private var autoInstallAttempted = false
+    private var autoInstallEnabled = true
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -706,8 +709,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSplash() {
         // اللوجو يطلع من صغير لنطة خفيفة (Overshoot) - أنعم من Fade العادي
-        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(android.view.animation.OvershootInterpolator(1.4f))
-            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
+        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(android.view.animation.OvershootInterpolator(1.4f)).start()
         splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         splashDivider.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         splashSub.animate().alpha(1f).setDuration(700).setStartDelay(450).start()
@@ -747,8 +749,7 @@ class MainActivity : AppCompatActivity() {
         progressFill.layoutParams.width = 0
         progressFill.requestLayout()
 
-        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setInterpolator(android.view.animation.OvershootInterpolator(1.3f))
-            .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
+        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(700).setInterpolator(android.view.animation.OvershootInterpolator(1.3f)).start()
         welcomeTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         welcomeConnecting.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         progressTrack.animate().alpha(1f).setDuration(700).setStartDelay(400).start()
