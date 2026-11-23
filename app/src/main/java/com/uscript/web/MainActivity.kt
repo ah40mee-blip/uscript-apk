@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         splashLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
+            setImageResource(R.drawable.upanel_logo)
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, dp(300).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
             ).apply { cornerRadius = dp(2).toFloat() }
         }
 
@@ -199,7 +199,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, width.toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -389,7 +389,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val wcLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
+            setImageResource(R.drawable.upanel_logo)
             alpha = 0f
             scaleX = 0.85f
             scaleY = 0.85f
@@ -436,7 +436,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
             ).apply { cornerRadius = dp(2).toFloat() }
         }
 
@@ -476,7 +476,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         welcomeLogo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
+            setImageResource(R.drawable.upanel_logo)
             alpha = 0f
             scaleX = 0.8f
             scaleY = 0.8f
@@ -497,7 +497,7 @@ class MainActivity : AppCompatActivity() {
             post {
                 paint.shader = LinearGradient(
                     0f, 0f, dp(260).toFloat(), 0f,
-                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE")),
+                    intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE")),
                     null, Shader.TileMode.CLAMP
                 )
             }
@@ -531,7 +531,7 @@ class MainActivity : AppCompatActivity() {
             }
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
+                intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#C026D3"), Color.parseColor("#7C3AED"), Color.parseColor("#2563EB"), Color.parseColor("#22D3EE"))
             ).apply {
                 cornerRadius = dp(7).toFloat()
             }
@@ -661,7 +661,7 @@ class MainActivity : AppCompatActivity() {
         disconnectedView = discBox
 
         val discIcon = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_icon)
+            setImageResource(R.drawable.upanel_logo)
             layoutParams = LinearLayout.LayoutParams(dp(130), dp(130))
         }
 
@@ -705,7 +705,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSplash() {
-        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
+        // اللوجو يطلع من صغير لنطة خفيفة (Overshoot) - أنعم من Fade العادي
+        splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(android.view.animation.OvershootInterpolator(1.4f))
             .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
         splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         splashDivider.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
@@ -746,7 +747,7 @@ class MainActivity : AppCompatActivity() {
         progressFill.layoutParams.width = 0
         progressFill.requestLayout()
 
-        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f)
+        welcomeLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setInterpolator(android.view.animation.OvershootInterpolator(1.3f))
             .setDuration(700).setInterpolator(DecelerateInterpolator()).start()
         welcomeTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
         welcomeConnecting.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
@@ -804,6 +805,57 @@ class MainActivity : AppCompatActivity() {
         }, 1800)
     }
 
+    // ===== Auto-Install: لو الـ WebUI مش متثبت، ثبته أوتوماتيك من غير ما المستخدم يدوس INSTALL =====
+    private fun autoInstallAndRetry() {
+        if (!autoInstallEnabled || autoInstallAttempted) { showDisconnected(); return }
+        autoInstallAttempted = true
+        val ip = ipField.text.toString().trim()
+        if (ip.isEmpty()) { showDisconnected(); return }
+        val savedPw = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "") ?: ""
+        // مربع شيك واحد بس: Configuring U-Panel + بار متحرك - من غير أي رسايل تفصيلية
+        statusText.text = ""
+        disconnectedView.visibility = View.GONE
+        welcomeConnectedView.visibility = View.GONE
+        webView.visibility = View.GONE
+        welcomeView.visibility = View.VISIBLE
+        welcomeConnecting.text = "Configuring U-Panel"
+        welcomeConnecting.alpha = 1f
+        progressTrack.alpha = 1f
+        progressFill.alpha = 1f
+        val barAnim2 = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2200
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            repeatMode = android.animation.ValueAnimator.RESTART
+            addUpdateListener { anim ->
+                val f = anim.animatedValue as Float
+                progressFill.layoutParams.width = (dp(240) * f).toInt()
+                progressFill.requestLayout()
+            }
+        }
+        barAnim2.start()
+        Thread {
+            // تجاهل رسايل التفاصيل - الشاشة ثابتة على Configuring U-Panel بس
+            val (ok, errMsg) = ScriptInstaller.installWithError(this, ip, savedPw) { _ -> }
+            runOnUiThread {
+                barAnim2.cancel()
+                if (ok) {
+                    getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putBoolean("installed", true).apply()
+                    statusText.text = ""
+                    connectStarted = true
+                    loadFailed = false
+                    webView.loadUrl(baseUrl)
+                } else {
+                    if (errMsg.contains("SSH") || errMsg.contains("password") || errMsg.contains("Auth") || errMsg.contains("باسورد")) {
+                        showInstallDialog()
+                    } else {
+                        showDisconnected()
+                        statusText.text = "فشل التثبيت الأوتوماتيك: " + errMsg
+                    }
+                }
+            }
+        }.start()
+    }
+
     // ===== Install Script - إضافة فقط، بدون تغيير أي شكل أو وظيفة =====
     private fun showInstallDialog() {
         val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(16), dp(24), dp(16)) }
@@ -819,14 +871,15 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("تثبيت") { _, _ ->
                 val ip = ipField.text.toString().trim()
                 val pw = pass.text.toString()
+                getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("root_pw", pw).apply()
                 if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                progressDlg = android.app.AlertDialog.Builder(this).setTitle("جاري التثبيت...").setMessage("جاري الاتصال بالرسيفر...").setCancelable(false).show()
+                progressDlg = android.app.AlertDialog.Builder(this).setTitle("Configuring U-Panel").setMessage("Configuring U-Panel...").setCancelable(false).show()
                 Thread {
-                    val res = ScriptInstaller.install(this, ip, pw) { msg -> runOnUiThread { try { progressDlg?.setMessage(msg) } catch(e: Exception) {} } }
+                    val (res, errMsg) = ScriptInstaller.installWithError(this, ip, pw) { _ -> /* Configuring U-Panel بس - من غير رسايل تفصيلية */ }
                     runOnUiThread {
                         try { progressDlg?.dismiss() } catch(e: Exception) {}
                         android.app.AlertDialog.Builder(this).setTitle(if (res) "✅ تم التثبيت" else "❌ فشل التثبيت")
-                            .setMessage(if (res) "تم تثبيت U-Panel بنجاح.\nدوس CONNECT للدخول." else "فشل التثبيت.\nاتأكد إن SSH شغال على الرسيفر والباسورد صح وحاول تاني.")
+                            .setMessage(if (res) "تم تثبيت U-Panel بنجاح.\nدوس CONNECT للدخول." else "فشل التثبيت.\n" + if (errMsg.isNotEmpty()) errMsg else "اتأكد إن SSH شغال على الرسيفر والباسورد صح وحاول تاني.")
                             .setPositiveButton("تمام", null).show()
                     }
                 }.start()
@@ -840,22 +893,12 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setPadding(dp(16), dp(8), dp(16), dp(8))
         }
-        // اللوجو: سداسي بجرادينت وردي / سماوي + حرف U
-        val logoBox = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(64), dp(64))
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                colors = intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#22D3EE"))
-                gradientType = GradientDrawable.LINEAR_GRADIENT
-                orientation = GradientDrawable.Orientation.TL_BR
-            }
+        // اللوجو: صورة PNG نفسها - عشان يطلع نسخة طبق الأصل من الصورة، مش رسم بالكود
+        val logoBox = android.widget.ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(72), dp(72))
+            setImageResource(R.drawable.upanel_logo)
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
         }
-        val uTxt = TextView(this).apply {
-            text = "U"; textSize = 38f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
-        }
-        logoBox.addView(uTxt)
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -961,6 +1004,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDisconnected() {
+        // لو لسه مجربناش Auto-Install، جرّبه الأول بدل ما نعرض "مش متصل" على طول
+        if (!autoInstallAttempted && connectStarted && autoInstallEnabled) {
+            autoInstallAndRetry()
+            return
+        }
         welcomeView.visibility = View.GONE
         welcomeConnectedView.visibility = View.GONE
         webView.visibility = View.GONE
