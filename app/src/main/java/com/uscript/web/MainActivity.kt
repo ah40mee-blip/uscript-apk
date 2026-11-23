@@ -835,8 +835,9 @@ class MainActivity : AppCompatActivity() {
         }
         barAnim2.start()
         Thread {
-            // تجاهل رسايل التفاصيل - الشاشة ثابتة على Configuring U-Panel بس
-            val (ok, errMsg) = ScriptInstaller.installWithError(this, ip, savedPw) { _ -> }
+            // بيشتغل مع ScriptInstaller القديم والجديد - بيستخدم install() اللي موجودة في الاتنين
+            val ok = ScriptInstaller.install(this, ip, savedPw) { _ -> }
+            val errMsg = "" 
             runOnUiThread {
                 barAnim2.cancel()
                 if (ok) {
@@ -876,7 +877,8 @@ class MainActivity : AppCompatActivity() {
                 if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 progressDlg = android.app.AlertDialog.Builder(this).setTitle("Configuring U-Panel").setMessage("Configuring U-Panel...").setCancelable(false).show()
                 Thread {
-                    val (res, errMsg) = ScriptInstaller.installWithError(this, ip, pw) { _ -> /* Configuring U-Panel بس - من غير رسايل تفصيلية */ }
+                    val res = ScriptInstaller.install(this, ip, pw) { _ -> /* Configuring U-Panel بس - من غير رسايل تفصيلية */ }
+                    val errMsg = "" 
                     runOnUiThread {
                         try { progressDlg?.dismiss() } catch(e: Exception) {}
                         android.app.AlertDialog.Builder(this).setTitle(if (res) "✅ تم التثبيت" else "❌ فشل التثبيت")
