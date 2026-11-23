@@ -15,9 +15,6 @@ import android.app.PictureInPictureParams
 import android.content.res.Configuration
 import android.util.Rational
 import android.view.View
-import android.app.PictureInPictureParams
-import android.content.res.Configuration
-import android.util.Rational
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.webkit.WebResourceError
@@ -815,12 +812,12 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(14), dp(14), dp(14), dp(14)); textSize = 15f
             background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")) }
         }
-        val info = TextView(this).apply { text = "IP: " + ipInput.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
+        val info = TextView(this).apply { text = "IP: " + ipField.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
         lay.addView(info); lay.addView(pass)
         var progressDlg: android.app.AlertDialog? = null
         android.app.AlertDialog.Builder(this).setTitle("📦 Install U-Panel").setView(lay)
             .setPositiveButton("تثبيت") { _, _ ->
-                val ip = ipInput.text.toString().trim()
+                val ip = ipField.text.toString().trim()
                 val pw = pass.text.toString()
                 if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
                 progressDlg = android.app.AlertDialog.Builder(this).setTitle("جاري التثبيت...").setMessage("جاري الاتصال بالرسيفر...").setCancelable(false).show()
@@ -925,6 +922,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         isInPip = isInPictureInPictureMode
@@ -950,9 +948,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        // مهم: لو في PiP متوقفش الـ WebView - خلي الفيديو مكمل
-        if (!isInPip) super.onPause()
-        // في PiP: متعملش pause للـ WebView
+        super.onPause()
+        // في PiP: رجّع الـ WebView يشتغل تاني عشان الفيديو ميقفش
+        if (isInPip) {
+            try { webView.onResume() } catch (e: Exception) {}
+        }
     }
 
     override fun onResume() {
@@ -970,7 +970,7 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // لو في Fullscreen للفيديو، اخرج منه الأول بدل ما تطلع من التطبيق
-        if (customView != null) { (webView.webChromeClient as? android.webkit.WebChromeClient)?.onHideCustomView(); return }
+        if (customView != null) { try { webView.webChromeClient?.onHideCustomView() } catch (e: Exception) {}; return }
         if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
             webView.goBack()
         } else if (webView.visibility == View.VISIBLE) {
