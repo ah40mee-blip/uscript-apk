@@ -144,7 +144,14 @@ class MainActivity : AppCompatActivity() {
         // ===== WebView =====
         webView = WebView(this).apply {
             visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onReceivedError(v: WebView?, r: android.webkit.WebResourceRequest?, e: android.webkit.WebResourceError?) {
+                    v?.visibility = View.GONE
+                    ipView.visibility = View.VISIBLE
+                    statusText.setTextColor(Color.parseColor("#F472B6"))
+                    statusText.text = "Panel server not running on $baseUrl - دوس CONFIGURE PANEL عشان يثبّت ويشغّل السيرفر"
+                }
+            }
         }
 
         root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(webView)
@@ -225,14 +232,28 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    // ENTER PANEL: دخول للبانل على طول من غير تثبيت ولا اختبار
+    // ENTER PANEL: شغّل سيرفر الـ WebUI الأول عبر SSH وبعدين افتح البانل
+    // عشان لو السيرفر واقع يدي ERR_CONNECTION_REFUSED
     private fun onEnterPanelClicked() {
-        val (ip, _, _) = saveFields()
+        val (ip, _, pw) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening Panel..."
-        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
-        webView.visibility = View.VISIBLE
-        webView.loadUrl(baseUrl)
+        statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Starting Panel..."
+        showWelcome("Opening Panel")
+        Thread {
+            // حاول تشغّل سيرفر الـ WebUI على الرسيفر قبل ما تفتح
+            val started = ScriptInstaller.startWebUi(this, ip, pw)
+            runOnUiThread {
+                stopBar()
+                welcomeView.visibility = View.GONE
+                ipView.visibility = View.GONE; discView.visibility = View.GONE
+                webView.visibility = View.VISIBLE
+                webView.loadUrl(baseUrl)
+                if (!started) {
+                    // لو السيرفر مشتغلش، الـ WebView هتجيب خطأ - خلّي المستخدم يرجع بسهولة
+                    Toast.makeText(this, "Panel server not running - try CONFIGURE PANEL", Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
     }
 
     // CONFIGURE PANEL: تثبيت + دخول - مع شاشة Configuring + بار متحرك
