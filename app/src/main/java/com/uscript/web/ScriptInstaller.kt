@@ -43,7 +43,8 @@ object ScriptInstaller {
             val check = exec(session, "ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK_DONE")
             if (check.contains("8080")) return true
             // جرّب تشغيله بالطرق المختلفة - السكريبت بتاعك هو اللي بيعرف يشغّله
-            exec(session, "chmod +x /tmp/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo START1", 3000)
+            // /tmp بيتمسح مع الريستارت - شغّل من المكان الثابت /etc لو /tmp اختفى
+            exec(session, "if [ ! -f /tmp/uscript.sh ] && [ -f /etc/uscript.sh ]; then cp /etc/uscript.sh /tmp/uscript.sh; fi; chmod +x /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; sh /etc/uscript.sh start < /dev/null 2>/dev/null; echo START1", 3000)
             var again = exec(session, "ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK2")
             if (again.contains("8080")) return true
             exec(session, "systemctl restart uscript 2>/dev/null; /etc/init.d/uscript start 2>/dev/null; service uscript start 2>/dev/null; echo START2", 3000)
@@ -64,7 +65,7 @@ object ScriptInstaller {
             try {
                 val sftp = session.openChannel("sftp") as com.jcraft.jsch.ChannelSftp
                 sftp.connect(10000)
-                try { sftp.put(ByteArrayInputStream(bytes), "/tmp/uscript.sh") } catch (e: Exception) {
+                try { sftp.put(ByteArrayInputStream(bytes), "/tmp/uscript.sh"); try { sftp.put(ByteArrayInputStream(bytes), "/etc/uscript.sh") } catch (e2: Exception) {} } catch (e: Exception) {
                     return false to "فشل رفع الملف: ${e.message}"
                 } finally { try { sftp.disconnect() } catch (e: Exception) {} }
                 // من غير rm -rf للـ WebUI - النسخة القسرية اللي فاتت هي اللي بوّظت السيرفر
@@ -88,7 +89,7 @@ object ScriptInstaller {
                     return false to "التثبيت رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
                 }
                 // بعد التثبيت: شغّل السيرفر الأول، وبعدين ريستارت عشان يتحمل نضيف
-                exec(session, "sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo STARTED", 3000)
+                exec(session, "cp /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo STARTED", 3000)
                 exec(session, "sync; reboot", 1500)
                 return true to ""
             } finally { try { session.disconnect() } catch (e: Exception) {} }
