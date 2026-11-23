@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
     private lateinit var configureBtn: Button
+    private lateinit var enterPanelBtn: Button
     private lateinit var statusText: TextView
     private lateinit var webView: WebView
     private lateinit var splashView: View
@@ -103,10 +104,11 @@ class MainActivity : AppCompatActivity() {
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
         configureBtn = btn("CONFIGURE PANEL", "#0D1330") { onConfigureClicked() }
+        enterPanelBtn = btn("ENTER PANEL", "#1E2A55") { onEnterPanelClicked() }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
             addView(title); addView(sub); addView(ipField); addView(portField)
-            addView(usernameField); addView(passwordField); addView(connectBtn); addView(configureBtn); addView(statusText)
+            addView(usernameField); addView(passwordField); addView(connectBtn); addView(configureBtn); addView(enterPanelBtn); addView(statusText)
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
@@ -203,21 +205,34 @@ class MainActivity : AppCompatActivity() {
         connectBtn.isEnabled = false
         Thread {
             var ok = false
+            // اختبر الرسيفر نفسه على بورت SSH 22 الأول - حتى لو الـ WebUI لسه بيقوم بعد الريستارت
             try {
-                val c = java.net.URL(baseUrl).openConnection() as java.net.HttpURLConnection
-                c.connectTimeout = 5000; c.readTimeout = 5000; c.requestMethod = "GET"
-                ok = c.responseCode in 200..499; c.disconnect()
-            } catch (e: Exception) {
+                val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, 22), 4000); s.close(); ok = true
+            } catch (e: Exception) { ok = false }
+            // لو SSH مقفول جرّب بورت الـ WebUI
+            if (!ok) {
                 try {
-                    val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 3000); s.close(); ok = true
-                } catch (e2: Exception) { ok = false }
+                    val c = java.net.URL(baseUrl).openConnection() as java.net.HttpURLConnection
+                    c.connectTimeout = 5000; c.readTimeout = 5000; c.requestMethod = "GET"
+                    ok = c.responseCode in 200..499; c.disconnect()
+                } catch (e: Exception) { ok = false }
             }
             runOnUiThread {
                 connectBtn.isEnabled = true
                 if (ok) { statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Connected ✅ to $ip" }
-                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip:$port" }
+                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip - لو لسه عامل ريستارت استنى دقيقة وجرب تاني" }
             }
         }.start()
+    }
+
+    // ENTER PANEL: دخول للبانل على طول من غير تثبيت ولا اختبار
+    private fun onEnterPanelClicked() {
+        val (ip, _, _) = saveFields()
+        if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
+        statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening Panel..."
+        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        webView.loadUrl(baseUrl)
     }
 
     // CONFIGURE PANEL: تثبيت + دخول - مع شاشة Configuring + بار متحرك
