@@ -931,7 +931,7 @@ class MainActivity : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             // في PiP: اخفي كل حاجة ما عدا الفيديو
             // الـ WebView هيفضل شغال والفيديو مكمل
-            rootView?.findViewById<View>(android.R.id.content)?.let {}
+            // PiP: اخفي الواجهات بس، الـ WebView يفضل ظاهر
             // اخفي الواجهات اللي فوق الـ WebView
             // هنخفي كل الـ Views اللي مش WebView عن طريق إخفاء الـ overlay
             hideUiForPip(true)
