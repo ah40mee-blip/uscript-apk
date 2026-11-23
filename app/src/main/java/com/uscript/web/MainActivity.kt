@@ -863,8 +863,7 @@ class MainActivity : AppCompatActivity() {
             }.setNegativeButton("إلغاء") { _, _ -> showDisconnected() }.show()
     }
 
-    // ===== اللوجو
- الموحد - U-Panel في كل الشاشات =====
+    // ===== اللوجو الموحد - U-Panel في كل الشاشات =====
     private fun buildLogoHeader(withAnimation: Boolean = false): LinearLayout {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
