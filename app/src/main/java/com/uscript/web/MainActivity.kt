@@ -970,7 +970,7 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // لو في Fullscreen للفيديو، اخرج منه الأول بدل ما تطلع من التطبيق
-        if (customView != null) { (webView.webChromeClient as? android.webkit.WebChromeClient)?.onHideCustomView(); return } {
+        if (customView != null) { (webView.webChromeClient as? android.webkit.WebChromeClient)?.onHideCustomView(); return }
         if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
             webView.goBack()
         } else if (webView.visibility == View.VISIBLE) {
