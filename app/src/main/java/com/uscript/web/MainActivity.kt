@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var portField: EditText
     private lateinit var pinField: EditText
     private lateinit var connectBtn: Button
-    private lateinit var installBtn: Button
     private lateinit var statusText: TextView
 
     private lateinit var welcomeView: View
@@ -346,16 +345,7 @@ class MainActivity : AppCompatActivity() {
         ipCenter.addView(portField)
         ipCenter.addView(pinField)
         ipCenter.addView(connectBtn)
-        // زرار Install - بنفس ستايل CONNECT بالظبط، من غير تغيير أي حاجة تانية
-        installBtn = Button(this).apply {
-            text = "📦 INSTALL U-PANEL"
-            textSize = 15f; setTextColor(Color.WHITE); isAllCaps = false
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#0F172A")) }
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(10) }
-            setOnClickListener { showInstallDialog() }
-        }
-        ipCenter.addView(installBtn)
+        // مفيش زرار INSTALL - التثبيت أوتوماتيك مع CONNECT
         ipCenter.addView(statusText)
         ipScroll.addView(ipCenter)
         root.addView(ipScroll)
@@ -835,9 +825,7 @@ class MainActivity : AppCompatActivity() {
         }
         barAnim2.start()
         Thread {
-            // بيشتغل مع ScriptInstaller القديم والجديد - بيستخدم install() اللي موجودة في الاتنين
-            val ok = ScriptInstaller.install(this, ip, savedPw) { _ -> }
-            val errMsg = "" 
+            val (ok, errMsg) = ScriptInstaller.installWithError(this, ip, savedPw) { _ -> }
             runOnUiThread {
                 barAnim2.cancel()
                 if (ok) {
@@ -848,7 +836,7 @@ class MainActivity : AppCompatActivity() {
                     webView.loadUrl(baseUrl)
                 } else {
                     if (errMsg.contains("SSH") || errMsg.contains("password") || errMsg.contains("Auth") || errMsg.contains("باسورد")) {
-                        showInstallDialog()
+                        askRootPasswordAndRetry()
                     } else {
                         showDisconnected()
                         statusText.text = "فشل التثبيت الأوتوماتيك: " + errMsg
@@ -858,38 +846,25 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    // ===== Install Script - إضافة فقط، بدون تغيير أي شكل أو وظيفة =====
-    private fun showInstallDialog() {
-        val lay = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(16), dp(24), dp(16)) }
+    // ===== تثبيت أوتوماتيك: مفيش زرار Install - يطلب الباسورد مرة واحدة ويكمل لوحده =====
+    private fun askRootPasswordAndRetry() {
         val pass = EditText(this).apply {
             hint = "باسورد Root للرسيفر"; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             setPadding(dp(14), dp(14), dp(14), dp(14)); textSize = 15f
             background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(Color.parseColor("#F1F5F9")) }
         }
-        val info = TextView(this).apply { text = "IP: " + ipField.text.toString() + "\nهيتم تثبيت U-Panel من GitHub على الرسيفر عبر SSH (بورت 22)"; textSize = 13f; setTextColor(Color.parseColor("#334155")) }
-        lay.addView(info); lay.addView(pass)
-        var progressDlg: android.app.AlertDialog? = null
-        android.app.AlertDialog.Builder(this).setTitle("📦 Install U-Panel").setView(lay)
-            .setPositiveButton("تثبيت") { _, _ ->
-                val ip = ipField.text.toString().trim()
+        android.app.AlertDialog.Builder(this).setTitle("باسورد الرسيفر").setMessage("اكتب باسورد Root عشان التثبيت يكمل أوتوماتيك")
+            .setView(pass)
+            .setPositiveButton("كمّل أوتوماتيك") { _, _ ->
                 val pw = pass.text.toString()
                 getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("root_pw", pw).apply()
-                if (ip.isEmpty()) { Toast.makeText(this, "اكتب IP الرسيفر الأول", Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                progressDlg = android.app.AlertDialog.Builder(this).setTitle("Configuring U-Panel").setMessage("Configuring U-Panel...").setCancelable(false).show()
-                Thread {
-                    val res = ScriptInstaller.install(this, ip, pw) { _ -> /* Configuring U-Panel بس - من غير رسايل تفصيلية */ }
-                    val errMsg = "" 
-                    runOnUiThread {
-                        try { progressDlg?.dismiss() } catch(e: Exception) {}
-                        android.app.AlertDialog.Builder(this).setTitle(if (res) "✅ تم التثبيت" else "❌ فشل التثبيت")
-                            .setMessage(if (res) "تم تثبيت U-Panel بنجاح.\nدوس CONNECT للدخول." else "فشل التثبيت.\n" + if (errMsg.isNotEmpty()) errMsg else "اتأكد إن SSH شغال على الرسيفر والباسورد صح وحاول تاني.")
-                            .setPositiveButton("تمام", null).show()
-                    }
-                }.start()
-            }.setNegativeButton("إلغاء", null).show()
+                autoInstallAttempted = false
+                autoInstallAndRetry()
+            }.setNegativeButton("إلغاء") { _, _ -> showDisconnected() }.show()
     }
 
-    // ===== اللوجو الموحد - U-Panel في كل الشاشات =====
+    // ===== اللوجو
+ الموحد - U-Panel في كل الشاشات =====
     private fun buildLogoHeader(withAnimation: Boolean = false): LinearLayout {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
