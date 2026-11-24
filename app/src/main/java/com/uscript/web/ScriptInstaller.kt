@@ -5,12 +5,12 @@ import com.jcraft.jsch.JSch
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
-// ScriptInstaller - الاسكريبت في /etc/enigma2/ - الباكب بس في /media/hdd/backup/
-// CONFIGURE PANEL = زرع + تشغيل + Panel Configured
+// ScriptInstaller - يزرع الاسكريبت في مكانه الأصلي اللي الـ WebUI متعود عليه
+// /media/hdd/U-Panel/uscript.sh - مفيش نقل ولا تصليح مسارات
 object ScriptInstaller {
     const val ASSET_FILE = "uscript.sh"
-    const val PANEL_DIR = "/etc/enigma2"  // الملف ظاهر هنا
-    const val SCRIPT_PATH = "/etc/enigma2/uscript.sh"  // ظاهر في etc/enigma2
+    const val PANEL_DIR = "/media/hdd/U-Panel"
+    const val SCRIPT_PATH = "/media/hdd/U-Panel/uscript.sh"
 
     fun installWithError(context: Context, ip: String, rootPassword: String, onProgress: (String) -> Unit): Pair<Boolean, String> {
         try {
@@ -26,29 +26,26 @@ object ScriptInstaller {
                 s.connect(10000); s
             } catch (e: Exception) { return false to "مش قادر اتصل بـ SSH على $ip:22 - ${e.message}" }
             try {
-                // 1) اعمل الفولدر
                 var ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("mkdir -p $PANEL_DIR && chmod 700 $PANEL_DIR && chmod 755 $PANEL_DIR && echo MKDIR_OK")
+                ch.setCommand("mkdir -p $PANEL_DIR /media/hdd/backup && chmod 755 $PANEL_DIR && echo MKDIR_OK")
                 var out = ByteArrayOutputStream(); ch.setOutputStream(out); ch.connect(10000)
                 while (!ch.isClosed) Thread.sleep(300)
                 try { ch.disconnect() } catch (e: Exception) {}
 
-                // 2) ازرع الاسكريبت في /media/hdd/U-Panel/
                 val sftp = session.openChannel("sftp") as com.jcraft.jsch.ChannelSftp
                 sftp.connect(10000)
                 try { sftp.put(ByteArrayInputStream(bytes), SCRIPT_PATH) } catch (e: Exception) {
                     return false to "فشل زرع الاسكريبت في $PANEL_DIR: ${e.message}"
                 } finally { try { sftp.disconnect() } catch (e: Exception) {} }
 
-                // 3) شغّله بأمر التشغيل - من غير install
-                // nohup + & مهم: عشان السيرفر يفضل شغال بعد ما SSH يقفل
+                // شغّله بأمر التشغيل من مكانه الأصلي - من غير أي تصليح مسارات
                 ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("""export TERM=dumb; pkill -f uscript.sh 2>/dev/null; init 4 2>/dev/null; sleep 2; grep -rl '/media/hdd/U-Panel' /etc /usr /var /tmp 2>/dev/null | xargs sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g' 2>/dev/null; grep -rl 'U-Panel/uscript.sh' /etc /usr /var /tmp 2>/dev/null | xargs sed -i 's|U-Panel/uscript.sh|enigma2/uscript.sh|g' 2>/dev/null; mkdir -p /media/hdd/backup; sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g; s|HDD/U-Panel|etc\/enigma2|g; s|HDD}/U-Panel|etc\/enigma2|g; s|U-Panel/uscript.sh|enigma2/uscript.sh|g' $SCRIPT_PATH; sed -i '/backup/I s|/etc/enigma2|/media/hdd/backup|g; /restore/I s|/etc/enigma2|/media/hdd/backup|g' $SCRIPT_PATH; chmod +x $SCRIPT_PATH; rm -f /media/hdd/U-Panel/uscript.sh 2>/dev/null; cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH </dev/null > $PANEL_DIR/.run.log 2>&1 & disown; echo RUN_OK; sleep 2; init 3 2>/dev/null; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
+                ch.setCommand("""export TERM=dumb; chmod +x $SCRIPT_PATH; cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH </dev/null > $PANEL_DIR/.run.log 2>&1 & disown; echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
                 out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
                 var saw = false; var w = 0
-                while (!ch.isClosed && w < 120) {
+                while (!ch.isClosed && w < 60) {
                     Thread.sleep(500); w++
                     val so = out.toString()
                     if (so.contains("RUN_OK") || (so.contains("Reboot Guard") && so.contains("Universal Edition"))) { Thread.sleep(1000); saw = true; break }
@@ -61,7 +58,6 @@ object ScriptInstaller {
                 if (exit != 0 && exit != -1 && !ok) {
                     return false to "الزرع تم بس التشغيل رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
                 }
-                // استنى ثانيتين السيرفر يقوم
                 Thread.sleep(2000)
                 return true to ""
             } finally { try { session.disconnect() } catch (e: Exception) {} }
