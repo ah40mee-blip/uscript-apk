@@ -92,41 +92,33 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    // ===== البانل النيتف - بيحل محل WebUI الاسكريبت 100% =====
+    // ===== البانل الحقيقي: هيدر برميوم نيتف + WebUI الاسكريبت نفسه جوّه WebView متعاد تلوينه =====
+    // ليه؟ لأن القوايم المزيفة (Toast بس) مش بتستجيب. الحل الصح: نسيب قوايم الاسكريبت الأصلية شغالة زي ما هي، بس نغيّر شكلها 100% بـ CSS - فالقوايم حقيقية وبتستجيب، والشكل برميوم.
     private fun buildNativePanel(): View {
-        fun card(title: String, sub: String, btnText: String, color: String, onClick: () -> Unit): LinearLayout {
-            val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(16), dp(16), dp(16)); background = box() }
-            c.addView(TextView(this).apply { text = title; textSize = 18f; setTextColor(Color.WHITE); setTypeface(null, android.graphics.Typeface.BOLD) })
-            c.addView(TextView(this).apply { text = sub; textSize = 13f; setTextColor(Color.parseColor("#9AA4C0")) })
-            c.addView(btn(btnText, color) { onClick() }); return c
-        }
-        fun statCard(label: String, value: String, color: String): LinearLayout {
-            val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(12), dp(12), dp(12), dp(12)); background = box(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
-            c.addView(TextView(this).apply { text = value; textSize = 22f; setTextColor(Color.parseColor(color)); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) })
-            c.addView(TextView(this).apply { text = label; textSize = 12f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER }); return c
-        }
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(16), dp(16), dp(16)) }
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        // هيدر برميوم نيتف فوق
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(16), dp(16), dp(8)) }
         header.addView(premiumLogo(56, 30f))
         val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
         ht.addView(TextView(this).apply { text = "U-Panel"; textSize = 24f; setTextColor(Color.WHITE); setTypeface(null, android.graphics.Typeface.BOLD) })
         ht.addView(TextView(this).apply { text = "Control Ur Enigma"; textSize = 12f; setTextColor(Color.parseColor("#F472B6")) })
         header.addView(ht); col.addView(header)
-        panelStatus = TextView(this).apply { text = "Receiver: Online  •  Panel Ready"; textSize = 13f; setTextColor(Color.parseColor("#4ADE80")); gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(12)) }
+        panelStatus = TextView(this).apply { text = "Receiver: Online  •  Panel Ready"; textSize = 13f; setTextColor(Color.parseColor("#4ADE80")); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(8)) }
         col.addView(panelStatus)
-        col.addView(card("Live TV", "Streaming now  •  Sports HD 1", "Open Live TV", "#E879F9") { openHiddenWebAction("/live") })
-        col.addView(card("Channels", "Channel list  •  Signal & SNR", "View Channels", "#A855F7") { openHiddenWebAction("/channels") })
-        col.addView(card("Backup", "Last: Today  •  /media/hdd/backup/", "Start Backup", "#6366F1") { runPanelCmd("backup") })
-        col.addView(card("Restore", "Latest backup in /media/hdd/backup/", "Restore", "#22D3EE") { runPanelCmd("restore") })
-        val stats = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        stats.addView(statCard("Signal", "86%", "#E879F9")); stats.addView(statCard("Disk", "62%", "#A855F7")); stats.addView(statCard("Temp", "48C", "#22D3EE"))
-        col.addView(stats)
-        col.addView(card("Settings", "PIN  •  Server  •  Restart", "Open Settings", "#1E2A55") { openHiddenWebAction("/settings") })
-        col.addView(btn("Back", "#0D1330") { nativePanel.visibility = View.GONE; ipView.visibility = View.VISIBLE })
-        return ScrollView(this).apply { addView(col); visibility = View.GONE }
+        // WebView الحقيقي - هو اللي فيه كل القوايم والخواص، وهنعيد تلوينه بـ CSS
+        webView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        webView.visibility = View.VISIBLE
+        col.addView(webView)
+        val back = btn("Back", "#0D1330") { nativePanel.visibility = View.GONE; ipView.visibility = View.VISIBLE }
+        col.addView(back)
+        return FrameLayout(this).apply { addView(col); visibility = View.GONE }
     }
-    private fun openHiddenWebAction(path: String) { try { webView.loadUrl(baseUrl + path) } catch (e: Exception) {} ; Toast.makeText(this, "Loading...", Toast.LENGTH_SHORT).show() }
-    private fun runPanelCmd(cmd: String) { panelStatus.text = "Running " + cmd + "..."; panelStatus.setTextColor(Color.parseColor("#F472B6")); Toast.makeText(this, cmd + " started", Toast.LENGTH_SHORT).show() }
+    // حقن ثيم برميوم جوّه WebUI الاسكريبت - بيغيّر الشكل بس، من غير ما يمس القوايم ولا الأزرار
+    private fun injectPremiumTheme() {
+        val css = ("(function(){var s=document.createElement('style');s.innerHTML='*{box-sizing:border-box} body{background:#070B1E!important;color:#fff!important;font-family:sans-serif} header,.header,.topbar,.navbar{background:linear-gradient(90deg,#E879F9,#A855F7,#6366F1)!important;border:none!important;border-radius:0 0 18px 18px!important} button,.btn,input[type=submit]{background:linear-gradient(90deg,#E879F9,#A855F7)!important;color:#fff!important;border:none!important;border-radius:14px!important;padding:12px 18px!important;font-weight:bold!important;box-shadow:0 4px 16px rgba(232,121,249,.35)} input,select,textarea{background:#0D1330!important;color:#fff!important;border:1px solid #2A3560!important;border-radius:12px!important;padding:12px!important} a{color:#E879F9!important} table,.card,.panel,.box{background:#0D1330!important;border:1px solid #2A3560!important;border-radius:16px!important;color:#fff!important}';document.head.appendChild(s);})()")
+        try { webView.evaluateJavascript(css, null) } catch (e: Exception) {}
+    }
+    private fun openHiddenWebAction(path: String) { try { webView.loadUrl(baseUrl + path) } catch (e: Exception) {} }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -200,7 +192,7 @@ class MainActivity : AppCompatActivity() {
         // ===== WebView =====
         webView = WebView(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1)
-            visibility = View.GONE
+            visibility = View.VISIBLE
             visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
                 override fun onReceivedError(v: WebView?, r: android.webkit.WebResourceRequest?, e: android.webkit.WebResourceError?) {
@@ -212,8 +204,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        webView.webViewClient = object : WebViewClient() { override fun onPageFinished(view: WebView?, url: String?) { super.onPageFinished(view, url); injectPremiumTheme() } }
         nativePanel = buildNativePanel()
-        root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(webView); root.addView(nativePanel)
+        root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(nativePanel) // WebView جوّه البانل النيتف
         setContentView(root)
 
         // أنيميشن الـ Splash
@@ -298,10 +291,10 @@ class MainActivity : AppCompatActivity() {
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
         statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
         ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
-        // WebUI الاسكريبت عمره ما بيظهر: WebView بيفضل مخفي، والبانل النيتف هو اللي بيظهر
-        webView.visibility = View.GONE
+        // البانل النيتف جواه WebView الحقيقي متعاد تلوينه - القوايم حقيقية وبتستجيب
         webView.loadUrl(baseUrl) // في الخلفية بس عشان السيرفر يفضل شغال
         nativePanel.visibility = View.VISIBLE
+        webView.visibility = View.VISIBLE
     }
 
 private fun onConfigureClicked() {
@@ -320,10 +313,10 @@ private fun onConfigureClicked() {
                     ipView.visibility = View.GONE
                     discView.visibility = View.GONE
                     try { webView.clearCache(true) } catch (e: Exception) {}
-                    // WebUI الاسكريبت مش هيظهر: WebView مخفي في الخلفية، البانل النيتف هو اللي بيظهر
-                    webView.visibility = View.GONE
+                    // البانل النيتف جواه WebView الحقيقي متعاد تلوينه
                     webView.loadUrl(baseUrl)
                     nativePanel.visibility = View.VISIBLE
+        webView.visibility = View.VISIBLE
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
