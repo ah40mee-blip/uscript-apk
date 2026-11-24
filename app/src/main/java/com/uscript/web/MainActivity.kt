@@ -28,7 +28,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ipField: EditText
     private lateinit var portField: EditText
-    private lateinit var usernameField: EditText
+    private lateinit var pinField: EditText
+    lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
     private lateinit var configureBtn: Button
@@ -103,12 +104,13 @@ class MainActivity : AppCompatActivity() {
         passwordField = field("Password  ( root )", savedPw, true)
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
-        configureBtn = btn("CONFIGURE PANEL", "#0D1330") { onConfigureClicked() }
-        enterPanelBtn = btn("ENTER PANEL", "#1E2A55") { onEnterPanelClicked() }
+        configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
+        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }.apply { visibility = View.GONE }
+        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
             addView(title); addView(sub); addView(ipField); addView(portField)
-            addView(usernameField); addView(passwordField); addView(connectBtn); addView(configureBtn); addView(enterPanelBtn); addView(statusText)
+            addView(configureBtn); addView(pinField); addView(enterPanelBtn); addView(statusText)
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
@@ -149,7 +151,7 @@ class MainActivity : AppCompatActivity() {
                     v?.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
                     statusText.setTextColor(Color.parseColor("#F472B6"))
-                    statusText.text = "Panel server not running on $baseUrl - دوس CONFIGURE PANEL عشان يثبّت ويشغّل السيرفر"
+                    statusText.text = "Cannot reach $baseUrl - اتأكد الرسيفر شغال ودوس ENTER PANEL تاني"
                 }
             }
         }
@@ -232,32 +234,22 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    // ENTER PANEL: شغّل سيرفر الـ WebUI الأول عبر SSH وبعدين افتح البانل
-    // عشان لو السيرفر واقع يدي ERR_CONNECTION_REFUSED
+    // ENTER PANEL: افتح البانل على طول - من غير SSH
+    // سيرفر الـ WebUI بتاع Enigma2 بيشتغل لوحده، مش محتاج أمر start
     private fun onEnterPanelClicked() {
-        val (ip, _, pw) = saveFields()
+        val (ip, _, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Starting Panel..."
-        showWelcome("Opening Panel")
-        Thread {
-            // حاول تشغّل سيرفر الـ WebUI على الرسيفر قبل ما تفتح
-            val started = ScriptInstaller.startWebUi(this, ip, pw)
-            runOnUiThread {
-                stopBar()
-                welcomeView.visibility = View.GONE
-                ipView.visibility = View.GONE; discView.visibility = View.GONE
-                webView.visibility = View.VISIBLE
-                webView.loadUrl(baseUrl)
-                if (!started) {
-                    // لو السيرفر مشتغلش، الـ WebView هتجيب خطأ - خلّي المستخدم يرجع بسهولة
-                    Toast.makeText(this, "Panel server not running - try CONFIGURE PANEL", Toast.LENGTH_LONG).show()
-                }
-            }
-        }.start()
+        val pin = try { pinField.text.toString().trim() } catch (e: Exception) { "" }
+        if (pin.isEmpty()) { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Enter the Panel PIN first"; return }
+        // PIN بيتسلم للبانل نفسه - هو اللي بيأكده
+        getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("panel_pin", pin).apply()
+        statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
+        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        webView.loadUrl(baseUrl)
     }
 
-    // CONFIGURE PANEL: تثبيت + دخول - مع شاشة Configuring + بار متحرك
-    private fun onConfigureClicked() {
+private fun onConfigureClicked() {
         val (ip, _, pw) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
         showWelcome("Configuring U-Panel")
@@ -266,12 +258,14 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 stopBar()
                 if (ok) {
-                    statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Panel configured ✅"
-                    Toast.makeText(this, "Panel configured ✅", Toast.LENGTH_LONG).show()
+                    // CONFIGURE خلص - متدخلش لوحدك، استنى ENTER PANEL
+                    statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "U-Panel is Configured"
+                    Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
                     welcomeView.visibility = View.GONE
+                    ipView.visibility = View.VISIBLE
+                    pinField.visibility = View.VISIBLE
+                    enterPanelBtn.visibility = View.VISIBLE
                     try { webView.clearCache(true) } catch (e: Exception) {}
-                    webView.visibility = View.VISIBLE
-                    webView.loadUrl(baseUrl)
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
