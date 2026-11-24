@@ -43,7 +43,7 @@ object ScriptInstaller {
                 // 3) شغّله بأمر التشغيل - من غير install
                 // nohup + & مهم: عشان السيرفر يفضل شغال بعد ما SSH يقفل
                 ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("""export TERM=dumb; pkill -f uscript.sh 2>/dev/null; pkill -f U-Panel 2>/dev/null; sleep 1; grep -rl '/media/hdd/U-Panel' /etc/enigma2 /tmp /usr/lib/enigma2 2>/dev/null | xargs sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g' 2>/dev/null; mkdir -p /media/hdd/backup; sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g' $SCRIPT_PATH; sed -i '/backup/I s|/etc/enigma2|/media/hdd/backup|g; /restore/I s|/etc/enigma2|/media/hdd/backup|g' $SCRIPT_PATH; chmod +x $SCRIPT_PATH; rm -f /media/hdd/U-Panel/uscript.sh 2>/dev/null; cd $PANEL_DIR; nohup sh $SCRIPT_PATH > $PANEL_DIR/.run.log 2>&1 & echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
+                ch.setCommand("""export TERM=dumb; pkill -f uscript.sh 2>/dev/null; pkill -f U-Panel 2>/dev/null; sleep 1; grep -rl '/media/hdd/U-Panel' /etc/enigma2 /tmp /usr/lib/enigma2 2>/dev/null | xargs sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g' 2>/dev/null; mkdir -p /media/hdd/backup; sed -i 's|/media/hdd/U-Panel|/etc/enigma2|g' $SCRIPT_PATH; sed -i '/backup/I s|/etc/enigma2|/media/hdd/backup|g; /restore/I s|/etc/enigma2|/media/hdd/backup|g' $SCRIPT_PATH; chmod +x $SCRIPT_PATH; rm -f /media/hdd/U-Panel/uscript.sh 2>/dev/null; cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH </dev/null > $PANEL_DIR/.run.log 2>&1 & disown echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
                 out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
@@ -51,14 +51,14 @@ object ScriptInstaller {
                 while (!ch.isClosed && w < 120) {
                     Thread.sleep(500); w++
                     val so = out.toString()
-                    if (so.contains("Reboot Guard") && so.contains("Universal Edition")) { Thread.sleep(2000); saw = true; break }
+                    if (so.contains("RUN_OK") || (so.contains("Reboot Guard") && so.contains("Universal Edition"))) { Thread.sleep(1000); saw = true; break }
                 }
                 val exit = ch.exitStatus
                 fun clean(t: String): String { return t.replace(Regex("\u001B\\[[0-9;]*[a-zA-Z]"), "").trim() }
                 val outT = clean(out.toString()); val errT = clean(err.toString())
                 try { ch.disconnect() } catch (e: Exception) {}
                 val ok = outT.contains("RUN_OK") || saw || outT.contains("[OK]") || outT.contains("Universal Edition")
-                if (exit != 0 && !ok) {
+                if (exit != 0 && exit != -1 && !ok) {
                     return false to "الزرع تم بس التشغيل رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
                 }
                 // استنى ثانيتين السيرفر يقوم
