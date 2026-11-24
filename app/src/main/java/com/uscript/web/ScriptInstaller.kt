@@ -5,7 +5,7 @@ import com.jcraft.jsch.JSch
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
-// ScriptInstaller - يزرع الاسكريبت في /media/hdd/U-Panel/ ويشغّله
+// ScriptInstaller - الاسكريبت في /etc/enigma2/ - الباكب بس في /media/hdd/backup/
 // CONFIGURE PANEL = زرع + تشغيل + Panel Configured
 object ScriptInstaller {
     const val ASSET_FILE = "uscript.sh"
@@ -43,7 +43,7 @@ object ScriptInstaller {
                 // 3) شغّله بأمر التشغيل - من غير install
                 // nohup + & مهم: عشان السيرفر يفضل شغال بعد ما SSH يقفل
                 ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("export TERM=dumb; chmod +x $SCRIPT_PATH && rm -f /media/hdd/U-Panel/uscript.sh /media/hdd/U-Panel/.uscript.sh 2>/dev/null; cd $PANEL_DIR && nohup sh $SCRIPT_PATH > $PANEL_DIR/.run.log 2>&1 & echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20")
+                ch.setCommand("export TERM=dumb; mkdir -p /media/hdd/backup; sed -i 's|/media/hdd/U-Panel/uscript.sh|/etc/enigma2/uscript.sh|g; s|/media/hdd/U-Panel|/etc/enigma2|g' $SCRIPT_PATH; sed -i '/backup/I s|/etc/enigma2|/media/hdd/backup|g' $SCRIPT_PATH $SCRIPT_PATH; chmod +x $SCRIPT_PATH && rm -f /media/hdd/U-Panel/uscript.sh /media/hdd/U-Panel/.uscript.sh 2>/dev/null; cd $PANEL_DIR && nohup sh $SCRIPT_PATH > $PANEL_DIR/.run.log 2>&1 & echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20")
                 out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
