@@ -5,55 +5,12 @@ import com.jcraft.jsch.JSch
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
-// ScriptInstaller - من غير مسح مدمر للـ WebUI القديم
-// ENTER PANEL بقى بيشغّل سيرفر الـ WebUI الأول قبل ما يفتح
+// ScriptInstaller - يزرع الاسكريبت في /media/hdd/U-Panel/ ويشغّله
+// CONFIGURE PANEL = زرع + تشغيل + Panel Configured
 object ScriptInstaller {
     const val ASSET_FILE = "uscript.sh"
-
-    private fun exec(session: com.jcraft.jsch.Session, cmd: String, waitMs: Long = 0): String {
-        return try {
-            val ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-            ch.setCommand(cmd)
-            val out = ByteArrayOutputStream()
-            ch.setOutputStream(out); ch.setErrStream(ByteArrayOutputStream())
-            ch.connect(10000)
-            if (waitMs > 0) Thread.sleep(waitMs)
-            else { var w = 0; while (!ch.isClosed && w < 60) { Thread.sleep(500); w++ } }
-            val r = out.toString()
-            try { ch.disconnect() } catch (e: Exception) {}
-            r
-        } catch (e: Exception) { "" }
-    }
-
-    private fun connect(ip: String, pw: String): com.jcraft.jsch.Session? {
-        return try {
-            val s = JSch().getSession("root", ip, 22)
-            s.setPassword(if (pw.isEmpty()) "root" else pw)
-            s.setConfig("StrictHostKeyChecking", "no")
-            s.setConfig("PreferredAuthentications", "password,keyboard-interactive")
-            s.connect(10000); s
-        } catch (e: Exception) { null }
-    }
-
-    // شغّل سيرفر الـ WebUI - جرّب كل الطرق المعروفة، واحدة منهم هتشتغل
-    fun startWebUi(context: Context, ip: String, rootPassword: String): Boolean {
-        val session = connect(ip, rootPassword) ?: return false
-        try {
-            // لو السيرفر شغال أصلا متعملش حاجة
-            val check = exec(session, "ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK_DONE")
-            if (check.contains("8080")) return true
-            // جرّب تشغيله بالطرق المختلفة - السكريبت بتاعك هو اللي بيعرف يشغّله
-            // /tmp بيتمسح مع الريستارت - شغّل من المكان الثابت /etc لو /tmp اختفى
-            exec(session, "if [ ! -f /tmp/uscript.sh ] && [ -f /etc/uscript.sh ]; then cp /etc/uscript.sh /tmp/uscript.sh; fi; chmod +x /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; sh /etc/uscript.sh start < /dev/null 2>/dev/null; echo START1", 3000)
-            var again = exec(session, "ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK2")
-            if (again.contains("8080")) return true
-            exec(session, "systemctl restart uscript 2>/dev/null; /etc/init.d/uscript start 2>/dev/null; service uscript start 2>/dev/null; echo START2", 3000)
-            again = exec(session, "ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK3")
-            if (again.contains("8080")) return true
-            // آخر محاولة: شغّل السكريبت install تاني - هو بيظبط السيرفر لوحده
-            return false
-        } finally { try { session.disconnect() } catch (e: Exception) {} }
-    }
+    const val PANEL_DIR = "/media/hdd/U-Panel"
+    const val SCRIPT_PATH = "/media/hdd/U-Panel/uscript.sh"
 
     fun installWithError(context: Context, ip: String, rootPassword: String, onProgress: (String) -> Unit): Pair<Boolean, String> {
         try {
@@ -61,17 +18,33 @@ object ScriptInstaller {
                 return false to "ملف uscript.sh مش موجود في assets"
             }
             if (bytes.isEmpty()) return false to "ملف uscript.sh فاضي"
-            val session = connect(ip, rootPassword) ?: return false to "مش قادر اتصل بـ SSH على $ip:22"
+            val session = try {
+                val s = JSch().getSession("root", ip, 22)
+                s.setPassword(if (rootPassword.isEmpty()) "root" else rootPassword)
+                s.setConfig("StrictHostKeyChecking", "no")
+                s.setConfig("PreferredAuthentications", "password,keyboard-interactive")
+                s.connect(10000); s
+            } catch (e: Exception) { return false to "مش قادر اتصل بـ SSH على $ip:22 - ${e.message}" }
             try {
+                // 1) اعمل الفولدر
+                var ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
+                ch.setCommand("mkdir -p $PANEL_DIR && chmod 755 $PANEL_DIR && echo MKDIR_OK")
+                var out = ByteArrayOutputStream(); ch.setOutputStream(out); ch.connect(10000)
+                while (!ch.isClosed) Thread.sleep(300)
+                try { ch.disconnect() } catch (e: Exception) {}
+
+                // 2) ازرع الاسكريبت في /media/hdd/U-Panel/
                 val sftp = session.openChannel("sftp") as com.jcraft.jsch.ChannelSftp
                 sftp.connect(10000)
-                try { sftp.put(ByteArrayInputStream(bytes), "/tmp/uscript.sh"); try { sftp.put(ByteArrayInputStream(bytes), "/etc/uscript.sh") } catch (e2: Exception) {} } catch (e: Exception) {
-                    return false to "فشل رفع الملف: ${e.message}"
+                try { sftp.put(ByteArrayInputStream(bytes), SCRIPT_PATH) } catch (e: Exception) {
+                    return false to "فشل زرع الاسكريبت في $PANEL_DIR: ${e.message}"
                 } finally { try { sftp.disconnect() } catch (e: Exception) {} }
-                // من غير rm -rf للـ WebUI - النسخة القسرية اللي فاتت هي اللي بوّظت السيرفر
-                val ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("export TERM=dumb FORCE=1; chmod +x /tmp/uscript.sh && sh /tmp/uscript.sh install < /dev/null")
-                val out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
+
+                // 3) شغّله بأمر التشغيل - من غير install
+                // nohup + & مهم: عشان السيرفر يفضل شغال بعد ما SSH يقفل
+                ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
+                ch.setCommand("export TERM=dumb; chmod +x $SCRIPT_PATH && nohup sh $SCRIPT_PATH > $PANEL_DIR/run.log 2>&1 & echo RUN_OK; sleep 2; cat $PANEL_DIR/run.log 2>/dev/null | tail -20")
+                out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
                 var saw = false; var w = 0
@@ -84,13 +57,12 @@ object ScriptInstaller {
                 fun clean(t: String): String { return t.replace(Regex("\u001B\\[[0-9;]*[a-zA-Z]"), "").trim() }
                 val outT = clean(out.toString()); val errT = clean(err.toString())
                 try { ch.disconnect() } catch (e: Exception) {}
-                val ok = saw || outT.contains("[OK]") || outT.contains("Universal Edition")
+                val ok = outT.contains("RUN_OK") || saw || outT.contains("[OK]") || outT.contains("Universal Edition")
                 if (exit != 0 && !ok) {
-                    return false to "التثبيت رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
+                    return false to "الزرع تم بس التشغيل رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
                 }
-                // بعد التثبيت: شغّل السيرفر الأول، وبعدين ريستارت عشان يتحمل نضيف
-                exec(session, "cp /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo STARTED", 3000)
-                exec(session, "sync; reboot", 1500)
+                // استنى ثانيتين السيرفر يقوم
+                Thread.sleep(2000)
                 return true to ""
             } finally { try { session.disconnect() } catch (e: Exception) {} }
         } catch (e: Exception) {
