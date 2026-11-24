@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // لوجو برميوم: دائرة جريدينت + حرف U + هالة
-    private fun premiumLogo(sizeDp: Int, textSize: Float): FrameLayout {
+    private fun premiumLogo(sizeDp: Int, logoTextSize: Float): FrameLayout {
         val outer = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER; topMargin = dp(8); bottomMargin = dp(8) }
             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(2), Color.parseColor("#E879F9")) }
@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 14), dp(sizeDp - 14)).apply { gravity = Gravity.CENTER }
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
         }
-        val letter = TextView(this).apply { text = "U"; textSize = textSize; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) }
+        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) }
         inner.addView(letter); outer.addView(inner)
         return outer
     }
