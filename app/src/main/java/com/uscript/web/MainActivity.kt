@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
         configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
         enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }.apply { visibility = View.GONE }
-        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
+        pinField = field("PIN  ( Panel PIN )", "").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
             addView(title); addView(sub); addView(ipField); addView(portField)
