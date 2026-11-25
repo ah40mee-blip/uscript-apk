@@ -42,7 +42,7 @@ object ScriptInstaller {
 
                 // 3) شغّله - السيرفر هيقوم اوتوماتيك من جوه الاسكريبت
                 ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("export TERM=dumb; chmod +x $SCRIPT_PATH && sh $SCRIPT_PATH install < /dev/null")
+                ch.setCommand("""export TERM=dumb; chmod +x $SCRIPT_PATH; cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH --restart-server > $PANEL_DIR/.run.log 2>&1 < /dev/null & disown; sleep 4; echo RUN_OK; (netstat -tlnp 2>/dev/null | grep 8080 || ss -tlnp 2>/dev/null | grep 8080 || echo NO_PORT); ps 2>/dev/null | grep -v grep | grep uscript | head -3; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
                 out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
@@ -73,4 +73,3 @@ object ScriptInstaller {
         return installWithError(context, ip, rootPassword, onProgress).first
     }
 }
-
