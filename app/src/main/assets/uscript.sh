@@ -8985,7 +8985,7 @@ upanel_wipe() {
   printf "Wipe which SLOT (1-14, 0 = cancel)? "; read _WS
   [ "$_WS" = "0" ] && return 0
   case "$_WS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 14 ]; then echo "Slot must be 1-14."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 14 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
   case " $_SL " in *" $_WS "*) ;; *) echo "SLOT $_WS not found. Available: $_SL"; printf "Press ENTER... "; read _b; return 0;; esac
   if [ "$_WS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS - you cannot wipe the running slot. Switch to another slot first."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_WS")
@@ -9028,7 +9028,7 @@ upanel_wipe() {
   printf "Press ENTER to return... "; read _b; return 0
 }
 
-# --- flash a downloaded image into any slot (1-14) ---
+# --- flash a downloaded image into any slot (1-20) ---
 upanel_flash() {
   show_banner; line; info "Flash Image to Slot - installs a downloaded image from HDD into any slot (1-14)"
   _CS=$(upanel_current)
@@ -9066,16 +9066,19 @@ upanel_flash() {
     else cp -a "$_IP" "$_WK/img" 2>/dev/null; _WK="$_WK/img"; fi
   fi
   _IMGDIR="$_WK"; [ -d "$_WK/noveler" ] && _IMGDIR="$_WK/noveler"
-  _ROOTFS=$(find "$_IMGDIR" -maxdepth 2 -name 'rootfs.tar*' 2>/dev/null | head -1)
-  _ROOTDIR=$(find "$_IMGDIR" -maxdepth 2 -type d -name 'rootfs' 2>/dev/null | head -1)
-  _KERN=$(ls "$_IMGDIR"/kernel*.bin "$_IMGDIR"/uImage* "$_IMGDIR"/vmlinux* "$_IMGDIR"/zImage* "$_IMGDIR"/Image* 2>/dev/null | head -1)
+  _ROOTFS=$(find "$_IMGDIR" -maxdepth 3 -name 'rootfs.tar*' 2>/dev/null | head -1)
+  _ROOTDIR=$(find "$_IMGDIR" -maxdepth 3 -type d -name 'rootfs' 2>/dev/null | head -1)
+  # V6.20 FIX: was ls on depth-1 only - Egami multiboot zips keep the kernel at
+  # novaler4kpro/kernel.bin (depth 2), so _KERN came out empty, no kernel was
+  # copied, and verify failed on the missing kernel file. find, depth 3.
+  _KERN=$(find "$_IMGDIR" -maxdepth 3 \( -name 'kernel*.bin' -o -name 'uImage*' -o -name 'vmlinux*' -o -name 'zImage*' -o -name 'Image*' \) 2>/dev/null | grep -v -i 'rootfs' | head -1)
   if [ -z "$_ROOTFS" ] && [ -z "$_ROOTDIR" ]; then echo "No rootfs found in this image (need rootfs.tar.* or a rootfs/ folder)."; printf "Press ENTER... "; read _b; return 0; fi
   echo "Image: $(basename "$_IP") | rootfs: ${_ROOTFS:-$_ROOTDIR} | kernel: $(basename "$_KERN" 2>/dev/null || echo none)"
-  printf "Flash to which SLOT (1-14, 0 = cancel)? "; read _TS
-  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-14, 0 = cancel)? "; read _TS || return 0; done
+  printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS
+  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS || return 0; done
   [ "$_TS" = "0" ] && return 0
   case "$_TS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 14 ]; then echo "Slot must be 1-14."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 20 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
   if [ "$_TS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS. Switch to another slot first, then flash this one."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_TS")
   echo "TARGET: SLOT $_TS (now: $_OLD) <- $(basename "$_IP")"
@@ -9109,9 +9112,16 @@ upanel_flash() {
   if [ ! -f "$_DEST/etc/image-version" ] && [ ! -f "$_DEST/usr/bin/enigma2" ]; then echo "[FLASH-FAIL] Extraction looks wrong - no etc/image-version or enigma2 in target. Slot may be incomplete."; umount "$_MP" 2>/dev/null; printf "Press ENTER... "; read _b; return 0; fi
   sync
   umount "$_MP" 2>/dev/null
+  _TK=""
+  mount -o remount,rw /boot 2>/dev/null
   if [ -n "$_KERN" ]; then
     _CK=$(grep -oE 'kernel=[^ ]+' "/boot/STARTUP_LINUX_$_CS" 2>/dev/null | head -1 | sed 's/kernel=//')
-    if [ -n "$_CK" ]; then _TK=$(echo "$_CK" | sed "s/$_CS/$_TS/g"); [ "$_TK" = "$_CK" ] && _TK="${_CK%.*}$_TS.${_CK##*.}"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; else cp "$_KERN" "/boot/kernel$_TS.bin" 2>/dev/null && echo "[FLASH] Kernel -> /boot/kernel$_TS.bin"; fi
+    if [ -n "$_CK" ]; then _TK=$(echo "$_CK" | sed "s/$_CS/$_TS/g"); [ "$_TK" = "$_CK" ] && _TK="${_CK%.*}$_TS.${_CK##*.}"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; else _TK="/boot/kernel$_TS.bin"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; fi
+    # V6.20 FIX: point the TARGET slot's STARTUP at the kernel we just copied.
+    # Before, STARTUP_LINUX_TS (written by Prepare) kept the OLD slot's kernel=
+    # while verify checked it - so verify failed on a kernel that was never the
+    # new image's, and the slot would have booted the old kernel.
+    if [ -n "$_TK" ] && [ -f "$_TK" ] && [ -f "/boot/STARTUP_LINUX_$_TS" ]; then sed -i "s|kernel=[^ ]*|kernel=$_TK|" "/boot/STARTUP_LINUX_$_TS" 2>/dev/null && echo "[FLASH] STARTUP_LINUX_$_TS kernel= -> $_TK"; fi
   else echo "[FLASH] No kernel file in image - keeping existing kernel (image may use shared kernel)."; fi
   if [ ! -f "/boot/STARTUP_LINUX_$_TS" ]; then
     if [ -f "/boot/STARTUP_LINUX_$_CS" ]; then
@@ -9775,7 +9785,7 @@ upanel_verify_after_flash() {
   fi
   if [ "$_VOK" = "1" ]; then
     _VK=$(grep -oE 'kernel=[^ ]+' "/boot/STARTUP_LINUX_$_VS" 2>/dev/null | head -1 | sed 's/kernel=//')
-    [ -n "$_VK" ] && [ ! -f "$_VK" ] && { _VOK=0; _VWHY="kernel file missing: $_VK"; }
+    [ -n "$_VK" ] && [ ! -e "$_VK" ] && { _VOK=0; _VWHY="kernel file missing: $_VK"; }
   fi
   umount "$_VMP" 2>/dev/null
   if [ "$_VOK" = "1" ]; then echo "[VERIFY-OK] SLOT $_VS - image-version + enigma2 + kernel present."; return 0; fi
