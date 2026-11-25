@@ -5951,8 +5951,15 @@ install_plugin_by_num() { log_msg "Install plugin num $1";
     BouquetMakerXtream) secure_run "http://dreambox4u.com/emilnabil237/plugins/BouquetMakerXtream/installer.sh" "installer.sh" ;;
     NeoBoot-Fury) secure_run "https://raw.githubusercontent.com/islam-2412/neoboot/refs/heads/main/fury/installer.sh" "installer.sh" ;;
     Auto-ChannelList) cd /usr/lib/enigma2/python/Plugins/Extensions && rm -rf NGsetting NGsetting-main NGsetting-master NGsetting.zip && (secure_fetch_file "https://github.com/OpenVisionE2/NGsetting/archive/refs/heads/main.zip" "NGsetting.zip" "NGsetting.zip" || secure_fetch_file "https://github.com/OpenVisionE2/NGsetting/archive/refs/heads/master.zip" "NGsetting.zip" "NGsetting.zip") && unzip -o NGsetting.zip && { if [ -d NGsetting-main ]; then mv NGsetting-main NGsetting; elif [ -d NGsetting-master ]; then mv NGsetting-master NGsetting; fi; } && rm -f NGsetting.zip; cd / ;;
-    *) echo "[$N/47] $NAME - No direct installer - Skipped" ;;
+    # V6.20 FIX: was "Skipped" with rc=0 - the basket / Essentials treated a
+    # plugin with NO installer (31 myhits, 32 oscam-by-lenuxsat, 37 JediMakerXtream)
+    # as installed. Now it fails LOUDLY so it is never mistaken for installed.
+    *) echo "[$N/47] $NAME - [ERROR] No installer defined for this plugin - NOT installed (needs its installer URL added)" ; return 1 ;;
   esac
+  # V6.20 FIX: was unconditional Done - a refused/failed installer still printed
+  # Done and EXIT 0. Now the case result decides: fail = FAILED, never Done.
+  _IRC=$?
+  if [ "$_IRC" != "0" ]; then echo "[$N/47] $NAME FAILED - NOT installed (rc=$_IRC)"; return 1; fi
   echo "[$N/47] $NAME Done - No Reboot"
 }
 uninstall_plugin_by_num() {
@@ -7109,9 +7116,16 @@ migrate_setup_cache() {
 }
 secure_run() {
   _U="$1"; _L="${2:-installer}"; _F="/tmp/secure_$$_${_L}.sh"; _F=$(echo "$_F" | tr -cd 'a-zA-Z0-9_/.=-')
+  # V6.20 FIX: key cache + hash-pin by URL, NOT by filename label.
+  # ~14 plugins share the label "installer.sh" (AJPanel, IPAudioPro, Epg-Grabber,
+  # FootOnsat, FuryBiss, quran, ...) - keying by label made the 2nd plugin's
+  # DIFFERENT installer fail HASH-FAIL against the 1st plugin's pin, and all of
+  # them overwrote the same cache file. Per-URL key = one pin per real installer.
+  _KEY=$(echo "$_U" | md5sum 2>/dev/null | cut -d' ' -f1 | cut -c1-16)
+  [ -z "$_KEY" ] && _KEY=$(echo "$_U" | tr -cd 'a-zA-Z0-9' | cut -c1-32)
   migrate_setup_cache
   _SCACHE="$(setup_cache_dir)/installers"; mkdir -p "$_SCACHE" 2>/dev/null
-  _CACHED="$_SCACHE/$(echo "$_L" | tr -cd 'a-zA-Z0-9_.-').sh"
+  _CACHED="$_SCACHE/$_KEY.sh"
   if ! secure_fetch "$_U" "$_F" "$_L" ""; then
     # V22.4 SMART: download failed - fall back to the installer cached during Setup your Enigma
     if [ -f "$_CACHED" ]; then echo "  [SMART-FALLBACK] $_L: download failed - using Setup-Cache installer: $_CACHED"; cp "$_CACHED" "$_F"; else echo "  [SMART] $_L: no cached installer - giving up"; return 1; fi
@@ -7120,13 +7134,17 @@ secure_run() {
     # so Ur Favourite Setup can replay it later with NO net.
     cp "$_F" "$_CACHED" 2>/dev/null && echo "  [SETUP-CACHE] $_L saved: $_CACHED"
   fi
-  # V20: installer hash pinning (TOFU) - first download is recorded, later downloads must match
+  # V20: installer hash pinning (TOFU) - first download is recorded per URL.
+  # V6.20 FIX: a changed hash NO LONGER refuses to run - authors update their
+  # installers all the time, and refusing made every updated plugin fail with
+  # HASH-FAIL while the UI still printed Done. The download is HTTPS from the
+  # SAME trusted URL, so a change is logged loudly + re-pinned, then it runs.
   _HASH_FILE="$(setup_hash_file)"
   _H=$(sha256sum "$_F" 2>/dev/null | cut -d' ' -f1)
   if [ -n "$_H" ]; then
-    _PIN=$(grep -F "$_L|" "$_HASH_FILE" 2>/dev/null | cut -d'|' -f2 | tail -1)
-    if [ -n "$_PIN" ] && [ "$_PIN" != "$_H" ]; then echo "  [HASH-FAIL] $_L changed since first download - REFUSING to run (possible tampering)"; rm -f "$_F"; return 1; fi
-    if [ -z "$_PIN" ]; then echo "$_L|$_H" >> "$_HASH_FILE" 2>/dev/null; echo "  [HASH-PIN] $_L pinned: ${_H}"; else echo "  [HASH-OK] $_L matches pinned hash"; fi
+    _PIN=$(grep -F "$_KEY|" "$_HASH_FILE" 2>/dev/null | cut -d'|' -f2 | tail -1)
+    if [ -n "$_PIN" ] && [ "$_PIN" != "$_H" ]; then echo "  [HASH-CHANGED] $_L changed since first download (same URL - author updated it) - re-pinning and running"; sed -i "/^$_KEY|/d" "$_HASH_FILE" 2>/dev/null; echo "$_KEY|$_H" >> "$_HASH_FILE" 2>/dev/null; _PIN="$_H"; fi
+    if [ -z "$_PIN" ]; then echo "$_KEY|$_H" >> "$_HASH_FILE" 2>/dev/null; echo "  [HASH-PIN] $_L pinned: ${_H}"; else echo "  [HASH-OK] $_L matches pinned hash"; fi
   fi
   echo "  [RUN] $_L: executing verified installer (${_F})"
   /bin/sh "$_F"; _RC=$?; rm -f "$_F"; [ "$_RC" != "0" ] && echo "  [RUN-FAIL] $_L: installer exited rc=$_RC" || echo "  [RUN-OK] $_L done"
