@@ -28,7 +28,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ipField: EditText
     private lateinit var portField: EditText
-    private lateinit var pinField: EditText
     lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
@@ -65,6 +64,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // لوجو برميوم: دائرة جريدينت + حرف U + هالة
+    // لوجو برميوم أكتر: هالة خارجية + حلقتين + جريدينت 4 ألوان + ظل + لمعة
+    private fun premiumLogo(sizeDp: Int, logoTextSize: Float): FrameLayout {
+        val halo = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(sizeDp + 28), dp(sizeDp + 28)).apply { gravity = Gravity.CENTER; topMargin = dp(10); bottomMargin = dp(10) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#1A1033")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
+            elevation = dp(20).toFloat()
+        }
+        val outer = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(3), Color.parseColor("#E879F9")) }
+            elevation = dp(16).toFloat()
+        }
+        val mid = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 10), dp(sizeDp - 10)).apply { gravity = Gravity.CENTER }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }
+        }
+        val inner = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 26), dp(sizeDp - 26)).apply { gravity = Gravity.CENTER }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
+        }
+        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); elevation = dp(4).toFloat(); setShadowLayer(12f, 0f, 4f, Color.parseColor("#4C1D95")) }
+        // لمعة صغيرة فوق اللوجو
+        val shine = View(this).apply { layoutParams = FrameLayout.LayoutParams(dp(sizeDp / 3), dp(sizeDp / 6)).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; topMargin = dp(10) }; background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#FFFFFF")); alpha = 60 } }
+        inner.addView(letter); inner.addView(shine); mid.addView(inner); outer.addView(mid); halo.addView(outer)
+        return halo
+    }
+    // دايلوج برميوم لـ Panel Configured
+    private fun showConfiguredDialog() {
+        val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(32), dp(28), dp(28)); background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0D1330")); setStroke(dp(2), Color.parseColor("#E879F9")) }; elevation = dp(24).toFloat() }
+        val checkBg = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(dp(84), dp(84)).apply { gravity = Gravity.CENTER }; background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4ADE80"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }; elevation = dp(12).toFloat() }
+        checkBg.addView(TextView(this).apply { text = "✓"; textSize = 44f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) })
+        card.addView(checkBg)
+        card.addView(TextView(this).apply { text = "Panel Configured"; textSize = 24f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(16), 0, 0) })
+        card.addView(TextView(this).apply { text = "U-Panel is ready\nEnjoy your premium experience"; textSize = 14f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(20)) })
+        val ok = btn("Enter U-Panel", "#E879F9") { dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }
+        card.addView(ok)
+        dlg.setContentView(FrameLayout(this).apply { setPadding(dp(28), dp(28), dp(28), dp(28)); addView(card); setOnClickListener { dlg.dismiss() } })
+        dlg.setCancelable(true); dlg.show()
+        card.alpha = 0f; card.scaleX = 0.8f; card.scaleY = 0.8f; card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(450).setInterpolator(OvershootInterpolator(1.4f)).start()
+    }
+    private fun nativeEnterPanel() { onEnterPanelClicked() }
+
     private fun btn(text: String, color: String, onClick: () -> Unit): Button {
         return Button(this).apply {
             this.text = text; textSize = 16f; setTextColor(Color.WHITE)
@@ -86,9 +129,9 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#070B1E")) }
 
         // ===== 1) Splash متحرك =====
-        val splashLogo = TextView(this).apply { text = "U"; textSize = 72f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        val splashLogo = premiumLogo(150, 88f)
         val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 36f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val splashSub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 15f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val splashCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
@@ -96,8 +139,9 @@ class MainActivity : AppCompatActivity() {
         splashView = FrameLayout(this).apply { addView(splashCol) }
 
         // ===== 2) صفحة الخانات =====
-        val title = TextView(this).apply { text = "U-Panel"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val sub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val formLogo = premiumLogo(110, 62f)
+        val title = TextView(this).apply { text = "U-Panel"; textSize = 38f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 15f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
         portField = field("Port  ( 8080 )", savedPort)
         usernameField = field("Username  ( root )", savedUser)
@@ -105,26 +149,25 @@ class MainActivity : AppCompatActivity() {
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
         configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
-        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }.apply { visibility = View.GONE }
-        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
+        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
-            addView(title); addView(sub); addView(ipField); addView(portField)
-            addView(configureBtn); addView(pinField); addView(enterPanelBtn); addView(statusText)
+            addView(formLogo); addView(title); addView(sub); addView(ipField); addView(portField)
+            addView(configureBtn); addView(enterPanelBtn); addView(statusText)
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
         // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
-        val wLogo = TextView(this).apply { text = "U"; textSize = 64f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        val wLogo = premiumLogo(120, 68f)
         welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 28f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 16f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val track = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(240), dp(6)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
-            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#1E2A55")) }
+            layoutParams = LinearLayout.LayoutParams(dp(280), dp(10)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
+            background = GradientDrawable().apply { cornerRadius = dp(4).toFloat(); setColor(Color.parseColor("#1E2A55")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
         }
         progressFill = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(0, dp(6))
-            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#E879F9")) }
+            layoutParams = FrameLayout.LayoutParams(0, dp(10))
+            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(6).toFloat() }
         }
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
@@ -239,10 +282,6 @@ class MainActivity : AppCompatActivity() {
     private fun onEnterPanelClicked() {
         val (ip, _, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        val pin = try { pinField.text.toString().trim() } catch (e: Exception) { "" }
-        if (pin.isEmpty()) { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Enter the Panel PIN first"; return }
-        // PIN بيتسلم للبانل نفسه - هو اللي بيأكده
-        getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("panel_pin", pin).apply()
         statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
         ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
         webView.visibility = View.VISIBLE
@@ -258,14 +297,15 @@ private fun onConfigureClicked() {
             runOnUiThread {
                 stopBar()
                 if (ok) {
-                    // CONFIGURE خلص - متدخلش لوحدك، استنى ENTER PANEL
+                    // Configure بيعمل كل حاجة: زرع + تشغيل + دخول لصفحة PIN على طول
                     statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "U-Panel is Configured"
-                    Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
+                    showConfiguredDialog()
                     welcomeView.visibility = View.GONE
-                    ipView.visibility = View.VISIBLE
-                    pinField.visibility = View.VISIBLE
-                    enterPanelBtn.visibility = View.VISIBLE
+                    ipView.visibility = View.GONE
+                    discView.visibility = View.GONE
                     try { webView.clearCache(true) } catch (e: Exception) {}
+                    webView.visibility = View.VISIBLE
+                    webView.loadUrl(baseUrl)
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
