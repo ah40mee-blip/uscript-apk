@@ -69,6 +69,28 @@ object ScriptInstaller {
         }
     }
 
+
+    // إعادة تشغيل السيرفر بس من غير إعادة زرع - للـ Auto-Retry لما يقع في نص الشغل
+    fun restartServer(context: Context, ip: String, rootPassword: String): Boolean {
+        try {
+            val session = JSch().getSession("root", ip, 22)
+            session.setPassword(if (rootPassword.isEmpty()) "root" else rootPassword)
+            session.setConfig("StrictHostKeyChecking", "no")
+            session.setConfig("PreferredAuthentications", "password,keyboard-interactive")
+            session.connect(10000)
+            try {
+                val ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
+                ch.setCommand("cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH --restart-server > $PANEL_DIR/.run.log 2>&1 < /dev/null & disown; sleep 3; echo RESTART_OK")
+                val out = ByteArrayOutputStream(); ch.setOutputStream(out); ch.connect(10000)
+                while (!ch.isClosed) Thread.sleep(300)
+                try { ch.disconnect() } catch (e: Exception) {}
+            } finally { try { session.disconnect() } catch (e: Exception) {} }
+            // استنى البورت يقوم
+            for (i in 1..15) { try { val sock = java.net.Socket(); sock.connect(java.net.InetSocketAddress(ip, 8080), 2000); sock.close(); return true } catch (e: Exception) { Thread.sleep(2000) } }
+            return false
+        } catch (e: Exception) { return false }
+    }
+
     fun install(context: Context, ip: String, rootPassword: String, onProgress: (String) -> Unit): Boolean {
         return installWithError(context, ip, rootPassword, onProgress).first
     }
