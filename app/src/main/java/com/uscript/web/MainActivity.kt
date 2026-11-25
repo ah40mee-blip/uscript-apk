@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressFill: View
     private lateinit var discView: View
     private var baseUrl = ""
+    private var autoRetrying = false // عشان الـ Auto-Retry ميتكررش لانهائي لو السيرفر فعلا واقع
     private var barAnim: android.animation.ValueAnimator? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
@@ -191,10 +192,20 @@ class MainActivity : AppCompatActivity() {
             visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
                 override fun onReceivedError(v: WebView?, r: android.webkit.WebResourceRequest?, e: android.webkit.WebResourceError?) {
-                    v?.visibility = View.GONE
-                    ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#F472B6"))
-                    statusText.text = "Cannot reach $baseUrl - اتأكد الرسيفر شغال ودوس ENTER PANEL تاني"
+                    // السيرفر وقع في نص الشغل - متخرجش المستخدم بره، اعمل Restart لوحده وارجع حمّل
+                    if (r?.isForMainFrame == true && !autoRetrying) {
+                        autoRetrying = true
+                        showWelcome("Server dropped... Restarting...")
+                        Thread {
+                            val (_, _, pw) = saveFields(); val (ip2, _, _) = saveFields()
+                            val ok = try { ScriptInstaller.restartServer(this@MainActivity, ip2, pw) } catch (e2: Exception) { false }
+                            runOnUiThread {
+                                stopBar(); welcomeView.visibility = View.GONE; autoRetrying = false
+                                if (ok) { webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl); Toast.makeText(this@MainActivity, "Server restarted", Toast.LENGTH_SHORT).show() }
+                                else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $baseUrl - دوس ENTER PANEL تاني" }
+                            }
+                        }.start()
+                    }
                 }
             }
         }
