@@ -8719,6 +8719,16 @@ upanel_boot_mount() {
     [ -b "$_d" ] || continue
     case " $_CANDS " in *" $_d "*) ;; *) _CANDS="$_CANDS $_d";; esac
   done
+  # V6.20 FIX: try the BOOT partition of the disk we booted from FIRST.
+  # The bootloader reads STARTUP from there at power-on (Recovery + Multiboot
+  # selection). Old order was blkid order - with SD/USB inserted, /boot could
+  # mount from the EXTERNAL disk, hiding the internal flash slots.
+  _BROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  if [ "$_BROOTSRC" = "/dev/root" ] || [ -z "$_BROOTSRC" ]; then _BROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
+  _BROOTDISK="${_BROOTSRC#/dev/}"; case "$_BROOTDISK" in mmcblk*|nvme*) _BROOTDISK="${_BROOTDISK%%p*}";; *) _BROOTDISK="${_BROOTDISK%%[0-9]*}";; esac
+  _BSEP=""; case "$_BROOTDISK" in mmcblk*|nvme*) _BSEP="p";; esac
+  _BROOTBP="/dev/${_BROOTDISK}${_BSEP}1"
+  if [ -b "$_BROOTBP" ]; then case " $_CANDS " in *" $_BROOTBP "*) ;; *) _CANDS="$_BROOTBP $_CANDS";; esac; fi
   _FALLBACK=""
   for _CAND in $_CANDS; do
     _MERR=$(mount -t vfat -o ro "$_CAND" /boot 2>&1) || _MERR=$(mount -o ro "$_CAND" /boot 2>&1) || { echo "[BOOT-MOUNT] $_CAND: mount failed: $_MERR"; continue; }
@@ -9144,6 +9154,7 @@ upanel_flash() {
   if [ ! -f "/boot/STARTUP_LINUX_$_TS" ]; then
     if [ -f "/boot/STARTUP_LINUX_$_CS" ]; then
       sed -e "s/rootsubdir=[^ ]*/rootsubdir=$_SUB/" -e "s/root=[^ ]*/root=$_RP/" -e "s/$_CS/$_TS/g" "/boot/STARTUP_LINUX_$_CS" > "/boot/STARTUP_LINUX_$_TS" && echo "[FLASH] Created /boot/STARTUP_LINUX_$_TS"
+      [ -z "$_SUB" ] && upanel_startup_fix_rootsubdir "/boot/STARTUP_LINUX_$_TS"
     else echo "[FLASH] WARNING: /boot/STARTUP_LINUX_$_TS does not exist and no template - create it manually or the slot will not boot."; fi
   fi
   sync; rm -rf "$_WK" /tmp/upanel_flash_mnt
@@ -10453,6 +10464,7 @@ multiboot_prepare_disk() {
   [ -z "$_TPL" ] && { umount /tmp/upanel-prep-boot 2>/dev/null; echo "[PREPARE-FAIL] No STARTUP template found in /boot - cannot create slot STARTUP files."; printf "Press ENTER... "; read _b; return 1; }
   _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _PP="/dev/${_PD_DISK}${_SEP}$((_I+4))"
     sed -E -e "s|root=[^ ]*|root=$_PP|" -e "s|rootsubdir=[^ ]*||g" "$_TPL" > "/tmp/upanel-prep-boot/STARTUP_LINUX_$_I"
+    upanel_startup_fix_rootsubdir "/tmp/upanel-prep-boot/STARTUP_LINUX_$_I"
     echo "  [OK] STARTUP_LINUX_$_I -> root=$_PP (from $(basename "$_TPL"))"; _I=$((_I+1)); done
   sync; umount /tmp/upanel-prep-boot 2>/dev/null; rmdir /tmp/upanel-prep-boot 2>/dev/null
   echo "[PREPARE] Syncing the new STARTUP files into internal /boot so the Panel sees the slots..."
@@ -10474,41 +10486,165 @@ multiboot_prepare_disk() {
 # Safe: only copies STARTUP_LINUX_N / STARTUP_N files, NEVER touches /boot/STARTUP
 # (the file the box is currently booting from). /boot is remounted rw, then ro again.
 multiboot_sync_startup() {
-  _SYNCED=0; _SKIPPED=0; _SEEN=""
-  mkdir -p /tmp/upanel-sync-boot
-  _ROOTDISK=""; _ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  _SYNCED=0; _SKIPPED=0
+  mkdir -p /tmp/upanel-sync-boot /tmp/upanel-sync-merged
+  rm -f /tmp/upanel-sync-merged/STARTUP* 2>/dev/null
+  _ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
   if [ "$_ROOTSRC" = "/dev/root" ] || [ -z "$_ROOTSRC" ]; then _ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
   _ROOTDISK="${_ROOTSRC#/dev/}"; case "$_ROOTDISK" in mmcblk*|nvme*) _ROOTDISK="${_ROOTDISK%%p*}";; *) _ROOTDISK="${_ROOTDISK%%[0-9]*}";; esac
+  # V6.20 FIX: old code SKIPPED the root disk ([ "$_DN" = "$_ROOTDISK" ] && continue),
+  # so the internal flash slots' STARTUP_LINUX_1..4 were never merged into /boot -
+  # that is why internal flash slots did not show in Recovery / Multiboot selection.
+  # Now: GATHER from EVERY disk's BOOT partition (internal flash included), then
+  # DISTRIBUTE the merged set to EVERY BOOT partition - whichever one the
+  # bootloader reads at power-on now shows ALL slots.
+  _BOOTS=""
   for _D in /sys/block/*; do
     [ -e "$_D" ] || continue; _DN=$(basename "$_D")
     case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
     case "$_DN" in *boot*) continue;; esac
     [ -e "$_D/partition" ] && continue
-    [ "$_DN" = "$_ROOTDISK" ] && continue
     [ $(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )) -le 0 ] && continue
     _SEP=""; case "$_DN" in mmcblk*|nvme*) _SEP="p";; esac
     _BP="/dev/${_DN}${_SEP}1"
     [ -b "$_BP" ] || continue
     _LBL=$(blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
     [ "$_LBL" = "BOOT" ] || continue
+    _BOOTS="$_BOOTS $_BP"
     mount "$_BP" /tmp/upanel-sync-boot 2>/dev/null || continue
     for _SF in /tmp/upanel-sync-boot/STARTUP_LINUX_* /tmp/upanel-sync-boot/STARTUP_[0-9]*; do
       [ -f "$_SF" ] || continue
       _BN=$(basename "$_SF")
-      case " $_SEEN " in *" $_BN "*) continue;; esac
-      _SEEN="$_SEEN $_BN"
-      if [ -f "/boot/$_BN" ] && cmp -s "$_SF" "/boot/$_BN"; then _SKIPPED=$((_SKIPPED+1)); continue; fi
-      mount -o remount,rw /boot 2>/dev/null
-      if cp "$_SF" "/boot/$_BN" 2>/dev/null && cmp -s "$_SF" "/boot/$_BN"; then echo "  [SYNC-OK] $_BN <- /dev/$_DN (p1)"; _SYNCED=$((_SYNCED+1)); else echo "  [SYNC-FAIL] $_BN <- /dev/$_DN (copy failed - /boot may be read-only)"; fi
-      mount -o remount,ro /boot 2>/dev/null
+      if [ -f "/tmp/upanel-sync-merged/$_BN" ]; then cmp -s "$_SF" "/tmp/upanel-sync-merged/$_BN" || echo "  [SYNC-WARN] $_BN differs between BOOT partitions - keeping first copy"; continue; fi
+      cp "$_SF" "/tmp/upanel-sync-merged/$_BN" 2>/dev/null
     done
     umount /tmp/upanel-sync-boot 2>/dev/null
   done
+  if [ -z "$(ls /tmp/upanel-sync-merged/STARTUP* 2>/dev/null)" ]; then echo "[SYNC] No STARTUP_LINUX_N files found on any disk BOOT partition - run Prepare Disk first, or re-insert the disk + reboot."; rmdir /tmp/upanel-sync-boot 2>/dev/null; printf "Press ENTER... "; read _b; return 0; fi
+  for _BP in $_BOOTS; do
+    mount "$_BP" /tmp/upanel-sync-boot 2>/dev/null || continue
+    for _SF in /tmp/upanel-sync-merged/STARTUP*; do
+      _BN=$(basename "$_SF")
+      if [ -f "/tmp/upanel-sync-boot/$_BN" ] && cmp -s "$_SF" "/tmp/upanel-sync-boot/$_BN"; then _SKIPPED=$((_SKIPPED+1)); continue; fi
+      if cp "$_SF" "/tmp/upanel-sync-boot/$_BN" 2>/dev/null; then echo "  [SYNC-OK] $_BN -> $_BP"; _SYNCED=$((_SYNCED+1)); else echo "  [SYNC-FAIL] $_BN -> $_BP"; fi
+    done
+    sync; umount /tmp/upanel-sync-boot 2>/dev/null
+  done
+  mount -o remount,rw /boot 2>/dev/null
+  for _SF in /tmp/upanel-sync-merged/STARTUP*; do
+    _BN=$(basename "$_SF")
+    if [ -f "/boot/$_BN" ] && cmp -s "$_SF" "/boot/$_BN"; then continue; fi
+    cp "$_SF" "/boot/$_BN" 2>/dev/null && echo "  [SYNC-OK] $_BN -> /boot (mounted)" && _SYNCED=$((_SYNCED+1))
+  done
+  mount -o remount,ro /boot 2>/dev/null
   rmdir /tmp/upanel-sync-boot 2>/dev/null
-  echo "[SYNC] Copied $_SYNCED new/changed STARTUP files to /boot, $_SKIPPED already up to date."
-  if [ "$_SYNCED" = "0" ] && [ "$_SKIPPED" = "0" ]; then echo "[SYNC] No STARTUP_LINUX_N files found on any external disk BOOT partition - run Prepare Disk first, or re-insert the disk + reboot."; fi
+  echo "[SYNC] Copied $_SYNCED new/changed STARTUP files, $_SKIPPED already up to date."
   echo "[SYNC] /boot now has: $(ls /boot/STARTUP_LINUX_* /boot/STARTUP_[0-9]* 2>/dev/null | wc -l) slot files."
   printf "Press ENTER... "; read _b; return 0
+}
+
+# V6.20 - Recovery slot names (25 Nov): the Bootmenu (oe-alliance) locates an image
+# via the STARTUP line's rootsubdir= - its documented extra-slot layout is a
+# shared rootfs partition + one subdir per image. U-Panel partition slots had
+# rootsubdir REMOVED (Prepare) or EMPTY (Flash), so the Bootmenu had no subdir
+# to follow to /etc/image-version and showed no name in Recovery.
+# Fix: rootsubdir=/ = "rootfs at partition root". The kernel boots it exactly
+# like a missing/empty rootsubdir, and a Bootmenu that follows the STARTUP line
+# now lands on <partition>/etc/image-version and can show the name.
+# Real subdirs (linuxrootfsN - internal shared slots) are NEVER touched.
+upanel_startup_fix_rootsubdir() { # $1 = STARTUP file
+  [ -f "$1" ] || return 1
+  _SUB=$(grep -oE "rootsubdir=[^ ']*" "$1" 2>/dev/null | head -1 | cut -d= -f2)
+  [ -n "$_SUB" ] && [ "$_SUB" != "/" ] && return 0
+  [ "$_SUB" = "/" ] && return 0
+  if grep -q "rootsubdir=" "$1"; then
+    sed -i -E "s|rootsubdir=[^ ']*|rootsubdir=/|g" "$1"
+  elif grep -q "^bootargs=" "$1"; then
+    sed -i -E "s|^(bootargs=.*)$|\1 rootsubdir=/|" "$1"
+  else
+    sed -i -E "s|'[[:space:]]*$| rootsubdir=/'|" "$1"
+  fi
+  grep -q "rootsubdir=/" "$1"
+}
+
+# Copy one STARTUP file (from /boot) to EVERY BOOT partition on every disk,
+# so whichever BOOT partition the bootloader reads shows the same file.
+upanel_startup_push_to_boots() { # $1 = STARTUP file in /boot
+  _BN=$(basename "$1"); _N=0
+  for _D in /sys/block/*; do
+    [ -e "$_D" ] || continue; _DN=$(basename "$_D")
+    case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
+    case "$_DN" in *boot*) continue;; esac
+    [ -e "$_D/partition" ] && continue
+    _SEP=""; case "$_DN" in mmcblk*|nvme*) _SEP="p";; esac
+    _BP="/dev/${_DN}${_SEP}1"; [ -b "$_BP" ] || continue
+    _LBL=$(blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
+    [ "$_LBL" = "BOOT" ] || continue
+    mkdir -p /tmp/upanel-push-boot; mount "$_BP" /tmp/upanel-push-boot 2>/dev/null || continue
+    cp "$1" "/tmp/upanel-push-boot/$_BN" 2>/dev/null && _N=$((_N+1))
+    umount /tmp/upanel-push-boot 2>/dev/null
+  done
+  rmdir /tmp/upanel-push-boot 2>/dev/null
+  echo "$_N"
+}
+
+# Recovery Slot Names menu - TEST on one slot first, then apply to all, revert anytime.
+upanel_recovery_names() {
+  show_banner; line; info "Recovery Slot Names - make image names show in the Recovery / Bootmenu"
+  echo "Why names are missing: U-Panel partition slots had rootsubdir REMOVED or EMPTY"
+  echo "in their STARTUP files. The Bootmenu finds an image via rootsubdir= - with"
+  echo "nothing to follow, it cannot read /etc/image-version and shows no name."
+  echo "Fix: rootsubdir=/ (= rootfs at partition root). The kernel boots it exactly"
+  echo "like a missing rootsubdir. Internal shared slots (linuxrootfsN) are untouched."
+  echo ""
+  echo "  [1] TEST on ONE slot - fix one slot, reboot to Recovery, check its name"
+  echo "  [2] Apply to ALL external slots"
+  echo "  [3] Revert - restore the original STARTUP files from backup"
+  echo "  [0] Back"
+  printf "Your choice: "; read _RN || return 0
+  _BKDIR="/media/hdd/U-Panel/STARTUP-backup"; mkdir -p "$_BKDIR" 2>/dev/null
+  upanel_boot_mount; mount -o remount,rw /boot 2>/dev/null
+  case "$_RN" in
+    1)
+      printf "Test on which SLOT number? (0 = cancel): "; read _TS; [ "$_TS" = "0" ] && return 0
+      _SF="/boot/STARTUP_LINUX_$_TS"
+      [ -f "$_SF" ] || { echo "[RECOVERY-NAME] No STARTUP file for SLOT $_TS."; printf "Press ENTER... "; read _b; return 0; }
+      [ -f "$_BKDIR/STARTUP_LINUX_$_TS.orig" ] || cp "$_SF" "$_BKDIR/STARTUP_LINUX_$_TS.orig" 2>/dev/null
+      echo "[RECOVERY-NAME] Backup: $_BKDIR/STARTUP_LINUX_$_TS.orig"
+      echo "[RECOVERY-NAME] Before: $(grep -oE 'root=[^ ]+|rootsubdir=[^ ]+' "$_SF" | tr '\n' ' ')"
+      upanel_startup_fix_rootsubdir "$_SF" && echo "[RECOVERY-NAME] rootsubdir=/ written." || echo "[RECOVERY-NAME] NOTE: rootsubdir=/ could NOT be written - file format unknown, left unchanged."
+      echo "[RECOVERY-NAME] After:  $(grep -oE 'root=[^ ]+|rootsubdir=[^ ]+' "$_SF" | tr '\n' ' ')"
+      _P=$(upanel_startup_push_to_boots "$_SF"); echo "[RECOVERY-NAME] Pushed to $_P BOOT partition(s)."
+      sync; mount -o remount,ro /boot 2>/dev/null
+      echo ""
+      echo "NOW: reboot to Recovery (hold OK / reset) and look at SLOT $_TS:"
+      echo "  - Name shows CORRECTLY -> come back here, run [2] Apply to ALL."
+      echo "  - Name shows WRONG, or no name, or slot will not boot -> boot any"
+      echo "    other slot, come back here, run [3] Revert."
+      printf "Press ENTER... "; read _b ;;
+    2)
+      _FIXED=0; _SKIP=0
+      for _SF in /boot/STARTUP_LINUX_*; do
+        [ -f "$_SF" ] || continue; _BN=$(basename "$_SF")
+        _SUB=$(grep -oE "rootsubdir=[^ ']*" "$_SF" 2>/dev/null | head -1 | cut -d= -f2)
+        if [ -n "$_SUB" ] && [ "$_SUB" != "/" ]; then _SKIP=$((_SKIP+1)); continue; fi
+        [ -f "$_BKDIR/$_BN.orig" ] || cp "$_SF" "$_BKDIR/$_BN.orig" 2>/dev/null
+        if upanel_startup_fix_rootsubdir "$_SF"; then _FIXED=$((_FIXED+1)); _P=$(upanel_startup_push_to_boots "$_SF"); fi
+      done
+      sync; mount -o remount,ro /boot 2>/dev/null
+      echo "[RECOVERY-NAME] Fixed $_FIXED slot file(s), skipped $_SKIP shared-slot file(s) (linuxrootfsN)."
+      echo "[RECOVERY-NAME] Originals in $_BKDIR - Revert [3] restores them anytime."
+      printf "Press ENTER... "; read _b ;;
+    3)
+      _R=0
+      for _BF in "$_BKDIR"/STARTUP_LINUX_*.orig; do
+        [ -f "$_BF" ] || continue; _BN=$(basename "$_BF" .orig)
+        cp "$_BF" "/boot/$_BN" 2>/dev/null && { _R=$((_R+1)); upanel_startup_push_to_boots "/boot/$_BN" >/dev/null; }
+      done
+      sync; mount -o remount,ro /boot 2>/dev/null
+      echo "[RECOVERY-NAME] Restored $_R original STARTUP file(s)."
+      printf "Press ENTER... "; read _b ;;
+  esac
 }
 
 boot_slot_manager() {
@@ -10538,6 +10674,7 @@ boot_slot_manager() {
     echo "  [9] Download Image from Internet"
     echo "  [10] Rollback guard (auto-return if new slot fails to boot)"
     echo "  [11] Wipe Slot - erase the image on a slot completely"
+    echo "  [12] Recovery Slot Names - make image names show in Recovery (TEST)"
     echo "  [R] Rename a slot"
     echo "  [0] Back"
     printf "Your choice: "; read _BC || return 0
@@ -10546,6 +10683,7 @@ boot_slot_manager() {
       2) rm -f /tmp/upanel_slot_img_* /tmp/upanel_e2fs_tried 2>/dev/null; continue ;;
       10) rollback_guard_status ;;
       11) upanel_wipe ;;
+      12) upanel_recovery_names ;;
       1) multiboot_prepare_disk ;;
       R|r) upanel_rename_menu ;;
       3)
