@@ -231,7 +231,7 @@ class MainActivity : AppCompatActivity() {
             duration = 2200; repeatCount = android.animation.ValueAnimator.INFINITE
             addUpdateListener { a ->
                 val f = a.animatedValue as Float
-                progressFill.layoutParams.width = (dp(240) * f).toInt()
+                progressFill.layoutParams.width = (dp(280) * f).toInt()
                 progressFill.requestLayout()
             }
         }
@@ -287,6 +287,7 @@ class MainActivity : AppCompatActivity() {
         Thread {
             var up = false
             for (i in 1..15) {
+                runOnUiThread { welcomeConnecting.text = "Waiting for server... (" + (16 - i) * 2 + "s)" }
                 try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
             }
             runOnUiThread {
