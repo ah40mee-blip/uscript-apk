@@ -3795,7 +3795,7 @@ class H(BaseHTTPRequestHandler):
                 _img = _names.get(_n, "Empty / Unknown")
                 body += "<div%s><b>%s - %s%s</b><br><a href='/multiboot/switch?slot=%d'>Switch to this slot + Reboot</a><a href='/multiboot/wipe?slot=%d'>Wipe this slot</a><a href='/multiboot/rename?slot=%d'>Rename this slot</a></div>" % (_cls, html.escape(_lbl), html.escape(_img), _here, _n, _n, _n)
             body += "<div class='sec'>SUB-ACTIONS - same as Terminal Boot Slot Manager</div>"
-            body += "<a href='/multiboot/prepare'>Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
+            body += "<a href='/multiboot/prepare'>Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)</a><a href='/multiboot/sync'>Sync Slots to /boot - if prepared slots do NOT show in the Panel / Flash page (no format, safe)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
             body += "<a href='/multiboot'>Back to Multiboot Manager</a><a href='/'>Back to Panel</a>"
             self.send_html(body); return
         if u.path in ("/tools", "/servers", "/iptv", "/streaming", "/picons", "/skin", "/setting", "/channellist", "/bouquet", "/transponder", "/image-update", "/backup-manager", "/backup-image", "/multiboot", "/epg-download", "/factory-reset"):
@@ -3815,7 +3815,7 @@ class H(BaseHTTPRequestHandler):
               "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control (mobile browser)", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
               "/backup-manager": ("Backup Manager - List / Cleanup / Rollback", "Exact items from Terminal Backup Manager.", [("1) List All Backups", "/run?action=backup-manager-list", ""), ("List / Download / Delete backups", "/backups", ""), ("2) Cleanup - Keep Last 3 Per Group", "/run?action=backup-manager-cleanup", ""), ("3) Rollback Files (Latest BeforeRestore)", "/run?action=backup-manager-rollback", ""), ("4) Rollback Plugins (Latest BeforeRestore)", "/run?action=backup-manager-rollback-plugins", ""), ("5) Change Backup Location - HDD", "/run?action=backup-location-hdd", ""), ("5) Change Backup Location - USB", "/run?action=backup-location-usb", "")]),
               "/backup-image": ("Backup Image", "Full Image backup - same as Terminal Backup Image.", [("Backup Image now", "/run?action=backup-image", ""), ("Download / Flash Image", "/images", "")]),
-              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("1) Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)", "/multiboot/prepare", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("R) Rename a slot", "/multiboot/rename", "")]),
+              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("1) Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)", "/multiboot/prepare", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("R) Rename a slot", "/multiboot/rename", "")]),
             }
             _title, _desc, _items = _PAGES[u.path]
             body = "<h1>%s</h1><p class='small'>%s</p>" % (html.escape(_tr(_title) if _title in UI_TEXT else _title), html.escape(_desc))
@@ -4208,6 +4208,9 @@ class H(BaseHTTPRequestHandler):
                 self.send_html(body); return
             # V5.96 FIX: branches above only set body - send it for every page in this block
             self.send_html(body); return
+        if u.path == "/multiboot/sync":
+            ACTIONS["multiboot-sync"] = ("Multiboot - Sync Slots to /boot", True, ["--web-multiboot-sync"])
+            self.send_response(302); self.send_header("Location", "/run?action=multiboot-sync"); self.end_headers(); return
         if u.path in ("/multiboot/switch", "/multiboot/wipe", "/multiboot/rename", "/multiboot/prepare", "/download-image/pin"):
             if u.path == "/multiboot/switch":
                 _slot=(q.get("slot") or [""])[0]
@@ -10424,9 +10427,59 @@ multiboot_prepare_disk() {
     sed -E -e "s|root=[^ ]*|root=$_PP|" -e "s|rootsubdir=[^ ]*||g" "$_TPL" > "/tmp/upanel-prep-boot/STARTUP_LINUX_$_I"
     echo "  [OK] STARTUP_LINUX_$_I -> root=$_PP (from $(basename "$_TPL"))"; _I=$((_I+1)); done
   sync; umount /tmp/upanel-prep-boot 2>/dev/null; rmdir /tmp/upanel-prep-boot 2>/dev/null
+  echo "[PREPARE] Syncing the new STARTUP files into internal /boot so the Panel sees the slots..."
+  mkdir -p /tmp/upanel-prep-boot; mount "$_BOOTPART" /tmp/upanel-prep-boot 2>/dev/null
+  mount -o remount,rw /boot 2>/dev/null
+  _SC=0; for _SF in /tmp/upanel-prep-boot/STARTUP_LINUX_*; do [ -f "$_SF" ] || continue; _BN=$(basename "$_SF"); if cp "$_SF" "/boot/$_BN" 2>/dev/null && cmp -s "$_SF" "/boot/$_BN"; then _SC=$((_SC+1)); else echo "  [WARN] could not copy $_BN to /boot"; fi; done
+  mount -o remount,ro /boot 2>/dev/null; umount /tmp/upanel-prep-boot 2>/dev/null; rmdir /tmp/upanel-prep-boot 2>/dev/null
+  echo "[PREPARE] Synced $_SC STARTUP files to /boot - the $_PD_SLOTS slots will now show in the Panel."
   echo "[PREPARE] DONE - /dev/$_PD_DISK is now: BOOT 512M + $_PD_SLOTS slots x ${_PD_SIZE}G (linux1..linux$_PD_SLOTS, p5..p$((_PD_SLOTS+4)), Empty)."
   echo "[PREPARE] Next: reboot, then Multiboot > Diagnose Slots to confirm your box boots from this disk."
   echo "[PREPARE] Then Flash Image to Slot to install an image into a new slot."
+  printf "Press ENTER... "; read _b; return 0
+}
+
+
+# V6.20 FIX (25 Nov): Prepare writes STARTUP_LINUX_N to the PREPARED DISK's own BOOT
+# partition (p1), but the Panel / Flash page read slots from the INTERNAL /boot.
+# So freshly prepared slots never appeared until this sync copies them into /boot.
+# Safe: only copies STARTUP_LINUX_N / STARTUP_N files, NEVER touches /boot/STARTUP
+# (the file the box is currently booting from). /boot is remounted rw, then ro again.
+multiboot_sync_startup() {
+  _SYNCED=0; _SKIPPED=0; _SEEN=""
+  mkdir -p /tmp/upanel-sync-boot
+  _ROOTDISK=""; _ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  if [ "$_ROOTSRC" = "/dev/root" ] || [ -z "$_ROOTSRC" ]; then _ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
+  _ROOTDISK="${_ROOTSRC#/dev/}"; case "$_ROOTDISK" in mmcblk*|nvme*) _ROOTDISK="${_ROOTDISK%%p*}";; *) _ROOTDISK="${_ROOTDISK%%[0-9]*}";; esac
+  for _D in /sys/block/*; do
+    [ -e "$_D" ] || continue; _DN=$(basename "$_D")
+    case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
+    case "$_DN" in *boot*) continue;; esac
+    [ -e "$_D/partition" ] && continue
+    [ "$_DN" = "$_ROOTDISK" ] && continue
+    [ $(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )) -le 0 ] && continue
+    _SEP=""; case "$_DN" in mmcblk*|nvme*) _SEP="p";; esac
+    _BP="/dev/${_DN}${_SEP}1"
+    [ -b "$_BP" ] || continue
+    _LBL=$(blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
+    [ "$_LBL" = "BOOT" ] || continue
+    mount "$_BP" /tmp/upanel-sync-boot 2>/dev/null || continue
+    for _SF in /tmp/upanel-sync-boot/STARTUP_LINUX_* /tmp/upanel-sync-boot/STARTUP_[0-9]*; do
+      [ -f "$_SF" ] || continue
+      _BN=$(basename "$_SF")
+      case " $_SEEN " in *" $_BN "*) continue;; esac
+      _SEEN="$_SEEN $_BN"
+      if [ -f "/boot/$_BN" ] && cmp -s "$_SF" "/boot/$_BN"; then _SKIPPED=$((_SKIPPED+1)); continue; fi
+      mount -o remount,rw /boot 2>/dev/null
+      if cp "$_SF" "/boot/$_BN" 2>/dev/null && cmp -s "$_SF" "/boot/$_BN"; then echo "  [SYNC-OK] $_BN <- /dev/$_DN (p1)"; _SYNCED=$((_SYNCED+1)); else echo "  [SYNC-FAIL] $_BN <- /dev/$_DN (copy failed - /boot may be read-only)"; fi
+      mount -o remount,ro /boot 2>/dev/null
+    done
+    umount /tmp/upanel-sync-boot 2>/dev/null
+  done
+  rmdir /tmp/upanel-sync-boot 2>/dev/null
+  echo "[SYNC] Copied $_SYNCED new/changed STARTUP files to /boot, $_SKIPPED already up to date."
+  if [ "$_SYNCED" = "0" ] && [ "$_SKIPPED" = "0" ]; then echo "[SYNC] No STARTUP_LINUX_N files found on any external disk BOOT partition - run Prepare Disk first, or re-insert the disk + reboot."; fi
+  echo "[SYNC] /boot now has: $(ls /boot/STARTUP_LINUX_* /boot/STARTUP_[0-9]* 2>/dev/null | wc -l) slot files."
   printf "Press ENTER... "; read _b; return 0
 }
 
@@ -11857,6 +11910,7 @@ case "$1" in
   --web-multiboot-wipe) lock_startup_check; web_multiboot_wipe "$2"; exit $?;;
   --web-multiboot-rename) lock_startup_check; web_multiboot_rename "$2" "$3"; exit $?;;
     --web-multiboot-prepare) lock_startup_check; web_multiboot_prepare "$2" "$3" "$4"; exit $?;;
+    --web-multiboot-sync) lock_startup_check; multiboot_sync_startup; exit $?;;
   --web-multiboot-restore) lock_startup_check; web_multiboot_restore; exit $?;;
   --web-smart-restore-part) lock_startup_check; web_smart_restore_part "$2"; exit $?;;
   --web-custom-restore-part) lock_startup_check; web_custom_restore_part "$2"; exit $?;;
