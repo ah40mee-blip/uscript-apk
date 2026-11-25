@@ -28,15 +28,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ipField: EditText
     private lateinit var portField: EditText
+    private lateinit var pinField: EditText
     lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
     private lateinit var configureBtn: Button
     private lateinit var enterPanelBtn: Button
     private lateinit var statusText: TextView
-    private lateinit var webView: WebView // مخفي تماما - بيحمل السيرفر في الخلفية بس، عمره ما بيظهر
-    private lateinit var nativePanel: View
-    private lateinit var panelStatus: TextView
+    private lateinit var webView: WebView
     private lateinit var splashView: View
     private lateinit var ipView: View
     private lateinit var welcomeView: View
@@ -66,22 +65,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // لوجو برميوم: دائرة جريدينت + حرف U + هالة
-    private fun premiumLogo(sizeDp: Int, logoTextSize: Float): FrameLayout {
-        val outer = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER; topMargin = dp(8); bottomMargin = dp(8) }
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(2), Color.parseColor("#E879F9")) }
-            elevation = dp(12).toFloat()
-        }
-        val inner = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 14), dp(sizeDp - 14)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
-        }
-        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) }
-        inner.addView(letter); outer.addView(inner)
-        return outer
-    }
-
     private fun btn(text: String, color: String, onClick: () -> Unit): Button {
         return Button(this).apply {
             this.text = text; textSize = 16f; setTextColor(Color.WHITE)
@@ -90,35 +73,6 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(16), dp(16), dp(16), dp(16)); setOnClickListener { onClick() }
         }
     }
-
-
-    // ===== البانل الحقيقي: هيدر برميوم نيتف + WebUI الاسكريبت نفسه جوّه WebView متعاد تلوينه =====
-    // ليه؟ لأن القوايم المزيفة (Toast بس) مش بتستجيب. الحل الصح: نسيب قوايم الاسكريبت الأصلية شغالة زي ما هي، بس نغيّر شكلها 100% بـ CSS - فالقوايم حقيقية وبتستجيب، والشكل برميوم.
-    private fun buildNativePanel(): View {
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        // هيدر برميوم نيتف فوق
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(16), dp(16), dp(8)) }
-        header.addView(premiumLogo(56, 30f))
-        val ht = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
-        ht.addView(TextView(this).apply { text = "U-Panel"; textSize = 24f; setTextColor(Color.WHITE); setTypeface(null, android.graphics.Typeface.BOLD) })
-        ht.addView(TextView(this).apply { text = "Control Ur Enigma"; textSize = 12f; setTextColor(Color.parseColor("#F472B6")) })
-        header.addView(ht); col.addView(header)
-        panelStatus = TextView(this).apply { text = "Receiver: Online  •  Panel Ready"; textSize = 13f; setTextColor(Color.parseColor("#4ADE80")); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(8)) }
-        col.addView(panelStatus)
-        // WebView الحقيقي - هو اللي فيه كل القوايم والخواص، وهنعيد تلوينه بـ CSS
-        webView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
-        webView.visibility = View.VISIBLE
-        col.addView(webView)
-        val back = btn("Back", "#0D1330") { nativePanel.visibility = View.GONE; ipView.visibility = View.VISIBLE }
-        col.addView(back)
-        return FrameLayout(this).apply { addView(col); visibility = View.GONE }
-    }
-    // حقن ثيم برميوم جوّه WebUI الاسكريبت - بيغيّر الشكل بس، من غير ما يمس القوايم ولا الأزرار
-    private fun injectPremiumTheme() {
-        val css = ("(function(){var s=document.createElement('style');s.innerHTML='*{box-sizing:border-box} body{background:#070B1E!important;color:#fff!important;font-family:sans-serif} header,.header,.topbar,.navbar{background:linear-gradient(90deg,#E879F9,#A855F7,#6366F1)!important;border:none!important;border-radius:0 0 18px 18px!important} button,.btn,input[type=submit]{background:linear-gradient(90deg,#E879F9,#A855F7)!important;color:#fff!important;border:none!important;border-radius:14px!important;padding:12px 18px!important;font-weight:bold!important;box-shadow:0 4px 16px rgba(232,121,249,.35)} input,select,textarea{background:#0D1330!important;color:#fff!important;border:1px solid #2A3560!important;border-radius:12px!important;padding:12px!important} a{color:#E879F9!important} table,.card,.panel,.box{background:#0D1330!important;border:1px solid #2A3560!important;border-radius:16px!important;color:#fff!important}';document.head.appendChild(s);})()")
-        try { webView.evaluateJavascript(css, null) } catch (e: Exception) {}
-    }
-    private fun openHiddenWebAction(path: String) { try { webView.loadUrl(baseUrl + path) } catch (e: Exception) {} }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#070B1E")) }
 
         // ===== 1) Splash متحرك =====
-        val splashLogo = premiumLogo(120, 72f)
+        val splashLogo = TextView(this).apply { text = "U"; textSize = 72f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
         val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 36f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val splashCol = LinearLayout(this).apply {
@@ -142,7 +96,6 @@ class MainActivity : AppCompatActivity() {
         splashView = FrameLayout(this).apply { addView(splashCol) }
 
         // ===== 2) صفحة الخانات =====
-        val formLogo = premiumLogo(84, 48f)
         val title = TextView(this).apply { text = "U-Panel"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         val sub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
@@ -152,25 +105,26 @@ class MainActivity : AppCompatActivity() {
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
         configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
-        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
+        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }.apply { visibility = View.GONE }
+        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
-            addView(formLogo); addView(title); addView(sub); addView(ipField); addView(portField)
-            addView(configureBtn); addView(enterPanelBtn); addView(statusText)
+            addView(title); addView(sub); addView(ipField); addView(portField)
+            addView(configureBtn); addView(pinField); addView(enterPanelBtn); addView(statusText)
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
         // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
-        val wLogo = premiumLogo(96, 56f)
+        val wLogo = TextView(this).apply { text = "U"; textSize = 64f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
         welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 28f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 16f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val track = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(dp(240), dp(6)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
-            background = GradientDrawable().apply { cornerRadius = dp(4).toFloat(); setColor(Color.parseColor("#1E2A55")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#1E2A55")) }
         }
         progressFill = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(0, dp(8))
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(4).toFloat() }
+            layoutParams = FrameLayout.LayoutParams(0, dp(6))
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#E879F9")) }
         }
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
@@ -191,8 +145,6 @@ class MainActivity : AppCompatActivity() {
 
         // ===== WebView =====
         webView = WebView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(1, 1)
-            visibility = View.VISIBLE
             visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
                 override fun onReceivedError(v: WebView?, r: android.webkit.WebResourceRequest?, e: android.webkit.WebResourceError?) {
@@ -204,9 +156,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.webViewClient = object : WebViewClient() { override fun onPageFinished(view: WebView?, url: String?) { super.onPageFinished(view, url); injectPremiumTheme() } }
-        nativePanel = buildNativePanel()
-        root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(nativePanel) // WebView جوّه البانل النيتف
+        root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(webView)
         setContentView(root)
 
         // أنيميشن الـ Splash
@@ -289,12 +239,14 @@ class MainActivity : AppCompatActivity() {
     private fun onEnterPanelClicked() {
         val (ip, _, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
+        val pin = try { pinField.text.toString().trim() } catch (e: Exception) { "" }
+        if (pin.isEmpty()) { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Enter the Panel PIN first"; return }
+        // PIN بيتسلم للبانل نفسه - هو اللي بيأكده
+        getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("panel_pin", pin).apply()
         statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
         ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
-        // البانل النيتف جواه WebView الحقيقي متعاد تلوينه - القوايم حقيقية وبتستجيب
-        webView.loadUrl(baseUrl) // في الخلفية بس عشان السيرفر يفضل شغال
-        nativePanel.visibility = View.VISIBLE
         webView.visibility = View.VISIBLE
+        webView.loadUrl(baseUrl)
     }
 
 private fun onConfigureClicked() {
@@ -306,17 +258,14 @@ private fun onConfigureClicked() {
             runOnUiThread {
                 stopBar()
                 if (ok) {
-                    // Configure بيعمل كل حاجة: زرع + تشغيل + دخول لصفحة PIN على طول
+                    // CONFIGURE خلص - متدخلش لوحدك، استنى ENTER PANEL
                     statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "U-Panel is Configured"
                     Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
                     welcomeView.visibility = View.GONE
-                    ipView.visibility = View.GONE
-                    discView.visibility = View.GONE
+                    ipView.visibility = View.VISIBLE
+                    pinField.visibility = View.VISIBLE
+                    enterPanelBtn.visibility = View.VISIBLE
                     try { webView.clearCache(true) } catch (e: Exception) {}
-                    // البانل النيتف جواه WebView الحقيقي متعاد تلوينه
-                    webView.loadUrl(baseUrl)
-                    nativePanel.visibility = View.VISIBLE
-        webView.visibility = View.VISIBLE
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
