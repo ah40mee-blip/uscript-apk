@@ -4701,7 +4701,7 @@ if __name__ == "__main__":
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()
 PYEOF
 }
-web_ip() { hostname -I 2>/dev/null | cut -d' ' -f1; }
+web_ip() { _ip=$(hostname -I 2>/dev/null | cut -d' ' -f1); [ -n "$_ip" ] && { echo "$_ip"; return 0; }; ip -4 addr show scope global 2>/dev/null | grep -oE 'inet [0-9.]+' | head -1 | cut -d' ' -f2; }
 # V5.41 TRANSITION: kill BOTH the new server and a V5.39-or-older server (u-script-web.py) - the old one keeps port 8080
 web_pids() { for _d in /proc/[0-9]*; do if grep -q "u-panel-web.py" "$_d/cmdline" 2>/dev/null || grep -q "u-script-web.py" "$_d/cmdline" 2>/dev/null; then echo "${_d#/proc/}"; fi; done; }
 web_kill_servers() { for _p in $(web_pids); do kill "$_p" 2>/dev/null; done; pkill -f "u-panel-web.py" 2>/dev/null; pkill -f "u-script-web.py" 2>/dev/null; }
