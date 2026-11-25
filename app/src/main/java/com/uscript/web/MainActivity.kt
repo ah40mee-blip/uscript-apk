@@ -279,13 +279,28 @@ class MainActivity : AppCompatActivity() {
 
     // ENTER PANEL: افتح البانل على طول - من غير SSH
     // سيرفر الـ WebUI بتاع Enigma2 بيشتغل لوحده، مش محتاج أمر start
+    // ENTER: استنى السيرفر يقوم الأول - جرّب 8080 لحد 30 ثانية قبل ما يفتح
     private fun onEnterPanelClicked() {
-        val (ip, _, _) = saveFields()
+        val (ip, port, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
-        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
-        webView.visibility = View.VISIBLE
-        webView.loadUrl(baseUrl)
+        showWelcome("Waiting for server...")
+        Thread {
+            var up = false
+            for (i in 1..15) {
+                try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
+            }
+            runOnUiThread {
+                stopBar(); welcomeView.visibility = View.GONE
+                if (up) {
+                    ipView.visibility = View.GONE; discView.visibility = View.GONE
+                    webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
+                } else {
+                    ipView.visibility = View.VISIBLE
+                    statusText.setTextColor(Color.parseColor("#F472B6"))
+                    statusText.text = "Cannot reach http://$ip:$port - اتأكد السيرفر شغال ودوس ENTER PANEL تاني"
+                }
+            }
+        }.start()
     }
 
 private fun onConfigureClicked() {
@@ -303,9 +318,16 @@ private fun onConfigureClicked() {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.GONE
                     discView.visibility = View.GONE
-                    try { webView.clearCache(true) } catch (e: Exception) {}
-                    webView.visibility = View.VISIBLE
-                    webView.loadUrl(baseUrl)
+                    // استنى السيرفر يقوم بعد --restart-server قبل ما نفتح (كان بيفتح وهو لسه بيقوم فيضرب Cannot reach)
+                    Thread {
+                        var up = false
+                        for (i in 1..15) { try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) } }
+                        runOnUiThread {
+                            welcomeView.visibility = View.GONE; ipView.visibility = View.GONE; discView.visibility = View.GONE
+                            if (up) { try { webView.clearCache(true) } catch (e: Exception) {}; webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl) }
+                            else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Server not up yet on 8080 - دوس ENTER U-PANEL بعد 10 ثواني" }
+                        }
+                    }.start()
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
