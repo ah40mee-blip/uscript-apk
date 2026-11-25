@@ -130,9 +130,9 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#070B1E")) }
 
         // ===== 1) Splash متحرك =====
-        val splashLogo = premiumLogo(150, 88f)
-        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 36f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val splashSub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 15f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val splashLogo = premiumLogo(165, 95f)
+        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val splashSub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val splashCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
@@ -140,9 +140,9 @@ class MainActivity : AppCompatActivity() {
         splashView = FrameLayout(this).apply { addView(splashCol) }
 
         // ===== 2) صفحة الخانات =====
-        val formLogo = premiumLogo(110, 62f)
-        val title = TextView(this).apply { text = "U-Panel"; textSize = 38f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 15f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val formLogo = premiumLogo(125, 70f)
+        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
         portField = field("Port  ( 8080 )", savedPort)
         usernameField = field("Username  ( root )", savedUser)
@@ -159,16 +159,16 @@ class MainActivity : AppCompatActivity() {
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
         // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
-        val wLogo = premiumLogo(120, 68f)
-        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 28f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 16f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val wLogo = premiumLogo(135, 76f)
+        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 34f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 20f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val track = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(280), dp(10)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
+            layoutParams = LinearLayout.LayoutParams(dp(300), dp(14)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
             background = GradientDrawable().apply { cornerRadius = dp(4).toFloat(); setColor(Color.parseColor("#1E2A55")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
         }
         progressFill = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(0, dp(10))
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(6).toFloat() }
+            layoutParams = FrameLayout.LayoutParams(0, dp(14))
+            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(8).toFloat() }
         }
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
@@ -242,7 +242,7 @@ class MainActivity : AppCompatActivity() {
             duration = 2200; repeatCount = android.animation.ValueAnimator.INFINITE
             addUpdateListener { a ->
                 val f = a.animatedValue as Float
-                progressFill.layoutParams.width = (dp(280) * f).toInt()
+                progressFill.layoutParams.width = (dp(300) * f).toInt()
                 progressFill.requestLayout()
             }
         }
