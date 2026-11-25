@@ -5,8 +5,8 @@ import com.jcraft.jsch.JSch
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
-// ScriptInstaller - يزرع الاسكريبت في مكانه الأصلي اللي الـ WebUI متعود عليه
-// /media/hdd/U-Panel/uscript.sh - مفيش نقل ولا تصليح مسارات
+// ScriptInstaller - يزرع الاسكريبت في /media/hdd/U-Panel/ ويشغّله
+// CONFIGURE PANEL = زرع + تشغيل + Panel Configured
 object ScriptInstaller {
     const val ASSET_FILE = "uscript.sh"
     const val PANEL_DIR = "/media/hdd/U-Panel"
@@ -26,38 +26,41 @@ object ScriptInstaller {
                 s.connect(10000); s
             } catch (e: Exception) { return false to "مش قادر اتصل بـ SSH على $ip:22 - ${e.message}" }
             try {
+                // 1) اعمل الفولدر
                 var ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("mkdir -p $PANEL_DIR /media/hdd/backup && chmod 755 $PANEL_DIR && echo MKDIR_OK")
+                ch.setCommand("mkdir -p $PANEL_DIR && chmod 755 $PANEL_DIR && echo MKDIR_OK")
                 var out = ByteArrayOutputStream(); ch.setOutputStream(out); ch.connect(10000)
                 while (!ch.isClosed) Thread.sleep(300)
                 try { ch.disconnect() } catch (e: Exception) {}
 
+                // 2) ازرع الاسكريبت في /media/hdd/U-Panel/
                 val sftp = session.openChannel("sftp") as com.jcraft.jsch.ChannelSftp
                 sftp.connect(10000)
                 try { sftp.put(ByteArrayInputStream(bytes), SCRIPT_PATH) } catch (e: Exception) {
                     return false to "فشل زرع الاسكريبت في $PANEL_DIR: ${e.message}"
                 } finally { try { sftp.disconnect() } catch (e: Exception) {} }
 
-                // شغّله بأمر التشغيل من مكانه الأصلي - من غير أي تصليح مسارات
+                // 3) شغّله - السيرفر هيقوم اوتوماتيك من جوه الاسكريبت
                 ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
-                ch.setCommand("""export TERM=dumb; chmod +x $SCRIPT_PATH; cd $PANEL_DIR; setsid nohup sh $SCRIPT_PATH </dev/null > $PANEL_DIR/.run.log 2>&1 & disown; echo RUN_OK; sleep 2; cat $PANEL_DIR/.run.log 2>/dev/null | tail -20""")
+                ch.setCommand("export TERM=dumb; chmod +x $SCRIPT_PATH && sh $SCRIPT_PATH install < /dev/null")
                 out = ByteArrayOutputStream(); val err = ByteArrayOutputStream()
                 ch.setOutputStream(out); ch.setErrStream(err)
                 ch.connect(10000)
                 var saw = false; var w = 0
-                while (!ch.isClosed && w < 60) {
+                while (!ch.isClosed && w < 120) {
                     Thread.sleep(500); w++
                     val so = out.toString()
-                    if (so.contains("RUN_OK") || (so.contains("Reboot Guard") && so.contains("Universal Edition"))) { Thread.sleep(1000); saw = true; break }
+                    if (so.contains("Reboot Guard") && so.contains("Universal Edition")) { Thread.sleep(2000); saw = true; break }
                 }
                 val exit = ch.exitStatus
                 fun clean(t: String): String { return t.replace(Regex("\u001B\\[[0-9;]*[a-zA-Z]"), "").trim() }
                 val outT = clean(out.toString()); val errT = clean(err.toString())
                 try { ch.disconnect() } catch (e: Exception) {}
-                val ok = outT.contains("RUN_OK") || saw || outT.contains("[OK]") || outT.contains("Universal Edition")
-                if (exit != 0 && exit != -1 && !ok) {
+                val ok = saw || outT.contains("[OK]") || outT.contains("Universal Edition")
+                if (exit != 0 && !ok) {
                     return false to "الزرع تم بس التشغيل رجع خطأ (exit=$exit). ${if (errT.isNotEmpty()) errT else outT}".take(300)
                 }
+                // استنى ثانيتين السيرفر يقوم
                 Thread.sleep(2000)
                 return true to ""
             } finally { try { session.disconnect() } catch (e: Exception) {} }
@@ -70,3 +73,4 @@ object ScriptInstaller {
         return installWithError(context, ip, rootPassword, onProgress).first
     }
 }
+
