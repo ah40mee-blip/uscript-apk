@@ -2201,6 +2201,14 @@ def _layout_mock(_lk):
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
+    def _dbg(self, msg):
+        # V6.20 DIAG - checkpoint log with immediate flush+fsync, so it survives
+        # even if the process is killed mid-request (buffered writes would be lost).
+        try:
+            with open("/tmp/prepare-debug.log", "a") as _f:
+                _f.write(msg + "\n"); _f.flush()
+                import os as _o2; _o2.fsync(_f.fileno())
+        except Exception: pass
     def handle_error(self, request, client_address):
         # V6.20 DIAG - log the FULL traceback whenever a request drops the
         # connection (e.g. /multiboot/prepare "server dropped"). Without this,
@@ -3956,6 +3964,7 @@ class H(BaseHTTPRequestHandler):
             _en = "ENABLED" if _sv.get("LOCK_MAC_ENABLED", "") == "1" else "DISABLED"
             _ps = "SET" if _sv.get("LOCK_MAC_PIN_ENABLED", "") == "1" else "NOT SET"
             body = "<h1>Lock By Mac</h1><div class='card'><b>Lock By Mac:</b> %s<br><b>MAC Lock PIN:</b> %s<br><span class='small'>Every change needs your MAC Lock PIN. If no MAC Lock PIN is set yet, leave Current PIN empty and fill New PIN twice - Enable will ask you to set it first.</span></div><form method='post' action='/setting/mac-change'><label>Action</label><select name='action'><option value='enable'>Enable Lock (bind to THIS device)</option><option value='disable'>Disable Lock</option><option value='transfer'>Transfer to New Device</option><option value='setpin'>Set / Change MAC Lock PIN</option></select><input name='pin' type='password' placeholder='Current MAC Lock PIN'><input name='newpin' type='password' placeholder='New MAC Lock PIN (for Enable-first-time / Set PIN)'><input name='newpin2' type='password' placeholder='Repeat new MAC Lock PIN'><button>Run</button></form><a href='/panel'>Back to Panel Menu</a><a href='/'>Back</a>" % (html.escape(_en), html.escape(_ps))
+            self._dbg("PREPARE: sending html, body=%d chars" % len(body))
             self.send_html(body); return
         if u.path == "/setting/web":
             _bind = "0.0.0.0"
@@ -4230,6 +4239,7 @@ class H(BaseHTTPRequestHandler):
             elif u.path == "/multiboot/prepare":
                 # V6.20 - DEVICE-AWARE: same entry, different option per family.
                 # Vu+ / Dreambox never get the partitioner form - they get their own option.
+                self._dbg("PREPARE: entered handler")
                 _fam="hisilicon"
                 try:
                     import re as _reF
@@ -4253,6 +4263,7 @@ class H(BaseHTTPRequestHandler):
                     "<div class='card'><b>Option B - DM800 / DM8000 / DM820 / DM7080 / DM520 / DM525:</b><br>Use the <b>MeoBoot</b> plugin (or Barry Allen on supported models): install it on the running image, let IT prepare the USB / CF / SD card, then install images from inside the plugin.</div>"
                     "<a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
+                self._dbg("PREPARE: fam=%s" % _fam)
                 _disk=(q.get("disk") or [""])[0]; _slots=(q.get("slots") or [""])[0]; _size=(q.get("size") or [""])[0]; _cf=(q.get("confirm") or [""])[0]
                 if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _cf not in ("ERASE", "erase", "e", "E"):
                     # V6.20 - RE-PARTITION preview: disk chosen, ERASE not typed yet.
@@ -4266,11 +4277,13 @@ class H(BaseHTTPRequestHandler):
                             if ("/dev/%s" % _disk) in _bl: _lay+=html.escape(_bl)+"<br>"
                         if not _lay: _lay="(no partitions found - disk looks empty)"
                     except Exception: _lay="(could not read current layout)"
-                    body=("<h1>Prepare Disk for Multiboot - Confirm</h1><div class='card'><b>/dev/%s - CURRENT layout (will ALL be erased):</b><br><span class='small'>%s</span></div>"
-                    "<div class='card'><b>NEW layout:</b> p1 FAT32 512M BOOT + %s slots x %sG ext4 (linux1..linux%s)</div>"
-                    "<form method='get' action='/multiboot/prepare'><input type='hidden' name='disk' value='%s'><input type='hidden' name='slots' value='%s'><input type='hidden' name='size' value='%s'>"
-                    "<label>Type ERASE or e to erase /dev/%s and create the new slots:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>") % (_disk, _lay, _slots, _size, _slots, _disk, _slots, _size, _disk)
+                    # V6.20 FIX: was "%" formatting with a literal width:100% in the
+                    # template -> TypeError -> empty reply (curl 52). Concatenation only.
+                    body=("<h1>Prepare Disk for Multiboot - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
+                    "<div class='card'><b>NEW layout:</b> p1 FAT32 512M BOOT + " + _slots + " slots x " + _size + "G ext4 (linux1..linux" + _slots + ")</div>"
+                    "<form method='get' action='/multiboot/prepare'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'>"
+                    "<label>Type ERASE or e to erase /dev/" + _disk + " and create the new slots:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
                 if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _cf in ("ERASE", "erase", "e", "E"):
                     ACTIONS["multiboot-prepare-%s" % _disk] = ("Multiboot - Prepare /dev/%s for Multiboot (%s slots x %sG - ERASES DISK)" % (_disk, _slots, _size), True, ["--web-multiboot-prepare", _disk, _slots, _size])
@@ -4321,15 +4334,16 @@ class H(BaseHTTPRequestHandler):
                             _opts+="<option value='%s'>%d - /dev/%s - %d MB - %s</option>" % (_d, _di, _d, _sz, _kind)
                         except Exception: pass  # one bad disk must never kill the page/server
                 except Exception: pass
+                self._dbg("PREPARE: disk scan done, opts=%d chars" % len(_opts))
                 if not _opts:
                     body="<h1>Prepare Disk for Multiboot</h1><div class='card'>No external disk found - plug a USB HDD / USB flash / SD / memory card first. The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
                 else:
-                    body=("<h1>Prepare Disk for Multiboot</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + p2 EXTENDED + one ext4 logical partition per slot (linux1..linuxN, p5+). Up to 20 slots. After preparing: reboot, then Diagnose Slots to confirm your box boots from this disk - some boxes only boot multiboot from internal flash.</span></div>"
-                    "<form method='get' action='/multiboot/prepare'><label>Disk (whole disk will be ERASED):</label><select name='disk'>%s</select>"
+                    body=("<h1>Prepare Disk for Multiboot</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + p2 EXTENDED + one ext4 logical partition per slot (linux1..linuxN, p5+). Up to 20 slots. After preparing: reboot, then Diagnose Slots to confirm the slots are readable.</span></div>"
+                    "<form method='get' action='/multiboot/prepare'><label>Disk (whole disk will be ERASED):</label><select name='disk'>" + _opts + "</select>"
                     "<label>Slots (2-20):</label><select name='slots'>" + "".join("<option value='%d'%s>%d slots</option>" % (_n, " selected" if _n==4 else "", _n) for _n in range(2,21)) + "</select>"
                     "<label>Size per slot (GB):</label><select name='size'><option value='2'>2 GB</option><option value='3'>3 GB</option><option value='4' selected>4 GB</option><option value='6'>6 GB</option><option value='8'>8 GB</option></select>"
                     "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>") % _opts
+                    "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>")
             elif u.path == "/download-image/pin":
                 _f=(q.get("file") or [""])[0]
                 if _f and "/" not in _f:
