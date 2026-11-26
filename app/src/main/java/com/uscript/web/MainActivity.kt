@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
-    private lateinit var configureBtn: Button
+    private lateinit var configureBtn: Button // بقى Connect Panel - بيعمل Configure + دخول أوتوماتيك
     private lateinit var enterPanelBtn: Button
     private lateinit var statusText: TextView
     private lateinit var webView: WebView
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 1) Splash متحرك =====
         val splashLogo = premiumLogo(165, 95f)
-        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         val splashSub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val splashCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
@@ -141,7 +141,7 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 2) صفحة الخانات =====
         val formLogo = premiumLogo(125, 70f)
-        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
         portField = field("Port  ( 8080 )", savedPort)
@@ -149,12 +149,12 @@ class MainActivity : AppCompatActivity() {
         passwordField = field("Password  ( root )", savedPw, true)
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
-        configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
+        configureBtn = btn("Connect Panel  →", "#0A0A0A") { onConnectPanelClicked() } // أسود جلوسي - بيعمل Configure + دخول أوتوماتيك
         enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
             addView(formLogo); addView(title); addView(sub); addView(ipField); addView(portField)
-            addView(configureBtn); addView(enterPanelBtn); addView(statusText)
+            addView(configureBtn); addView(statusText) // زرار واحد بس: Connect Panel
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         splashSub.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         Handler(Looper.getMainLooper()).postDelayed({
             splashView.visibility = View.GONE; ipView.visibility = View.VISIBLE
-        }, 1600)
+        }, 5000) // Splash تقعد 5 ثواني
     }
 
     private fun saveFields(): Triple<String, String, String> {
@@ -311,6 +311,44 @@ class MainActivity : AppCompatActivity() {
                     statusText.setTextColor(Color.parseColor("#F472B6"))
                     statusText.text = "Cannot reach http://$ip:$port - اتأكد السيرفر شغال ودوس ENTER PANEL تاني"
                 }
+            }
+        }.start()
+    }
+
+
+    // Connect Panel: بيعمل اللي كان بيعمله Configure + بيدخل أوتوماتيك
+    // وقبل الدخول: شاشة جلوسي Welcome to U-Panel تعمل Fade Out وتظهر Control ur Enigma Life
+    private fun onConnectPanelClicked() {
+        val (ip, _, pw) = saveFields()
+        if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
+        showWelcome("Configuring U-Panel")
+        Thread {
+            val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
+            runOnUiThread {
+                stopBar()
+                if (!ok) { welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configure failed: $err"; return@runOnUiThread }
+                // شاشة Welcome جلوسي: Welcome to U-Panel -> Fade Out -> Control ur Enigma Life -> دخول
+                welcomeConnecting.text = "Welcome to U-Panel"
+                welcomeConnecting.textSize = 32f
+                welcomeConnecting.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+                welcomeConnecting.letterSpacing = 0.05f
+                welcomeConnecting.animate().alpha(1f).setDuration(800).start()
+                android.os.Handler(Looper.getMainLooper()).postDelayed({
+                    welcomeConnecting.animate().alpha(0f).setDuration(800).withEndAction {
+                        welcomeConnecting.text = "Control ur Enigma Life"
+                        welcomeConnecting.textSize = 26f
+                        welcomeConnecting.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+                        welcomeConnecting.letterSpacing = 0.04f
+                        welcomeConnecting.animate().alpha(1f).setDuration(800).start()
+                        android.os.Handler(Looper.getMainLooper()).postDelayed({
+                            welcomeView.animate().alpha(0f).setDuration(800).withEndAction {
+                                welcomeView.visibility = View.GONE; welcomeView.alpha = 1f
+                                // دخول أوتوماتيك للبانل
+                                onEnterPanelClicked()
+                            }.start()
+                        }, 5000) // Control ur Enigma Life تقعد 5 ثواني
+                    }.start()
+                }, 5000) // Welcome to U-Panel تقعد 5 ثواني
             }
         }.start()
     }
