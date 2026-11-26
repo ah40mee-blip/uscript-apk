@@ -15,7 +15,8 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.25 - U-PANEL" | # V6.24 (26 Nov): MULTIBOOT flash+switch: push STARTUP + kernel to EVERY BOOT partition (bootloader may read a different BOOT than mounted /boot) - flashed slot now shows in bootloader Multiboot + switch actually reaches it instead of Recovery | V6.23: LIVE TV TS watchdog auto-fallback | # V6.23 (26 Nov): LIVE TV - TS watchdog: drop buffered>2s gate, no-picture after 8s now ALWAYS falls back to transcode (ffmpeg H.264 -> VP8 -> gstreamer) instead of printing "press play again" | V4.99 behaviour: gstreamer VP8 used when ffmpeg has no H.264 | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
+_SCRIPT_VERSION="V 6.26 - U-PANEL" | # V6.26 (26 Nov): MULTIBOOT - Sync/Push refuse 0-byte STARTUP files; Fix Bootmenu rebuilds missing/0-byte STARTUP_LINUX_N from real slot content + re-aligns active STARTUP with current slot on all BOOTs; Rollback restores to all BOOTs + refuses 0-byte backup. V6.21-V6.25 (Live TV, Arabic, flash unmount fix) kept intact.
+# V6.24 (26 Nov): MULTIBOOT flash+switch: push STARTUP + kernel to EVERY BOOT partition (bootloader may read a different BOOT than mounted /boot) - flashed slot now shows in bootloader Multiboot + switch actually reaches it instead of Recovery | V6.23: LIVE TV TS watchdog auto-fallback | # V6.23 (26 Nov): LIVE TV - TS watchdog: drop buffered>2s gate, no-picture after 8s now ALWAYS falls back to transcode (ffmpeg H.264 -> VP8 -> gstreamer) instead of printing "press play again" | V4.99 behaviour: gstreamer VP8 used when ffmpeg has no H.264 | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
 # V6.20: THEME GROUPS RE-ORGANIZED + NEW Black & Navy themes, premium grouped cards.
 # V6.20: FONTS PER LANGUAGE - EN/AR/FR font lists filtered by current PANEL_LANG in Panel UI Font page + Theme setting.
 # V6.20: LANGUAGE - WebUI labels only EN/AR/FR via U-Panel Setting > Language setting (/setting/language), file /etc/u-panel-lang.conf, RTL for Arabic. Commands/URLs/CLI unchanged.
@@ -10136,7 +10137,7 @@ case "$1" in
         exit 0
       fi
       mount -o remount,rw /boot 2>/dev/null
-      [ -f /boot/u-panel-STARTUP.bak ] && cp /boot/u-panel-STARTUP.bak /boot/STARTUP 2>/dev/null
+      if [ -f /boot/u-panel-STARTUP.bak ] && [ -s /boot/u-panel-STARTUP.bak ]; then cp /boot/u-panel-STARTUP.bak /boot/STARTUP 2>/dev/null; for _RB_BP in /dev/mmcblk*p* /dev/sd*[0-9]*; do [ -b "$_RB_BP" ] || continue; [ "$(blkid "$_RB_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)" = "BOOT" ] || continue; _RB_MP=$(awk -v _d="$_RB_BP" '$1 == _d {print $2; exit}' /proc/mounts 2>/dev/null); if [ -n "$_RB_MP" ] && [ "$_RB_MP" != "/boot" ]; then cp /boot/u-panel-STARTUP.bak "$_RB_MP/STARTUP" 2>/dev/null; fi; done; fi
       sync
       rm -f /boot/u-panel-rollback.conf
       reboot -f 2>/dev/null; sleep 3; init 6 2>/dev/null
@@ -10887,6 +10888,7 @@ multiboot_prepare_disk() {
 # switch to it had no effect there (box fell into Recovery). Fresh copy wins.
 upanel_push_boot_file() {
   _PBF_SRC="$1"; [ -f "$_PBF_SRC" ] || return 0
+  if [ ! -s "$_PBF_SRC" ]; then echo "[PUSH-SKIP] $_PBF_SRC is 0 bytes - refusing to push an empty STARTUP (V6.26)."; return 1; fi
   _PBF_BN=$(basename "$_PBF_SRC")
   if command -v timeout >/dev/null 2>&1; then _PBF_TO="timeout 15"; else _PBF_TO=""; fi
   _PBF_PUSHED=0
@@ -11009,6 +11011,7 @@ multiboot_sync_startup() {
       _FC=0
       for _SF in "$_SCAN"/STARTUP_LINUX_* "$_SCAN"/STARTUP_[0-9]*; do
         [ -f "$_SF" ] || continue
+        if [ ! -s "$_SF" ]; then echo "  [SYNC-SKIP] $(basename "$_SF") is 0 bytes on $_BP - NOT copying an empty STARTUP (V6.26)."; continue; fi
         _BN=$(basename "$_SF")
         if [ -f "/tmp/upanel-sync-merged/$_BN" ]; then cmp -s "$_SF" "/tmp/upanel-sync-merged/$_BN" || echo "  [SYNC-WARN] $_BN differs between BOOT partitions - keeping first copy"; continue; fi
         cp "$_SF" "/tmp/upanel-sync-merged/$_BN" 2>/dev/null && _FC=$((_FC+1))
@@ -11022,6 +11025,7 @@ multiboot_sync_startup() {
   # holds the slots of the disk the box booted from (internal flash slots).
   for _SF in /boot/STARTUP_LINUX_* /boot/STARTUP_[0-9]*; do
     [ -f "$_SF" ] || continue
+    if [ ! -s "$_SF" ]; then echo "[SYNC-SKIP] /boot/$(basename "$_SF") is 0 bytes - NOT copying an empty STARTUP (V6.26)."; continue; fi
     _BN=$(basename "$_SF")
     if [ -f "/tmp/upanel-sync-merged/$_BN" ]; then cmp -s "$_SF" "/tmp/upanel-sync-merged/$_BN" || echo "  [SYNC-WARN] $_BN differs between BOOT partitions - keeping first copy"; continue; fi
     cp "$_SF" "/tmp/upanel-sync-merged/$_BN" 2>/dev/null && echo "[SYNC] /boot: $_BN collected."
@@ -11173,6 +11177,7 @@ upanel_boot_partitions() {
 
 upanel_startup_push_to_boots() { # $1 = STARTUP file in /boot
   _SRC="$1"; [ -f "$_SRC" ] || { echo 0; return 1; }
+  if [ ! -s "$_SRC" ]; then echo "[PUSH-SKIP] $_SRC is 0 bytes - refusing to push an empty STARTUP (V6.26)."; echo 0; return 1; fi
   _BN=$(basename "$_SRC"); _N=0
   for _BP in $(upanel_boot_partitions); do
     _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
@@ -11451,15 +11456,59 @@ upanel_distribute_kernel() { # $1 = basename, $2 = source
 # chain: Sync STARTUPs -> restore internal slots -> hide empty -> apply names.
 # Safe: Hide-empty's delete_one refuses STARTUPs whose root= is not a
 # LABEL=linuxN partition, so the just-restored internal STARTUPs survive it.
+
+# V6.26 NEW: rebuild a missing / 0-byte STARTUP_LINUX_N from the slot's REAL content.
+# V6.24 fixed Switch (push to every BOOT), but nothing rebuilt a STARTUP that was
+# already 0 bytes - Sync just copied the empty file around, so the slot never
+# showed in Recovery. This mounts each slot, proves it holds an image
+# (image-version / enigma2), then rebuilds its STARTUP from a healthy template.
+# Internal 1-4: root/subdir per slot + its own kernel partition (mmcblk0p19-22).
+# External 5+: root = slot partition, rootsubdir=/.
+upanel_boot_rebuild_missing() {
+  _RB_REBUILT=0
+  for _RB_N in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
+    if [ -f "/boot/STARTUP_LINUX_$_RB_N" ] && [ -s "/boot/STARTUP_LINUX_$_RB_N" ]; then continue; fi
+    _RB_ROOTINFO=$(upanel_root "$_RB_N" 2>/dev/null) || continue
+    case "$_RB_ROOTINFO" in *"|"*) _RB_RP="${_RB_ROOTINFO%%|*}"; _RB_SUB="${_RB_ROOTINFO#*|}" ;; *) _RB_RP="$_RB_ROOTINFO"; _RB_SUB="" ;; esac
+    [ -z "$_RB_RP" ] && continue
+    mkdir -p /tmp/upanel-rebuild 2>/dev/null
+    mount -o ro "$_RB_RP" /tmp/upanel-rebuild 2>/dev/null || continue
+    _RB_DIR="/tmp/upanel-rebuild"; [ -n "$_RB_SUB" ] && [ "$_RB_SUB" != "/" ] && _RB_DIR="/tmp/upanel-rebuild/$_RB_SUB"
+    _RB_HAS=0; [ -f "$_RB_DIR/etc/image-version" ] && _RB_HAS=1; [ -f "$_RB_DIR/usr/bin/enigma2" ] && _RB_HAS=1
+    umount /tmp/upanel-rebuild 2>/dev/null
+    [ "$_RB_HAS" = "0" ] && continue
+    _RB_TPL=""
+    for _RB_T in 1 2 3 4; do if [ -f "/boot/STARTUP_LINUX_$_RB_T" ] && [ -s "/boot/STARTUP_LINUX_$_RB_T" ]; then _RB_TPL="/boot/STARTUP_LINUX_$_RB_T"; break; fi; done
+    [ -z "$_RB_TPL" ] && continue
+    mount -o remount,rw /boot 2>/dev/null
+    if [ "$_RB_N" -le 4 ]; then
+      sed -e "s|root=[^ ]*|root=$_RB_RP|" -e "s|rootsubdir=[^ ]*|rootsubdir=linuxrootfs$_RB_N|" -e "s|kernel=[^ ]*|kernel=/dev/mmcblk0p$((18+_RB_N))|" "$_RB_TPL" > "/boot/STARTUP_LINUX_$_RB_N" 2>/dev/null
+    else
+      sed -e "s|root=[^ ]*|root=$_RB_RP|" -e "s|rootsubdir=[^ ]*|rootsubdir=/|" "$_RB_TPL" > "/boot/STARTUP_LINUX_$_RB_N" 2>/dev/null
+    fi
+    if [ -s "/boot/STARTUP_LINUX_$_RB_N" ]; then _RB_REBUILT=$((_RB_REBUILT+1)); echo "[REBUILD] STARTUP_LINUX_$_RB_N rebuilt from real content (root=$_RB_RP)"; upanel_push_boot_file "/boot/STARTUP_LINUX_$_RB_N" >/dev/null 2>&1; else rm -f "/boot/STARTUP_LINUX_$_RB_N"; fi
+  done
+  mount -o remount,ro /boot 2>/dev/null
+  [ "$_RB_REBUILT" -gt 0 ] && echo "[REBUILD] $_RB_REBUILT STARTUP file(s) rebuilt." || echo "[REBUILD] Nothing to rebuild - all STARTUP files present and non-empty."
+  return 0
+}
+
 upanel_fix_bootmenu() {
-  show_banner; line; info "Fix Bootmenu - ONE CLICK: Sync + Hide empty + Names"
+  show_banner; line; info "Fix Bootmenu - ONE CLICK: Rebuild + Sync + Hide empty + Names"
   echo "No re-partition - nothing is erased. Your images stay."
-  echo "=== Step 1/3: Sync STARTUP files to every BOOT partition ==="
+  echo "=== Step 0/4: Rebuild missing / 0-byte STARTUP files from real slot content ==="
+  upanel_boot_rebuild_missing
+  echo "=== Step 1/4: Sync STARTUP files to every BOOT partition ==="
   multiboot_sync_startup
-  echo ""; echo "=== Step 2/3: Hide empty slots in Recovery ==="
+  echo ""; echo "=== Step 2/4: Hide empty slots in Recovery ==="
   upanel_recovery_names 4
-  echo ""; echo "=== Step 3/3: Apply image names to all slots ==="
+  echo ""; echo "=== Step 3/4: Apply image names to all slots ==="
   upanel_recovery_names 2
+  echo ""; echo "=== Step 4/4: Re-align active STARTUP with CURRENT slot on ALL BOOTs ==="
+  _FB_CS=$(upanel_current 2>/dev/null)
+  if [ -n "$_FB_CS" ] && [ -f "/boot/STARTUP_LINUX_$_FB_CS" ] && [ -s "/boot/STARTUP_LINUX_$_FB_CS" ]; then
+    if cmp -s /boot/STARTUP "/boot/STARTUP_LINUX_$_FB_CS" 2>/dev/null; then echo "[FIX-BOOTMENU] Active STARTUP already = SLOT $_FB_CS - pushing it to all BOOTs to be sure."; upanel_push_boot_file "/boot/STARTUP"; else echo "[FIX-BOOTMENU] Active STARTUP did NOT match current SLOT $_FB_CS - repairing on all BOOTs (V6.26)."; mount -o remount,rw /boot 2>/dev/null; cp "/boot/STARTUP_LINUX_$_FB_CS" /boot/STARTUP 2>/dev/null; sync; mount -o remount,ro /boot 2>/dev/null; upanel_push_boot_file "/boot/STARTUP"; fi
+  else echo "[FIX-BOOTMENU] Cannot determine current slot - active STARTUP left untouched."; fi
   echo ""; echo "[FIX-BOOTMENU] Done. Reboot to Recovery - all slots with images show, with names."
 }
 
