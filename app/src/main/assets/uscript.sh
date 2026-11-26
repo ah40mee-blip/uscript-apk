@@ -14,7 +14,8 @@
 # V3.1 + U-Panel Folders + Plugins Backup Python Major.Minor Only - Python3.14
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
-_SCRIPT_VERSION="V 6.24 - U-PANEL" | # V6.24 (26 Nov): MULTIBOOT flash+switch: push STARTUP + kernel to EVERY BOOT partition (bootloader may read a different BOOT than mounted /boot) - flashed slot now shows in bootloader Multiboot + switch actually reaches it instead of Recovery | V6.23: LIVE TV TS watchdog auto-fallback | # V6.23 (26 Nov): LIVE TV - TS watchdog: drop buffered>2s gate, no-picture after 8s now ALWAYS falls back to transcode (ffmpeg H.264 -> VP8 -> gstreamer) instead of printing "press play again" | V4.99 behaviour: gstreamer VP8 used when ffmpeg has no H.264 | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
+# V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
+_SCRIPT_VERSION="V 6.25 - U-PANEL" | # V6.24 (26 Nov): MULTIBOOT flash+switch: push STARTUP + kernel to EVERY BOOT partition (bootloader may read a different BOOT than mounted /boot) - flashed slot now shows in bootloader Multiboot + switch actually reaches it instead of Recovery | V6.23: LIVE TV TS watchdog auto-fallback | # V6.23 (26 Nov): LIVE TV - TS watchdog: drop buffered>2s gate, no-picture after 8s now ALWAYS falls back to transcode (ffmpeg H.264 -> VP8 -> gstreamer) instead of printing "press play again" | V4.99 behaviour: gstreamer VP8 used when ffmpeg has no H.264 | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
 # V6.20: THEME GROUPS RE-ORGANIZED + NEW Black & Navy themes, premium grouped cards.
 # V6.20: FONTS PER LANGUAGE - EN/AR/FR font lists filtered by current PANEL_LANG in Panel UI Font page + Theme setting.
 # V6.20: LANGUAGE - WebUI labels only EN/AR/FR via U-Panel Setting > Language setting (/setting/language), file /etc/u-panel-lang.conf, RTL for Arabic. Commands/URLs/CLI unchanged.
@@ -1139,6 +1140,204 @@ UI_TEXT = {
   "Reboot Receiver": ("Reboot Receiver", "إعادة تشغيل الرسيفر", "Redémarrer le récepteur"),
   "Restart Enigma Only": ("Restart Enigma Only", "إعادة تشغيل إنيجما فقط", "Redémarrer Enigma uniquement"),
   "Disk Cleanup": ("Disk Cleanup", "تنظيف القرص", "Nettoyage du disque"),
+
+  "Confirm": ("Confirm", "تأكيد", "Confirmer"),
+   "Run this command on the receiver?": ("Run this command on the receiver?", "تشغّل الأمر ده على الرسيفر؟", "Exécuter cette commande sur le récepteur ?"),
+   "It runs as root - only run commands from sources you trust.": ("It runs as root - only run commands from sources you trust.", "بيشتغل كـ root - شغّل أوامر من مصادر بتثق فيها بس.", "Elle s'exécute en root - n'exécutez que des commandes de sources de confiance."),
+   "YES - Run command": ("YES - Run command", "نعم - شغّل الأمر", "Oui - Exécuter la commande"),
+   "Empty command": ("Empty command", "أمر فاضي", "Commande vide"),
+
+  "Cancel": ("Cancel", "إلغاء", "Annuler"),
+
+  "YES - ": ("YES - ", "نعم - ", "Oui - "),
+
+  "This cannot be undone. Make sure you really want it.": ("This cannot be undone. Make sure you really want it.", "ده مينفعش يتلغي. اتأكد إنك عايز كده فعلاً.", "Ceci ne peut pas être annulé. Assurez-vous de vraiment le vouloir."),
+
+  "Restart Enigma Only (no full reboot)": ("Restart Enigma Only (no full reboot)", "إعادة تشغيل إنيجما فقط (من غير ريستارت كامل)", "Redémarrer Enigma seulement (sans redémarrage complet)"),
+
+  "Wipe Slot": ("Wipe Slot", "مسح السلوت", "Effacer le slot"),
+
+  "Job not found": ("Job not found", "المهمة مش موجودة", "Tâche introuvable"),
+
+  "Running...": ("Running...", "جارٍ التشغيل...", "En cours..."),
+
+  "started %s - %s seconds elapsed - page refreshes every 3 seconds.": ("started %s - %s seconds elapsed - page refreshes every 3 seconds.", "بدأ %s - مرّ %s ثانية - الصفحة بتتحدّث كل 3 ثواني.", "démarré %s - %s secondes écoulées - la page s'actualise toutes les 3 secondes."),
+
+  "%s lines - keep this page open, the log streams line by line. Do not power off the receiver.": ("%s lines - keep this page open, the log streams line by line. Do not power off the receiver.", "%s سطر - خلّي الصفحة مفتوحة، السجل بيظهر سطر بسطر. متفصلش الرسيفر.", "%s lignes - gardez cette page ouverte, le journal défile ligne par ligne. N'éteignez pas le récepteur."),
+
+  "- Done - finished in %s seconds": ("- Done - finished in %s seconds", "- تم - خلّص في %s ثانية", "- Terminé - fini en %s secondes"),
+
+  "Free disk space. Each category asks for confirm before deleting.": ("Free disk space. Each category asks for confirm before deleting.", "فضّي مساحة. كل قسم هيطلب تأكيد قبل المسح.", "Libérez de l'espace disque. Chaque catégorie demandera confirmation avant suppression."),
+
+  "Nothing to clean - disk looks tidy.": ("Nothing to clean - disk looks tidy.", "مفيش حاجة تتمسح - القرص نضيف.", "Rien à nettoyer - le disque est propre."),
+
+  "MB reclaimable": ("MB reclaimable", "ميجا قابلة للاسترجاع", "Mo récupérables"),
+
+  "Clean this": ("Clean this", "نضّف ده", "Nettoyer"),
+
+  "Confirm Cleanup": ("Confirm Cleanup", "تأكيد التنظيف", "Confirmer le nettoyage"),
+
+  "Delete this?": ("Delete this?", "امسح ده؟", "Supprimer ceci ?"),
+
+  "YES - Clean": ("YES - Clean", "نعم - نضّف", "Oui - Nettoyer"),
+
+  "Not found": ("Not found", "مش موجود", "Introuvable"),
+
+  "Timeshift files (%s)": ("Timeshift files (%s)", "ملفات تايم شيفت (%s)", "Fichiers timeshift (%s)"),
+
+  "Crash / log files (%d files)": ("Crash / log files (%d files)", "ملفات كراش / سجلات (%d ملف)", "Fichiers crash / journaux (%d fichiers)"),
+
+  "Incomplete downloads (%d files)": ("Incomplete downloads (%d files)", "تحميلات ناقصة (%d ملف)", "Téléchargements incomplets (%d fichiers)"),
+
+  "Old backups over 30 days (keeps the newest 1)": ("Old backups over 30 days (keeps the newest 1)", "نسخ قديمة أقدم من 30 يوم (بيحتفظ بأحدث واحدة)", "Anciennes sauvegardes de plus de 30 jours (garde la plus récente)"),
+
+  "Add a recording timer. Enigma is stopped while the timer list is saved.": ("Add a recording timer. Enigma is stopped while the timer list is saved.", "ضيف مؤقت تسجيل. إنيجما بتتوقف لحد ما قايمة المؤقتات تتحفظ.", "Ajoutez une minuterie d'enregistrement. Enigma s'arrête pendant l'enregistrement de la liste."),
+
+  "No timers.": ("No timers.", "مفيش مؤقتات.", "Aucune minuterie."),
+
+  "Delete timer": ("Delete timer", "امسح المؤقت", "Supprimer la minuterie"),
+
+  "Add timer": ("Add timer", "ضيف مؤقت", "Ajouter une minuterie"),
+
+  "Timer name": ("Timer name", "اسم المؤقت", "Nom de la minuterie"),
+
+  "Channel:": ("Channel:", "القناة:", "Chaîne :"),
+
+  "Date:": ("Date:", "التاريخ:", "Date :"),
+
+  "Start time:": ("Start time:", "وقت البداية:", "Heure de début :"),
+
+  "Duration (minutes):": ("Duration (minutes):", "المدة (بالدقايق):", "Durée (minutes) :"),
+
+  "Bad date/time": ("Bad date/time", "تاريخ/وقت غلط", "Date/heure invalide"),
+
+  "Bad channel/duration": ("Bad channel/duration", "قناة/مدة غلط", "Chaîne/durée invalide"),
+
+  "TUNER SETTING": ("TUNER SETTING", "إعداد التيونر", "Réglage tuner"),
+
+  "Set the transponder, press Tune, then watch the live signal while you adjust the dish.": ("Set the transponder, press Tune, then watch the live signal while you adjust the dish.", "اظبط التردد، دوس ضبط، وبعدين راقب الإشارة المباشرة وانت بتظبط الطبق.", "Réglez le transpondeur, appuyez sur Accorder, puis regardez le signal en direct pendant que vous réglez la parabole."),
+
+  "Tuner:": ("Tuner:", "التيونر:", "Tuner :"),
+
+  "Tuner A": ("Tuner A", "تيونر A", "Tuner A"),
+
+  "Tuner B": ("Tuner B", "تيونر B", "Tuner B"),
+
+  "Satellite:": ("Satellite:", "القمر:", "Satellite :"),
+
+  "Frequency (MHz):": ("Frequency (MHz):", "التردد (ميجاهرتز):", "Fréquence (MHz) :"),
+
+  "Symbol Rate:": ("Symbol Rate:", "معدل الرمز:", "Débit de symboles :"),
+
+  "Polarization:": ("Polarization:", "الاستقطاب:", "Polarisation :"),
+
+  "FEC:": ("FEC:", "FEC:", "FEC :"),
+
+  "Or pick a channel on that transponder:": ("Or pick a channel on that transponder:", "أو اختار قناة على نفس التردد:", "Ou choisissez une chaîne sur ce transpondeur :"),
+
+  "-- or pick a channel --": ("-- or pick a channel --", "-- أو اختار قناة --", "-- ou choisissez une chaîne --"),
+
+  "Tune to this transponder": ("Tune to this transponder", "اضبط على التردد ده", "Accorder sur ce transpondeur"),
+
+  "LIVE SIGNAL": ("LIVE SIGNAL", "الإشارة المباشرة", "Signal en direct"),
+
+  "Auto-refresh every 3 sec": ("Auto-refresh every 3 sec", "تحديث تلقائي كل 3 ثواني", "Actualisation auto toutes les 3 sec"),
+
+  "AGC - Reception Level": ("AGC - Reception Level", "AGC - مستوى الاستقبال", "AGC - Niveau de réception"),
+
+  "Quality": ("Quality", "الجودة", "Qualité"),
+
+  "BER - Error Rate: %s": ("BER - Error Rate: %s", "BER - معدل الخطأ: %s", "BER - Taux d'erreur : %s"),
+
+  "Excellent": ("Excellent", "ممتازة", "Excellente"),
+
+  "Good": ("Good", "كويسة", "Bonne"),
+
+  "Weak": ("Weak", "ضعيفة", "Faible"),
+
+  "No signal": ("No signal", "مفيش إشارة", "Pas de signal"),
+
+  "LOCKED": ("LOCKED", "مقفول", "Verrouillé"),
+
+  "NO LOCK": ("NO LOCK", "مفيش قفل", "Pas de verrouillage"),
+
+  "Current service": ("Current service", "القناة الحالية", "Service actuel"),
+
+  "Tuned to:": ("Tuned to:", "تم الضبط على:", "Accordé sur :"),
+
+  "- watch the signal below while you adjust the dish.": ("- watch the signal below while you adjust the dish.", "- راقب الإشارة تحت وانت بتظبط الطبق.", "- regardez le signal ci-dessous pendant que vous réglez la parabole."),
+
+  "Plugins": ("Plugins", "الإضافات", "Plugins"),
+
+  "Categories from the Terminal Plugins menu. Pick a category, then pick a plugin to install it.": ("Categories from the Terminal Plugins menu. Pick a category, then pick a plugin to install it.", "فئات من قايمة إضافات التيرمينال. اختار فئة، وبعدين اختار إضافة عشان تثبّتها.", "Catégories du menu Plugins du terminal. Choisissez une catégorie, puis un plugin à installer."),
+
+  "ACTIONS - NOT categories": ("ACTIONS - NOT categories", "أوامر - مش فئات", "Actions - pas des catégories"),
+
+  "Uninstall Plugins": ("Uninstall Plugins", "إلغاء تثبيت إضافات", "Désinstaller des plugins"),
+
+  "Update Plugins (Force Reinstall, deps ignored)": ("Update Plugins (Force Reinstall, deps ignored)", "تحديث الإضافات (إعادة تثبيت إجباري، من غير اعتماديات)", "Mettre à jour les plugins (réinstallation forcée, dépendances ignorées)"),
+
+  "Add Plugin (Custom)": ("Add Plugin (Custom)", "إضافة إضافة (مخصصة)", "Ajouter un plugin (personnalisé)"),
+
+  "Installed Extensions (delete folder)": ("Installed Extensions (delete folder)", "الإضافات المثبّتة (مسح الفولدر)", "Extensions installées (supprimer le dossier)"),
+
+  "Plugin Manager - Installed": ("Plugin Manager - Installed", "مدير الإضافات - المثبّتة", "Gestionnaire de plugins - Installés"),
+
+  "Folders in /usr/lib/enigma2/python/Plugins/Extensions - same list as Terminal Uninstall shows.": ("Folders in /usr/lib/enigma2/python/Plugins/Extensions - same list as Terminal Uninstall shows.", "فولدرات في /usr/lib/enigma2/python/Plugins/Extensions - نفس القايمة اللي التيرمينال بيورّيها في الإلغاء.", "Dossiers dans /usr/lib/enigma2/python/Plugins/Extensions - même liste que celle affichée par la désinstallation du terminal."),
+
+  "Delete plugin folder": ("Delete plugin folder", "امسح فولدر الإضافة", "Supprimer le dossier du plugin"),
+
+  "Back to Plugins": ("Back to Plugins", "ارجع للإضافات", "Retour aux plugins"),
+
+  "Terminal: shows installed Extensions. Here: pick the plugin - it runs the same uninstall.": ("Terminal: shows installed Extensions. Here: pick the plugin - it runs the same uninstall.", "التيرمينال: بيورّي الإضافات المثبّتة. هنا: اختار الإضافة - هينفّذ نفس الإلغاء.", "Terminal : affiche les extensions installées. Ici : choisissez le plugin - il exécute la même désinstallation."),
+
+  "- Uninstall": ("- Uninstall", "- إلغاء", "- Désinstaller"),
+
+  "Update Plugins": ("Update Plugins", "تحديث الإضافات", "Mettre à jour les plugins"),
+
+  "Terminal: only INSTALLED plugins are offered, each is force-reinstalled from its own telnet command, dependencies ignored.": ("Terminal: only INSTALLED plugins are offered, each is force-reinstalled from its own telnet command, dependencies ignored.", "التيرمينال: بيعرض الإضافات المثبّتة بس، وكل واحدة بتتثبّت إجباري من أمر التلنت بتاعها، من غير اعتماديات.", "Terminal : seuls les plugins INSTALLÉS sont proposés, chacun est réinstallé de force avec sa propre commande telnet, dépendances ignorées."),
+
+  "- Force Reinstall": ("- Force Reinstall", "- إعادة تثبيت إجباري", "- Réinstallation forcée"),
+
+  "No installed U-Panel plugins found. Check /plugins/installed.": ("No installed U-Panel plugins found. Check /plugins/installed.", "مفيش إضافات U-Panel مثبّتة. شوف /plugins/installed.", "Aucun plugin U-Panel installé trouvé. Vérifiez /plugins/installed."),
+
+  "Add Plugin - Custom": ("Add Plugin - Custom", "إضافة إضافة - مخصصة", "Ajouter un plugin - Personnalisé"),
+
+  "Bad input": ("Bad input", "إدخال غلط", "Saisie invalide"),
+
+  "Name + Command are required, no TAB in name.": ("Name + Command are required, no TAB in name.", "الاسم + الأمر مطلوبين، وممنوع TAB في الاسم.", "Nom + Commande requis, pas de TAB dans le nom."),
+
+  "Custom plugin saved:": ("Custom plugin saved:", "اتحفظت الإضافة المخصصة:", "Plugin personnalisé enregistré :"),
+
+  "- it now appears in its category as [C#] Name (Custom).": ("- it now appears in its category as [C#] Name (Custom).", "- بقت تظهر في فئتها على شكل [C#] الاسم (مخصصة).", "- il apparaît maintenant dans sa catégorie sous la forme [C#] Nom (personnalisé)."),
+
+  "Same as Terminal Add More Plugins: Name + Category + ONE telnet command. It appears in its category list as [C#] Name (Custom).": ("Same as Terminal Add More Plugins: Name + Category + ONE telnet command. It appears in its category list as [C#] Name (Custom).", "نفس إضافة التيرمينال: الاسم + الفئة + أمر تلنت واحد. بتظهر في قايمة فئتها على شكل [C#] الاسم (مخصصة).", "Comme l'ajout du terminal : Nom + Catégorie + UNE commande telnet. Il apparaît dans sa liste de catégorie sous la forme [C#] Nom (personnalisé)."),
+
+  "Name (e.g. My Jedi Installer)": ("Name (e.g. My Jedi Installer)", "الاسم (مثال: My Jedi Installer)", "Nom (ex. My Jedi Installer)"),
+
+  "Telnet command - ONE line": ("Telnet command - ONE line", "أمر تلنت - سطر واحد", "Commande telnet - UNE ligne"),
+
+  "Save Custom Plugin": ("Save Custom Plugin", "احفظ الإضافة المخصصة", "Enregistrer le plugin personnalisé"),
+
+  "Streaming / IPTV": ("Streaming / IPTV", "بث / IPTV", "Streaming / IPTV"),
+
+  "Sport": ("Sport", "رياضة", "Sport"),
+
+  "Sat and TV": ("Sat and TV", "سات وقنوات", "Sat et TV"),
+
+  "Subtitles": ("Subtitles", "ترجمة", "Sous-titres"),
+
+  "Skins & UI": ("Skins & UI", "أشكال وواجهة", "Thèmes et interface"),
+
+  "Emu & Keys & Biss": ("Emu & Keys & Biss", "إيمو ومفاتيح وبيس", "Emu & Clés & Biss"),
+
+  "System & Tools": ("System & Tools", "نظام وأدوات", "Système et outils"),
+
+  "Stores": ("Stores", "متاجر", "Boutiques"),
+
+  "Islamic": ("Islamic", "إسلامي", "Islamique"),
+
+  "Multiboot": ("Multiboot", "مالتي بوت", "Multiboot"),
   "Scheduled Backup": ("Scheduled Backup", "نسخ احتياطي مجدول", "Sauvegarde planifiée"),
   "Download / Flash Image": ("Download / Flash Image", "تحميل / تفليش صورة", "Télécharger / Flasher une image"),
   "Recording Timers": ("Recording Timers", "مؤقتات التسجيل", "Minuteries d'enregistrement"),
@@ -1649,7 +1848,7 @@ def run_job(job):
     if not resolve_script():
         job["output"] = ("SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.\n"
                          "Run the script once from its real location, e.g.\n"
-                         "  sh /etc/enigma2/U-Panel-V6.24.sh\n"
+                         "  sh /etc/enigma2/U-Panel-V6.25.sh\n"
                          "then reload this page. No command was executed.\n")
         job["status"] = "done"
         return
@@ -2179,13 +2378,13 @@ def cleanup_scan():
         except Exception: return 0
     for root in BACKUP_ROOTS:
         ts = os.path.join(root, "timeshift")
-        if os.path.isdir(ts): out.append(("timeshift", "Timeshift files (" + root + ")", sz(ts), ts))
+        if os.path.isdir(ts): out.append(("timeshift", _tr("Timeshift files (%s)") % root, sz(ts), ts))
     logs = sorted(glob.glob("/media/hdd/*.log") + glob.glob("/media/hdd/*crash*") + glob.glob("/tmp/*crash*"))
     tot = sum(os.path.getsize(f) for f in logs if os.path.isfile(f))
-    if logs: out.append(("crashlogs", "Crash / log files (%d files)" % len(logs), tot, ";".join(logs)))
+    if logs: out.append(("crashlogs", _tr("Crash / log files (%d files)") % len(logs), tot, ";".join(logs)))
     parts = sorted(glob.glob(os.path.join(downloads_dir(), "*.part")) + glob.glob(os.path.join(downloads_dir(), "*.tmp")))
     tot2 = sum(os.path.getsize(f) for f in parts if os.path.isfile(f))
-    if parts: out.append(("incomplete", "Incomplete downloads (%d files)" % len(parts), tot2, ";".join(parts)))
+    if parts: out.append(("incomplete", _tr("Incomplete downloads (%d files)") % len(parts), tot2, ";".join(parts)))
     old = []
     for full, base, size, mtime in backup_entries():
         try:
@@ -2195,7 +2394,7 @@ def cleanup_scan():
     if len(old) > 1:
         keep = old[:1]
         tot3 = sum(os.path.getsize(f) if os.path.isfile(f) else 0 for f in old[1:])
-        out.append(("oldbackups", "Old backups over 30 days (keeps the newest 1)", tot3, ";".join(old[1:])))
+        out.append(("oldbackups", _tr("Old backups over 30 days (keeps the newest 1)"), tot3, ";".join(old[1:])))
     return out
 
 def _nice_name(base):
@@ -2340,12 +2539,12 @@ class H(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", "application/manifest+json"); self.send_header("Content-Length", str(len(_m))); self.end_headers(); self.wfile.write(_m); return
         if u.path == "/version":
             import json as _jjv
-            _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.24"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
+            _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.25"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-cache"); self.send_header("Content-Length", str(len(_vb))); self.end_headers(); self.wfile.write(_vb); return; return
         if u.path == "/restart-server":
             _sp = resolve_script()
             if not _sp:
-                self.send_html("<h1>Restart failed</h1><div class='card'>SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.<br>Re-run the script from its real location, e.g.<br>sh /etc/enigma2/U-Panel-V6.24.sh<br>then reload this page.</div><a href='/'>Back</a>"); return
+                self.send_html("<h1>Restart failed</h1><div class='card'>SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.<br>Re-run the script from its real location, e.g.<br>sh /etc/enigma2/U-Panel-V6.25.sh<br>then reload this page.</div><a href='/'>Back</a>"); return
             def _do_restart():
                 time.sleep(2)
                 try: subprocess.Popen(["sh", _sp, "--restart-server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -2391,7 +2590,7 @@ class H(BaseHTTPRequestHandler):
                 self.send_html("<h1>Terminal only</h1><div class='card'>Script style / colors are set from the Terminal only - hidden from the Web UI.<br><span class='small'>Run the script on the receiver and use U-Panel Setting in the Terminal.</span></div><a href='/setting'>Back to U-Panel Setting</a>"); return
             label, need_confirm, _ = ACTIONS[action]
             if need_confirm and q.get("confirm", [""])[0] != "1":
-                self.send_html("<h1>Confirm</h1><div class='card'>%s<br><span class='small'>This cannot be undone. Make sure you really want it.</span></div><a class='danger' href='/run?action=%s&confirm=1'>YES - %s</a><a href='/'>Cancel</a>" % (html.escape(label), html.escape(action), html.escape(label)))
+                self.send_html(("<h1>" + _tr("Confirm") + "</h1><div class='card'>%s<br><span class='small'>" + _tr("This cannot be undone. Make sure you really want it.") + "</span></div><a class='danger' href='/run?action=%s&confirm=1'>" + _tr("YES - ") + "%s</a><a href='/'>" + _tr("Cancel") + "</a>") % (html.escape(_tr(label)), html.escape(action), html.escape(_tr(label))))
                 return
             jid = uuid.uuid4().hex[:8]
             JOBS[jid] = {"action": action, "status": "starting", "output": "", "started": ""}
@@ -2401,18 +2600,18 @@ class H(BaseHTTPRequestHandler):
             jid = (q.get("id") or [""])[0]
             job = JOBS.get(jid)
             if not job:
-                self.send_html("<h1>Job not found</h1><a href='/'>Back</a>"); return
-            label = ACTIONS.get(job["action"], (job["action"],))[0]
+                self.send_html("<h1>" + _tr("Job not found") + "</h1><a href='/'>" + _tr("Back") + "</a>"); return
+            label = _tr(ACTIONS.get(job["action"], (job["action"],))[0])
             _el = int(time.time() - job.get("started_ts", time.time()))
             if job["status"] in ("running", "starting"):
-                body = "<meta http-equiv='refresh' content='3'><h1>%s</h1><p>⏳ Running... started %s - %s seconds elapsed - page refreshes every 3 seconds.</p><pre style='white-space:pre-wrap;word-break:break-word;background:#111;color:#0f0;padding:10px;border-radius:8px'>%s</pre><p class='small'>%s lines - keep this page open, the log streams line by line. Do not power off the receiver.</p><a href='/'>Back to Panel</a><script>window.scrollTo(0,document.body.scrollHeight);</script>" % (html.escape(label), job["started"], _el, html.escape(job["output"][-12000:]), job["output"].count(chr(10)))
+                body = ("<meta http-equiv='refresh' content='3'><h1>%s</h1><p>⏳ " + _tr("Running...") + " " + _tr("started %s - %s seconds elapsed - page refreshes every 3 seconds.") + "</p><pre style='white-space:pre-wrap;word-break:break-word;background:#111;color:#0f0;padding:10px;border-radius:8px'>%s</pre><p class='small'>" + _tr("%s lines - keep this page open, the log streams line by line. Do not power off the receiver.") + "</p><a href='/'>" + _tr("Back to Panel") + "</a><script>window.scrollTo(0,document.body.scrollHeight);</script>") % (html.escape(label), job["started"], _el, html.escape(job["output"][-12000:]), job["output"].count(chr(10)))
             else:
                 extra = ""
                 if job.get("file") and os.path.exists(job["file"]):
                     extra = "<a class='danger' href='/images/flash?path=%s'>Flash this image to a slot</a><a href='/images'>All downloaded images</a>" % html.escape(job["file"])
                 if job.get("next"):
                     extra = "<a class='danger' href='%s'>%s</a>" % (html.escape(job["next"]), html.escape(job.get("next_label", "Next step"))) + extra
-                body = "<h1>%s - Done - finished in %s seconds</h1><pre>%s</pre>%s<a href='/'>Back to Panel</a>" % (html.escape(label), _el, html.escape(job["output"][-8000:]), extra)
+                body = ("<h1>%s " + _tr("- Done - finished in %s seconds") + "</h1><pre>%s</pre>%s<a href='/'>" + _tr("Back to Panel") + "</a>") % (html.escape(label), _el, html.escape(job["output"][-8000:]), extra)
             self.send_html(body); return
         if u.path == "/backups":
             body = "<h1>Backups</h1><p class='small'>Download a backup to your mobile, or delete old ones to free disk space.</p>"
@@ -2421,7 +2620,7 @@ class H(BaseHTTPRequestHandler):
                 body += "<div class='card'>No backups found in /media/hdd or /media/usb.</div>"
             for full, base, size, mtime in entries:
                 body += "<div class='card'><b>%s</b><br><span class='small'>%s - %s</span><br><a href='/download?path=%s'>Download</a><a class='danger' href='/delete?path=%s'>Delete</a></div>" % (html.escape(_nice_name(base)), html.escape(size), html.escape(mtime), html.escape(full), html.escape(full))
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/download":
             ap = valid_backup_path((q.get("path") or [""])[0])
@@ -2461,7 +2660,7 @@ class H(BaseHTTPRequestHandler):
                 n = len(bouquet_channels(fn))
                 body += "<div class='card'><b>%s</b><br><span class='small'>%d channels</span><br><a href='/channels/bouquet?file=%s'>Open bouquet</a></div>" % (html.escape(nm), n, html.escape(fn))
             body += "<div class='card'><b>Create new bouquet</b><form method='get' action='/channels/create'><input name='name' placeholder='New bouquet name'><button>Create bouquet</button></form></div>"
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/channels/bouquet":
             fn = (q.get("file") or [""])[0]
@@ -2534,7 +2733,7 @@ class H(BaseHTTPRequestHandler):
                 try: sz = "%d MB" % (os.path.getsize(z) // 1048576)
                 except Exception: sz = "?"
                 body += "<div class='card'><b>%s</b><br><span class='small'>%s - %s</span><br><a href='/images/flash?path=%s'>Flash to slot</a><a class='danger' href='/images/delete?path=%s'>Delete</a></div>" % (html.escape(os.path.basename(z)), html.escape(z), html.escape(sz), html.escape(z), html.escape(z))
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/images/download-image":
             url = (q.get("url") or [""])[0].strip()
@@ -2691,8 +2890,8 @@ class H(BaseHTTPRequestHandler):
                 if not _vp8:
                     _eb5 = b"no VP8 encoder in ffmpeg"
                     self.send_response(501); self.send_header("Content-Type", "text/plain"); self.send_header("Content-Length", str(len(_eb5))); self.end_headers(); self.wfile.write(_eb5); return
-                _cmd5 = ["ffmpeg", "-hide_banner", "-loglevel", "error"] + _dec5 + ["-i", "http://127.0.0.1:%d/%s" % (_port5, _ref5),
-                         "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libvpx"] + _vp8_args5 + ["-b:v", "800k", "-vf", "scale=w='if(gt(iw,1280),1280,iw)':h=-2",
+                _cmd5 = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-probesize", "1048576", "-analyzeduration", "1000000"] + _dec5 + ["-i", "http://127.0.0.1:%d/%s" % (_port5, _ref5),
+                         "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libvpx"] + _vp8_args5 + ["-g", "50", "-b:v", "800k", "-vf", "scale=w='if(gt(iw,1280),1280,iw)':h=-2",
                          "-pix_fmt", "yuv420p", "-c:a", "libopus", "-b:a", "96k", "-f", "webm", "-"]
                 _ctype5 = "video/webm"
             elif _fmt5 in ("gst-h264", "gst-vp8"):
@@ -2703,7 +2902,7 @@ class H(BaseHTTPRequestHandler):
                         self.send_response(501); self.send_header("Content-Type", "text/plain"); self.send_header("Content-Length", str(len(_eb5))); self.end_headers(); self.wfile.write(_eb5); return
                     if _gst_enc5f == "x264enc":
                         _gst_pre5 = ["videoconvert", "!", "videoscale", "!", "video/x-raw,width=854", "!", "videorate", "!", "video/x-raw,framerate=20/1", "!"]
-                        _gst_args5 = ["x264enc", "tune=zerolatency", "speed-preset=ultrafast", "bitrate=800"]
+                        _gst_args5 = ["x264enc", "tune=zerolatency", "speed-preset=ultrafast", "bitrate=800", "key-int-max=50"]
                     else:
                         _gst_pre5 = ["videoconvert", "!", "videoscale", "!", "video/x-raw,width=1280", "!"]
                         _gst_args5 = {"v4l2h264enc": ["v4l2h264enc"], "omxh264enc": ["omxh264enc", "target-bitrate=1500000", "control-rate=variable"]}.get(_gst_enc5f, [])
@@ -2716,8 +2915,8 @@ class H(BaseHTTPRequestHandler):
                 if not _enc5:
                     _eb5 = b"no H.264 encoder in ffmpeg"
                     self.send_response(501); self.send_header("Content-Type", "text/plain"); self.send_header("Content-Length", str(len(_eb5))); self.end_headers(); self.wfile.write(_eb5); return
-                _extra5 = ["-preset", "ultrafast", "-tune", "zerolatency"] if _enc5 == "libx264" else ["-b:v", "1500k"]
-                _cmd5 = ["ffmpeg", "-hide_banner", "-loglevel", "error"] + _dec5 + ["-i", "http://127.0.0.1:%d/%s" % (_port5, _ref5),
+                _extra5 = ["-preset", "ultrafast", "-tune", "zerolatency", "-g", "50", "-keyint_min", "25", "-sc_threshold", "0", "-maxrate", "2000k", "-bufsize", "1500k"] if _enc5 == "libx264" else ["-b:v", "1500k", "-g", "50", "-maxrate", "2000k", "-bufsize", "1500k"]
+                _cmd5 = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-probesize", "1048576", "-analyzeduration", "1000000"] + _dec5 + ["-i", "http://127.0.0.1:%d/%s" % (_port5, _ref5),
                          "-map", "0:v:0", "-map", "0:a:0?", "-c:v", _enc5] + _extra5 + ["-vf", _scale5, "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
                          "-f", "mp4", "-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "1000000", "-"]
                 _ctype5 = "video/mp4"
@@ -3342,7 +3541,7 @@ class H(BaseHTTPRequestHandler):
             _warn = ""
             if not _cur_ref:
                 _warn = "<div class='card' style='border-color:#e53935'>OpenWebif is not answering - Live TV needs OpenWebif. <a href='/plugins/install?pkg=enigma2-plugin-extensions-openwebif'>Install OpenWebif</a> then Restart Enigma.</div>"
-            body = "<style>.lvbtn{flex:1;border:1px solid " + _c2 + "66;border-radius:12px;padding:11px 8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 14px " + _glow + ";transition:transform .15s ease,filter .15s ease;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}.lvbtn::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:none;pointer-events:none;z-index:0}.lvbtn:active::before{left:130%;transition:left .45s ease}.lvbtn.ghost::after{display:none}.lvbtn:active{transform:scale(.97)}.chbtn{display:block;margin:8px 0;padding:14px 14px;border-radius:14px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "55;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 5px 14px rgba(0,0,0,.45);position:relative;overflow:hidden}.chbtn.chsel{background:linear-gradient(180deg,rgba(255,255,255,.35)," + _lc2 + " 30%," + _c1 + ");border:2px solid #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.3),0 0 20px " + _glow + "}.lvbtn.stop{background:linear-gradient(135deg,#ff5252,#c62828);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(229,57,53,.35)}.lvbtn.ghost{background:transparent;color:" + _c2 + ";border:2px solid " + _c2 + ";box-shadow:none}.lvbtn.rec{background:linear-gradient(180deg,#2a2a2a,#000);border:2px solid #ff1744;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.blk{background:linear-gradient(180deg,#2a2a2a,#000);border:1px solid #444;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.rec.on{background:linear-gradient(180deg,#2a2a2a,#000);border-color:#ff1744;box-shadow:0 0 18px rgba(255,23,68,.7)}.recdot{color:#ff1744;font-size:20px;line-height:1;text-shadow:0 0 10px #ff1744}.recdot.pulse{animation:recpulse 1s infinite}@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.2}}.lvbtn.small{padding:12px 6px;font-size:14px}.lvbtn.play{background:linear-gradient(135deg,#22c55e,#15803d);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 16px rgba(34,197,94,.5)}.lvbtn.b1{background:linear-gradient(135deg,#3b82f6,#1e40af);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(59,130,246,.4)}.lvbtn.b2{background:linear-gradient(135deg,#f59e0b,#ea580c);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(245,158,11,.4)}.lvbtn.b3{background:linear-gradient(135deg,#fde047,#eab308);color:#1a1a1a;box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 4px 14px rgba(250,204,21,.45)}</style><h1>Live TV <span style='background:#e53935;color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>LIVE</span> <span style='background:" + _c2 + ";color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>" + html.escape(os.environ.get("U_PANEL_VERSION", "V6.24").replace("V ", "V").split(" - ")[0]) + "</span></h1><div class='small' id='srvver'>بيتأكد من إصدار السيرفر...</div><details><summary class='small' style='cursor:pointer;color:#aaa'>تفاصيل البث (اضغط لعرضها)</summary><div class='card' id='lvdiag' style='border-color:#f9d423'>بيفحص البث تلقائياً...</div><div class='small' id='lvplayer'>-</div><div class='small' id='lvvideo'>-</div></details>" + _warn
+            body = "<style>.lvbtn{flex:1;border:1px solid " + _c2 + "66;border-radius:12px;padding:11px 8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 14px " + _glow + ";transition:transform .15s ease,filter .15s ease;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}.lvbtn::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:none;pointer-events:none;z-index:0}.lvbtn:active::before{left:130%;transition:left .45s ease}.lvbtn.ghost::after{display:none}.lvbtn:active{transform:scale(.97)}.chbtn{display:block;margin:8px 0;padding:14px 14px;border-radius:14px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "55;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 5px 14px rgba(0,0,0,.45);position:relative;overflow:hidden}.chbtn.chsel{background:linear-gradient(180deg,rgba(255,255,255,.35)," + _lc2 + " 30%," + _c1 + ");border:2px solid #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.3),0 0 20px " + _glow + "}.lvbtn.stop{background:linear-gradient(135deg,#ff5252,#c62828);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(229,57,53,.35)}.lvbtn.ghost{background:transparent;color:" + _c2 + ";border:2px solid " + _c2 + ";box-shadow:none}.lvbtn.rec{background:linear-gradient(180deg,#2a2a2a,#000);border:2px solid #ff1744;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.blk{background:linear-gradient(180deg,#2a2a2a,#000);border:1px solid #444;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.rec.on{background:linear-gradient(180deg,#2a2a2a,#000);border-color:#ff1744;box-shadow:0 0 18px rgba(255,23,68,.7)}.recdot{color:#ff1744;font-size:20px;line-height:1;text-shadow:0 0 10px #ff1744}.recdot.pulse{animation:recpulse 1s infinite}@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.2}}.lvbtn.small{padding:12px 6px;font-size:14px}.lvbtn.play{background:linear-gradient(135deg,#22c55e,#15803d);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 16px rgba(34,197,94,.5)}.lvbtn.b1{background:linear-gradient(135deg,#3b82f6,#1e40af);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(59,130,246,.4)}.lvbtn.b2{background:linear-gradient(135deg,#f59e0b,#ea580c);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(245,158,11,.4)}.lvbtn.b3{background:linear-gradient(135deg,#fde047,#eab308);color:#1a1a1a;box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 4px 14px rgba(250,204,21,.45)}</style><h1>Live TV <span style='background:#e53935;color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>LIVE</span> <span style='background:" + _c2 + ";color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>" + html.escape(os.environ.get("U_PANEL_VERSION", "V6.25").replace("V ", "V").split(" - ")[0]) + "</span></h1><div class='small' id='srvver'>بيتأكد من إصدار السيرفر...</div><details><summary class='small' style='cursor:pointer;color:#aaa'>تفاصيل البث (اضغط لعرضها)</summary><div class='card' id='lvdiag' style='border-color:#f9d423'>بيفحص البث تلقائياً...</div><div class='small' id='lvplayer'>-</div><div class='small' id='lvvideo'>-</div></details>" + _warn
             body += ("<div class='card'>"
                      "<div id='lvbox' style='position:relative'><video id='lv' controls playsinline muted style='width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:block'></video><div id='subov' style='position:absolute;left:0;right:0;bottom:12%;text-align:center;pointer-events:none;font-size:22px;font-weight:bold;color:#ffe600;text-shadow:2px 2px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;white-space:pre-wrap;padding:0 8px'></div></div>"
                      "<p id='lvstat' style='display:none;margin:10px 0 0;padding:10px 12px;background:#1a1a2e;border:1px solid #33335a;border-radius:10px;font-size:14px;font-weight:700;color:#fff'>اضغط تشغيل لبدء البث - لازم تكون على نفس الواي فاي بتاع الرسيفر.</p>"
@@ -3365,7 +3564,7 @@ class H(BaseHTTPRequestHandler):
             body += ("<div class='card'><b>%s</b><br><span class='small'>الآن: %s</span><br><span class='small'>بعد كده: %s</span></div>" % (html.escape(_cur_name), html.escape(_now_t or "-"), html.escape(_next_t or "-")))
             body += "<div class='card'><b>القنوات (%d)</b><br><span class='small'>دوس على أي قناة - الرسيفر هيقلب عليها والبث هيتغير.</span></div>" % _count
             body += _rows
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             body += ("<script src='https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js'></script><script>"
                      "var LVREF='" + _cur_ref.replace("'", "") + "';var LVNAME='" + _cur_name.replace("'", "") + "';var LVPORT=8001;var lvPlayer=null;"
                      "function vidDly(){var e=document.getElementById('viddly');return e?parseFloat(e.value||'0'):0;}function lvUrl(){return '/live/stream?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&vdly='+vidDly();}"
@@ -3432,47 +3631,47 @@ class H(BaseHTTPRequestHandler):
             _msg = (q.get("msg") or [""])[0]
             _tuned = (q.get("tuned") or [""])[0]
             _sig = _signal_read()
-            _q = "Excellent" if _sig["snr"] >= 70 else ("Good" if _sig["snr"] >= 45 else ("Weak" if _sig["snr"] > 0 else "No signal"))
+            _q = _tr("Excellent") if _sig["snr"] >= 70 else (_tr("Good") if _sig["snr"] >= 45 else (_tr("Weak") if _sig["snr"] > 0 else _tr("No signal")))
             _qcol = "#34c759" if _sig["snr"] >= 70 else ("#f5c542" if _sig["snr"] >= 45 else "#e53935")
-            _lock = "<span class='ok'>LOCKED</span>" if _sig["locked"] else "<span style='color:#e53935'>NO LOCK</span>"
+            _lock = "<span class='ok'>" + _tr("LOCKED") + "</span>" if _sig["locked"] else "<span style='color:#e53935'>" + _tr("NO LOCK") + "</span>"
             _sats = [("Nilesat 7W", "-70"), ("Eutelsat 8W", "-80"), ("Amos 4W", "-40"), ("Arabsat / Badr 26E", "260"), ("Hotbird 13E", "130"), ("Eutelsat 16E", "160"), ("Astra 19.2E", "192"), ("Astra 23.5E", "235"), ("Eutelsat 9E", "90")]
             _sat_opts = "".join("<option value='%s' %s>%s</option>" % (html.escape(n), "selected" if n == _f["sat"] else "", html.escape(n)) for n, _o in _sats)
             _fec_opts = "".join("<option %s>%s</option>" % ("selected" if f == _f["fec"] else "", f) for f in ["Auto", "1/2", "2/3", "3/4", "5/6", "7/8", "8/9", "3/5", "4/5", "9/10"])
             _names = lamedb_names()
-            _ch_opts = "<option value=''>-- or pick a channel --</option>"
+            _ch_opts = "<option value=''>" + _tr("-- or pick a channel --") + "</option>"
             for _fn, _bnm in bouquet_list():
                 for _ln, _ref, _nm in bouquet_channels(_fn):
                     _rr = _ref[len("#SERVICE "):] if _ref.startswith("#SERVICE ") else _ref
                     _ch_opts += "<option value='%s'>%s - %s</option>" % (html.escape(_rr), html.escape(_bnm), html.escape(display_name(_ref, _nm, _names)))
-            body = "<h1>Tuner Signal Reader</h1>"
+            body = "<h1>" + _tr("Tuner Signal Reader") + "</h1>"
             if _msg: body += "<div class='card'>%s</div>" % html.escape(_msg)
-            if _tuned: body += "<div class='card'>Tuned to: <b>%s</b> - watch the signal below while you adjust the dish.</div>" % html.escape(_tuned)
-            body += ("<div class='card'><b>TUNER SETTING</b><br><span class='small'>Set the transponder, press Tune, then watch the live signal while you adjust the dish.</span>"
-                     "<form method='get' action='/signal/tune'><label class='small'>Tuner:</label><div class='sigwrap'>"
-                     "<a class='pill %s' href='/signal?tuner=A&sat=%s&freq=%s&sr=%s&pol=%s&fec=%s'>Tuner A</a>"
-                     "<a class='pill %s' href='/signal?tuner=B&sat=%s&freq=%s&sr=%s&pol=%s&fec=%s'>Tuner B</a></div>"
+            if _tuned: body += ("<div class='card'>" + _tr("Tuned to:") + " <b>%s</b> " + _tr("- watch the signal below while you adjust the dish.") + "</div>") % html.escape(_tuned)
+            body += ("<div class='card'><b>" + _tr("TUNER SETTING") + "</b><br><span class='small'>" + _tr("Set the transponder, press Tune, then watch the live signal while you adjust the dish.") + "</span>"
+                     "<form method='get' action='/signal/tune'><label class='small'>" + _tr("Tuner:") + "</label><div class='sigwrap'>"
+                     "<a class='pill %s' href='/signal?tuner=A&sat=%s&freq=%s&sr=%s&pol=%s&fec=%s'" + _tr("Tuner A") + "</a>"
+                     "<a class='pill %s' href='/signal?tuner=B&sat=%s&freq=%s&sr=%s&pol=%s&fec=%s'" + _tr("Tuner B") + "</a></div>"
                      "<input type='hidden' name='tuner' value='%s'>"
-                     "<label class='small'>Satellite:</label><select name='sat'>%s</select>"
-                     "<label class='small'>Frequency (MHz):</label><input name='freq' value='%s'>"
-                     "<label class='small'>Symbol Rate:</label><input name='sr' value='%s'>"
-                     "<label class='small'>Polarization:</label><select name='pol'><option %s> H</option><option %s>V</option></select>"
-                     "<label class='small'>FEC:</label><select name='fec'>%s</select>"
-                     "<label class='small'>Or pick a channel on that transponder:</label><select name='ch'>%s</select>"
-                     "<button class='signal'>Tune to this transponder</button></form></div>") % (
+                     "<label class='small'>" + _tr("Satellite:") + "</label><select name='sat'>%s</select>"
+                     "<label class='small'>" + _tr("Frequency (MHz):") + "</label><input name='freq' value='%s'>"
+                     "<label class='small'>" + _tr("Symbol Rate:") + "</label><input name='sr' value='%s'>"
+                     "<label class='small'>" + _tr("Polarization:") + "</label><select name='pol'><option %s> H</option><option %s>V</option></select>"
+                     "<label class='small'>" + _tr("FEC:") + "</label><select name='fec'>%s</select>"
+                     "<label class='small'>" + _tr("Or pick a channel on that transponder:") + "</label><select name='ch'>%s</select>"
+                     "<button class='signal'>" + _tr("Tune to this transponder") + "</button></form></div>") % (
                      "on" if _f["tuner"] == "A" else "", html.escape(_f["sat"]), html.escape(_f["freq"]), html.escape(_f["sr"]), html.escape(_f["pol"]), html.escape(_f["fec"]),
                      "on" if _f["tuner"] == "B" else "", html.escape(_f["sat"]), html.escape(_f["freq"]), html.escape(_f["sr"]), html.escape(_f["pol"]), html.escape(_f["fec"]),
                      html.escape(_f["tuner"]), _sat_opts, html.escape(_f["freq"]), html.escape(_f["sr"]),
                      "selected" if _f["pol"] == "H" else "", "selected" if _f["pol"] == "V" else "", _fec_opts, _ch_opts)
-            body += ("<div class='card'><b>LIVE SIGNAL</b> - %s<br><span class='small'>Channel: %s | Auto-refresh every 3 sec</span>"
+            body += ("<div class='card'><b>" + _tr("LIVE SIGNAL") + "</b> - %s<br><span class='small'>" + _tr("Channel:") + " %s | " + _tr("Auto-refresh every 3 sec") + "</span>"
                      "<div style='font-size:44px;font-weight:bold;text-align:center;margin:8px 0'>%d%% <span style='font-size:16px'>SNR %s</span></div>"
                      "<div style='text-align:center'><span style='color:%s'><b>%s</b></span></div>"
                      "<label class='small'>SNR</label><div class='sigbar'><div style='width:%d%%;background:linear-gradient(90deg,#a855f7,#22d3ee)'></div></div>"
-                     "<label class='small'>AGC - Reception Level</label><div class='sigbar'><div style='width:%d%%;background:linear-gradient(90deg,#22d3ee,#34c759)'></div></div>"
-                     "<label class='small'>Quality</label><div class='sigbar'><div style='width:%d%%;background:linear-gradient(90deg,#a855f7,#22d3ee)'></div></div>"
-                     "<label class='small'>BER - Error Rate: %s</label></div>") % (
-                     _lock, html.escape(_sig["service"] or "Current service"), _sig["snr"], html.escape(_sig["db"] or ""),
+                     "<label class='small'>" + _tr("AGC - Reception Level") + "</label><div class='sigbar'><div style='width:%d%%;background:linear-gradient(90deg,#22d3ee,#34c759)'></div></div>"
+                     "<label class='small'>" + _tr("Quality") + "</label><div class='sigbar'><div style='width:%d%%;background:linear-gradient(90deg,#a855f7,#22d3ee)'></div></div>"
+                     "<label class='small'>" + _tr("BER - Error Rate: %s") + "</label></div>") % (
+                     _lock, html.escape(_sig["service"] or _tr("Current service")), _sig["snr"], html.escape(_sig["db"] or ""),
                      _qcol, _q, _sig["snr"], _sig["agc"], _sig["snr"], html.escape(_sig["ber"]))
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body, refresh=3); return
         if u.path == "/signal/tune":
             import urllib.parse as _pp, urllib.request as _uu
@@ -3598,36 +3797,36 @@ class H(BaseHTTPRequestHandler):
             body = "<h1>Receiver Status</h1>"
             for k, v in (("Uptime / load", d["uptime"]), ("Temperature", d["temp"] or "n/a"), ("Memory (free -m)", d["mem"]), ("Disk /media/hdd", d["disk"]), ("Load average", d["load"]), ("Signal (frontend)", d["signal"]), ("Timers", d["timers"]), ("Plugins", d["plugins"]), ("Backups", d["backups"])):
                 body += "<div class='card'><b>%s</b><br>%s</div>" % (k, html.escape(str(v) or "n/a"))
-            body += "<a href='/'>Back to Panel</a>"
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/timers":
-            body = "<h1>Recording Timers</h1><p class='small'>Add a recording timer. Enigma is stopped while the timer list is saved.</p>"
+            body = "<h1>" + _tr("Recording Timers") + "</h1><p class='small'>" + _tr("Add a recording timer. Enigma is stopped while the timer list is saved.") + "</p>"
             tls = timers_list()
-            if not tls: body += "<div class='card'>No timers.</div>"
+            if not tls: body += "<div class='card'>" + _tr("No timers.") + "</div>"
             for idx, el in enumerate(tls):
                 import datetime as _dt
                 try: beg = _dt.datetime.fromtimestamp(int(el.get("begin", "0"))).strftime("%Y-%m-%d %H:%M")
                 except Exception: beg = el.get("begin", "?")
                 try: end = _dt.datetime.fromtimestamp(int(el.get("end", "0"))).strftime("%H:%M")
                 except Exception: end = el.get("end", "?")
-                body += "<div class='card'><b>%s</b><br><span class='small'>%s - %s | %s | repeated=%s</span><br><a class='danger' href='/timers/delete?idx=%d'>Delete timer</a></div>" % (html.escape(el.get("name", "?")), html.escape(beg), html.escape(end), html.escape(channel_name_by_ref(el.get("serviceref", ""))), html.escape(el.get("repeated", "0")), idx)
+                body += ("<div class='card'><b>%s</b><br><span class='small'>%s - %s | %s | repeated=%s</span><br><a class='danger' href='/timers/delete?idx=%d'>" + _tr("Delete timer") + "</a></div>") % (html.escape(el.get("name", "?")), html.escape(beg), html.escape(end), html.escape(channel_name_by_ref(el.get("serviceref", ""))), html.escape(el.get("repeated", "0")), idx)
             opts = ""
             names = lamedb_names()
             for fn, bnm in bouquet_list():
                 for ln, ref, nm in bouquet_channels(fn):
                     opts += "<option value='%s'>%s - %s</option>" % (html.escape(ref[len("#SERVICE "):]), html.escape(bnm), html.escape(display_name(ref, nm, names)))
-            body += "<div class='card'><b>Add timer</b><form method='get' action='/timers/add'><input name='name' placeholder='Timer name'><label class='small'>Channel:</label><select name='ref' style='width:100%%;padding:14px;font-size:18px'>%s</select><label class='small'>Date:</label><input type='date' name='date'><label class='small'>Start time:</label><input type='time' name='time' value='20:00'><label class='small'>Duration (minutes):</label><input type='number' name='dur' value='60'><button>Add timer</button></form></div>" % opts
-            body += "<a href='/'>Back to Panel</a>"
+            body += ("<div class='card'><b>" + _tr("Add timer") + "</b><form method='get' action='/timers/add'><input name='name' placeholder='" + _tr("Timer name") + "'><label class='small'>" + _tr("Channel:") + "</label><select name='ref' style='width:100%%;padding:14px;font-size:18px'>%s</select><label class='small'>" + _tr("Date:") + "</label><input type='date' name='date'><label class='small'>" + _tr("Start time:") + "</label><input type='time' name='time' value='20:00'><label class='small'>" + _tr("Duration (minutes):") + "</label><input type='number' name='dur' value='60'><button>" + _tr("Add timer") + "</button></form></div>") % opts
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/timers/add":
             import datetime as _dt
             nm = (q.get("name") or ["Recording"])[0].strip() or "Recording"
             ref = (q.get("ref") or [""])[0].strip()
             try: beg = int(_dt.datetime.strptime((q.get("date") or [""])[0] + " " + (q.get("time") or ["20:00"])[0], "%Y-%m-%d %H:%M").timestamp())
-            except Exception: self.send_html("<h1>Bad date/time</h1><a href='/timers'>Back</a>", code=400); return
+            except Exception: self.send_html("<h1>" + _tr("Bad date/time") + "</h1><a href='/timers'>" + _tr("Back") + "</a>", code=400); return
             try: dur = int((q.get("dur") or ["60"])[0])
             except Exception: dur = 60
-            if not ref or dur <= 0 or dur > 1440: self.send_html("<h1>Bad channel/duration</h1><a href='/timers'>Back</a>", code=400); return
+            if not ref or dur <= 0 or dur > 1440: self.send_html("<h1>" + _tr("Bad channel/duration") + "</h1><a href='/timers'>" + _tr("Back") + "</a>", code=400); return
             import xml.etree.ElementTree as _et
             enigma_stop()
             try:
@@ -3672,10 +3871,10 @@ class H(BaseHTTPRequestHandler):
             self.send_response(302); self.send_header("Location", "/job?id=" + jid); self.end_headers(); return
         if u.path == "/plugins/install-cmd":
             cmd = (q.get("cmd") or [""])[0].strip()
-            if not cmd: self.send_html("<h1>Empty command</h1><a href='/plugins'>Back</a>", code=400); return
+            if not cmd: self.send_html("<h1>" + _tr("Empty command") + "</h1><a href='/plugins'>" + _tr("Back") + "</a>", code=400); return
             if q.get("confirm", [""])[0] != "1":
                 import urllib.parse as _up
-                self.send_html("<h1>Confirm</h1><div class='card'>Run this command on the receiver?<br><b>%s</b><br><span class='small'>It runs as root - only run commands from sources you trust.</span></div><a class='danger' href='/plugins/install-cmd?cmd=%s&confirm=1'>YES - Run command</a><a href='/plugins'>Cancel</a>" % (html.escape(cmd), _up.quote(cmd))); return
+                self.send_html(("<h1>" + _tr("Confirm") + "</h1><div class='card'>" + _tr("Run this command on the receiver?") + "<br><b>%s</b><br><span class='small'>" + _tr("It runs as root - only run commands from sources you trust.") + "</span></div><a class='danger' href='/plugins/install-cmd?cmd=%s&confirm=1'>" + _tr("YES - Run command") + "</a><a href='/plugins'>" + _tr("Cancel") + "</a>") % (html.escape(cmd), _up.quote(cmd))); return
             jid = uuid.uuid4().hex[:8]
             JOBS[jid] = {"action": "plugin-install-cmd", "kind": "shell", "shell": cmd, "status": "starting", "output": "", "started": ""}
             threading.Thread(target=run_job, args=(JOBS[jid],), daemon=True).start()
@@ -3854,18 +4053,18 @@ class H(BaseHTTPRequestHandler):
             self.send_html("<h1>Test</h1><div class='card'>%s</div><a href='/telegram'>Back</a>" % html.escape(res)); return
         if u.path == "/cleanup":
             items = cleanup_scan()
-            body = "<h1>Disk Cleanup</h1><p class='small'>Free disk space. Each category asks for confirm before deleting.</p>"
-            if not items: body += "<div class='card'>Nothing to clean - disk looks tidy.</div>"
+            body = "<h1>" + _tr("Disk Cleanup") + "</h1><p class='small'>" + _tr("Free disk space. Each category asks for confirm before deleting.") + "</p>"
+            if not items: body += "<div class='card'>" + _tr("Nothing to clean - disk looks tidy.") + "</div>"
             for cid, label, size, paths in items:
-                body += "<div class='card'><b>%s</b><br><span class='small'>~%d MB reclaimable</span><br><a class='danger' href='/cleanup/clean?id=%s'>Clean this</a></div>" % (html.escape(label), size // 1048576, cid)
-            body += "<a href='/'>Back to Panel</a>"
+                body += ("<div class='card'><b>%s</b><br><span class='small'>~%d " + _tr("MB reclaimable") + "</span><br><a class='danger' href='/cleanup/clean?id=%s'>" + _tr("Clean this") + "</a></div>") % (html.escape(label), size // 1048576, cid)
+            body += "<a href='/'>" + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/cleanup/clean":
             cid = (q.get("id") or [""])[0]
             items = {x[0]: x for x in cleanup_scan()}
-            if cid not in items: self.send_html("<h1>Not found</h1><a href='/cleanup'>Back</a>", code=404); return
+            if cid not in items: self.send_html("<h1>" + _tr("Not found") + "</h1><a href='/cleanup'>" + _tr("Back") + "</a>", code=404); return
             if q.get("confirm", [""])[0] != "1":
-                self.send_html("<h1>Confirm Cleanup</h1><div class='card'>Delete this?<br><b>%s</b></div><a class='danger' href='/cleanup/clean?id=%s&confirm=1'>YES - Clean</a><a href='/cleanup'>Cancel</a>" % (html.escape(items[cid][1]), cid)); return
+                self.send_html(("<h1>" + _tr("Confirm Cleanup") + "</h1><div class='card'>" + _tr("Delete this?") + "<br><b>%s</b></div><a class='danger' href='/cleanup/clean?id=%s&confirm=1'>" + _tr("YES - Clean") + "</a><a href='/cleanup'>" + _tr("Cancel") + "</a>") % (html.escape(items[cid][1]), cid)); return
             cmds = {"timeshift": "rm -rf %s/*" % items[cid][3], "crashlogs": "rm -f %s" % " ".join(items[cid][3].split(";")), "incomplete": "rm -f %s" % " ".join(items[cid][3].split(";")), "oldbackups": "rm -rf %s" % " ".join(items[cid][3].split(";"))}
             jid = uuid.uuid4().hex[:8]
             JOBS[jid] = {"action": "cleanup-run", "kind": "shell", "shell": cmds[cid], "status": "starting", "output": "", "started": ""}
@@ -4210,31 +4409,31 @@ class H(BaseHTTPRequestHandler):
 
         if u.path in ("/plugins", "/plugins/installed", "/plugins/uninstall", "/plugins/update", "/plugins/add"):
             if u.path == "/plugins":
-                body = "<h1>Plugins</h1><p class='small'>Categories from the Terminal Plugins menu. Pick a category, then pick a plugin to install it.</p>"
+                body = "<h1>" + _tr("Plugins") + "</h1><p class='small'>" + _tr("Categories from the Terminal Plugins menu. Pick a category, then pick a plugin to install it.") + "</p>"
                 for _cid,_ct,_nums in CAT_WEB:
-                    body += "<a href='/plugins/cat?cat=%d'>%s</a>" % (_cid,html.escape(_ct))
-                body += "<div class='sec'>ACTIONS - NOT categories</div><a href='/plugins/uninstall'>Uninstall Plugins</a><a href='/plugins/update'>Update Plugins (Force Reinstall, deps ignored)</a><a href='/plugins/add'>Add Plugin (Custom)</a><a href='/plugins/installed'>Installed Extensions (delete folder)</a>"
-                body += "<a href='/panel'>Back to Panel Menu</a><a href='/'>Back to Panel</a>"
+                    body += "<a href='/plugins/cat?cat=%d'>%s</a>" % (_cid,html.escape(_tr(_ct)))
+                body += "<div class='sec'>" + _tr("ACTIONS - NOT categories") + "</div><a href='/plugins/uninstall'>" + _tr("Uninstall Plugins") + "</a><a href='/plugins/update'>" + _tr("Update Plugins (Force Reinstall, deps ignored)") + "</a><a href='/plugins/add'>" + _tr("Add Plugin (Custom)") + "</a><a href='/plugins/installed'>" + _tr("Installed Extensions (delete folder)") + "</a>"
+                body += "<a href='/panel'>" + _tr("Back to Panel Menu") + "</a><a href='/'>" + _tr("Back to Panel") + "</a>"
                 self.send_html(body); return
             if u.path == "/plugins/installed":
-                body = "<h1>Plugin Manager - Installed</h1><p class='small'>Folders in /usr/lib/enigma2/python/Plugins/Extensions - same list as Terminal Uninstall shows.</p>"
+                body = "<h1>" + _tr("Plugin Manager - Installed") + "</h1><p class='small'>" + _tr("Folders in /usr/lib/enigma2/python/Plugins/Extensions - same list as Terminal Uninstall shows.") + "</p>"
                 for d,_,_ in plugin_list():
-                    body += "<div class='card'><b>%s</b><br><a class='danger' href='/plugins/delete?dir=%s'>Delete plugin folder</a></div>" % (html.escape(d), html.escape(d))
-                body += "<a href='/plugins'>Back to Plugins</a>"; self.send_html(body); return
+                    body += ("<div class='card'><b>%s</b><br><a class='danger' href='/plugins/delete?dir=%s'>" + _tr("Delete plugin folder") + "</a></div>") % (html.escape(d), html.escape(d))
+                body += "<a href='/plugins'>" + _tr("Back to Plugins") + "</a>"; self.send_html(body); return
             if u.path == "/plugins/uninstall":
-                body = "<h1>Uninstall Plugins</h1><p class='small'>Terminal: shows installed Extensions. Here: pick the plugin - it runs the same uninstall.</p>"
+                body = "<h1>" + _tr("Uninstall Plugins") + "</h1><p class='small'>" + _tr("Terminal: shows installed Extensions. Here: pick the plugin - it runs the same uninstall.") + "</p>"
                 for _n,_nm in enumerate(PLUGINS_WEB,1):
-                    body += "<a class='danger' href='/run?action=plugin-uninstall-%d'>%s - Uninstall</a>" % (_n,html.escape(_nm))
-                body += "<a href='/plugins'>Back to Plugins</a>"; self.send_html(body); return
+                    body += ("<a class='danger' href='/run?action=plugin-uninstall-%d'>%s " + _tr("- Uninstall") + "</a>") % (_n,html.escape(_nm))
+                body += "<a href='/plugins'>" + _tr("Back to Plugins") + "</a>"; self.send_html(body); return
             if u.path == "/plugins/update":
-                body = "<h1>Update Plugins</h1><p class='small'>Terminal: only INSTALLED plugins are offered, each is force-reinstalled from its own telnet command, dependencies ignored.</p>"
+                body = "<h1>" + _tr("Update Plugins") + "</h1><p class='small'>" + _tr("Terminal: only INSTALLED plugins are offered, each is force-reinstalled from its own telnet command, dependencies ignored.") + "</p>"
                 _installed_dirs = set(d for d,_,_ in plugin_list())
                 _shown = 0
                 for _n,_nm in enumerate(PLUGINS_WEB,1):
                     if _nm in _installed_dirs:
-                        body += "<a href='/run?action=plugin-update-%d'>%s - Force Reinstall</a>" % (_n,html.escape(_nm)); _shown += 1
-                if not _shown: body += "<div class='card'>No installed U-Panel plugins found. Check /plugins/installed.</div>"
-                body += "<a href='/plugins'>Back to Plugins</a>"; self.send_html(body); return
+                        body += ("<a href='/run?action=plugin-update-%d'>%s " + _tr("- Force Reinstall") + "</a>") % (_n,html.escape(_nm)); _shown += 1
+                if not _shown: body += "<div class='card'>" + _tr("No installed U-Panel plugins found. Check /plugins/installed.") + "</div>"
+                body += "<a href='/plugins'>" + _tr("Back to Plugins") + "</a>"; self.send_html(body); return
             if u.path == "/plugins/add":
                 _saved=(q.get("save") or [""])[0]
                 if _saved=="1":
@@ -4247,11 +4446,11 @@ class H(BaseHTTPRequestHandler):
                         try: os.makedirs(os.path.dirname(_cf),exist_ok=True)
                         except Exception: pass
                         open(_cf,"a").write("%s\t%s\t%s\n" % (_cat,_name,_cmd))
-                        self.send_html("<h1>Saved</h1><div class='card'>Custom plugin saved: %s - it now appears in its category as [C#] Name (Custom).</div><a href='/plugins'>Back to Plugins</a>" % html.escape(_name)); return
-                    self.send_html("<h1>Bad input</h1><div class='card'>Name + Command are required, no TAB in name.</div><a href='/plugins/add'>Back</a>"); return
-                body = "<h1>Add Plugin - Custom</h1><p class='small'>Same as Terminal Add More Plugins: Name + Category + ONE telnet command. It appears in its category list as [C#] Name (Custom).</p><form method='get' action='/plugins/add'><input type='hidden' name='save' value='1'><input name='name' placeholder='Name (e.g. My Jedi Installer)' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><select name='cat' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                for _cid,_ct,_nums in CAT_WEB: body += "<option value='%d'>%s</option>" % (_cid,html.escape(_ct))
-                body += "</select><input name='cmd' placeholder='Telnet command - ONE line' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>Save Custom Plugin</button></form><a href='/plugins'>Back to Plugins</a>"
+                        self.send_html(("<h1>" + _tr("Saved") + "</h1><div class='card'>" + _tr("Custom plugin saved:") + " %s " + _tr("- it now appears in its category as [C#] Name (Custom).") + "</div><a href='/plugins'>" + _tr("Back to Plugins") + "</a>") % html.escape(_name)); return
+                    self.send_html("<h1>" + _tr("Bad input") + "</h1><div class='card'>" + _tr("Name + Command are required, no TAB in name.") + "</div><a href='/plugins/add'>" + _tr("Back") + "</a>"); return
+                body = "<h1>" + _tr("Add Plugin - Custom") + "</h1><p class='small'>" + _tr("Same as Terminal Add More Plugins: Name + Category + ONE telnet command. It appears in its category list as [C#] Name (Custom).") + "</p><form method='get' action='/plugins/add'><input type='hidden' name='save' value='1'><input name='name' placeholder='" + _tr("Name (e.g. My Jedi Installer)") + "' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><select name='cat' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                for _cid,_ct,_nums in CAT_WEB: body += "<option value='%d'>%s</option>" % (_cid,html.escape(_tr(_ct)))
+                body += "</select><input name='cmd' placeholder='" + _tr("Telnet command - ONE line") + "' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>" + _tr("Save Custom Plugin") + "</button></form><a href='/plugins'>Back to Plugins</a>"
                 self.send_html(body); return
         if u.path == "/plugins/cat":
             try: _cid=int((q.get("cat") or ["1"])[0])
@@ -4270,7 +4469,7 @@ class H(BaseHTTPRequestHandler):
                         if len(_p)>=3 and _p[0].strip()==str(_cid): _customs.append(_p[1])
                 except Exception: pass
             for _ci2,_cn in enumerate(_customs,1): body += "<a href='/run?action=plugin-custom-%d'>%s (Custom) - Install / Run</a>" % (_ci2,html.escape(_cn))
-            body += "<a href='/plugins'>Back to Plugins</a>"; self.send_html(body); return
+            body += "<a href='/plugins'>" + _tr("Back to Plugins") + "</a>"; self.send_html(body); return
         if u.path in ("/smart-restore", "/custom-restore", "/download-image", "/download-image/my-images", "/download-image/my-links", "/packages", "/setup", "/fav", "/image-essentials", "/setting/ui-style", "/setting/ui-color"):
             if u.path == "/smart-restore":
                 body = "<h1>Smart Restore - LATEST BACKUP ONLY</h1><p class='small'>Mode auto-detected: SAME NAME + SAME PYTHON = FULL, else SAFE. BootLogo: in All only, for the CURRENT image.</p><a href='/run?action=smart-restore-packages'>Packages and Plugins</a><a href='/run?action=smart-restore-files'>Files Only</a><a href='/run?action=smart-restore'>All - Packages + Plugins + Files + BootLogo</a><a href='/panel'>Back to Panel Menu</a>"
@@ -4533,7 +4732,7 @@ class H(BaseHTTPRequestHandler):
         body = ""
         _devcard = "<div class='card' style='padding:4px 16px'>" + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.25)'><span style='opacity:.65'>Device</span><b>%s</b></div>" % html.escape((box or "").replace("\n", " \u2022 ")) + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.25)'><span style='opacity:.65'>Image</span><b>%s</b></div>" % html.escape(_clean_image_version(img)) + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0'><span style='opacity:.65'>HDD</span><b>%s</b></div></div>" % html.escape(_clean_disk_line(disk))
         body = _devcard
-        body += "<p class='small'>Panel %s - Theme: %s</p>" % (os.environ.get("U_PANEL_VERSION", "V6.24"), html.escape(WEB_THEMES[_web_theme_current()][0]))
+        body += "<p class='small'>Panel %s - Theme: %s</p>" % (os.environ.get("U_PANEL_VERSION", "V6.25"), html.escape(WEB_THEMES[_web_theme_current()][0]))
         body += "<div class='grid2'>"
         for _idx, it in enumerate(DASHBOARD):
             _extra = " wide center" if _idx in (0, 1) else ""
