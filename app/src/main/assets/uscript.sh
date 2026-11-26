@@ -760,33 +760,43 @@ FLASH_SCAN_ROOTS = os.environ.get("U_PANEL_FLASH_ROOTS", "/media/hdd:/media/usb:
 JOBS = {}
 SETUP_STATE = {}
 WEB_THEMES = {
-  # label, btn_c1, btn_c2, body_bg, body_fg, tiles (dv, dr, dg, dp, dc, dt, dl) each (c1, c2)
-  "upanel": ("U-Panel", "#7C3AED", "#C026D3", "#161638", "#ffffff", [("#7C3AED", "#C026D3"), ("#DB2777", "#F472B6"), ("#10B981", "#34D399"), ("#FB923C", "#FACC15"), ("#F59E0B", "#FBBF24"), ("#0EA5E9", "#22D3EE"), ("#2563EB", "#38BDF8")]),
-  "midnight": ("Midnight Neon", "#0EA5E9", "#A855F7", "#050510", "#E0F2FE", [("#7C3AED", "#A855F7"), ("#DB2777", "#F472B6"), ("#0891B2", "#22D3EE"), ("#F59E0B", "#FBBF24"), ("#EAB308", "#FDE047"), ("#2563EB", "#38BDF8"), ("#0EA5E9", "#67E8F9")]),
-  "ocean": ("Ocean Deep", "#0891B2", "#22D3EE", "#031525", "#E0F2FE", [("#0E7490", "#06B6D4"), ("#1D4ED8", "#3B82F6"), ("#0F766E", "#14B8A6"), ("#0369A1", "#38BDF8"), ("#0C4A6E", "#0284C7"), ("#155E75", "#22D3EE"), ("#1E40AF", "#60A5FA")]),
-  "forest": ("Forest", "#059669", "#A3E635", "#07170C", "#D1FAE5", [("#14532D", "#22C55E"), ("#166534", "#4ADE80"), ("#15803D", "#86EFAC"), ("#65A30D", "#A3E635"), ("#A16207", "#FACC15"), ("#0F766E", "#2DD4BF"), ("#047857", "#34D399")]),
-  "ember": ("Ember Fire", "#EA580C", "#EF4444", "#1A0A05", "#FFEDD5", [("#9A3412", "#F97316"), ("#991B1B", "#EF4444"), ("#C2410C", "#FB923C"), ("#EA580C", "#FDBA74"), ("#B45309", "#F59E0B"), ("#9F1239", "#FB7185"), ("#7C2D12", "#FF8C42")]),
-  "royal": ("Royal Violet", "#7C3AED", "#F59E0B", "#120826", "#EDE9FE", [("#6D28D9", "#A855F7"), ("#9D174D", "#EC4899"), ("#7E22CE", "#C084FC"), ("#B45309", "#F59E0B"), ("#A16207", "#FBBF24"), ("#86198F", "#E879F9"), ("#4C1D95", "#8B5CF6")]),
-  "crimson": ("Crimson", "#BE123C", "#FB7185", "#160608", "#FFE4E6", [("#9F1239", "#FB7185"), ("#991B1B", "#EF4444"), ("#BE123C", "#FDA4AF"), ("#9A3412", "#F97316"), ("#E11D48", "#F472B6"), ("#881337", "#F43F5E"), ("#7F1D1D", "#F87171")]),
-  "arctic": ("Arctic Light", "#2563EB", "#38BDF8", "#F1F5F9", "#0F172A", [("#1D4ED8", "#3B82F6"), ("#0E7490", "#06B6D4"), ("#0369A1", "#38BDF8"), ("#0284C7", "#7DD3FC"), ("#1E40AF", "#818CF8"), ("#0EA5E9", "#67E8F9"), ("#2563EB", "#60A5FA")]),
-  "paper": ("Paper Light", "#B45309", "#F59E0B", "#FDF6E3", "#292524", [("#92400E", "#D97706"), ("#9A3412", "#EA580C"), ("#854D0E", "#CA8A04"), ("#B45309", "#F59E0B"), ("#A16207", "#EAB308"), ("#78716C", "#A8A29E"), ("#57534E", "#78716C")]),
-  "mint": ("Mint Light", "#0D9488", "#34D399", "#F0FDF4", "#134E4A", [("#0D9488", "#2DD4BF"), ("#059669", "#34D399"), ("#0F766E", "#5EEAD4"), ("#16A34A", "#4ADE80"), ("#CA8A04", "#FACC15"), ("#0891B2", "#22D3EE"), ("#0369A1", "#38BDF8")]),
-  "graphite": ("Graphite", "#64748B", "#E2E8F0", "#101114", "#F1F5F9", [("#374151", "#6B7280"), ("#4B5563", "#9CA3AF"), ("#1F2937", "#4B5563"), ("#6B7280", "#D1D5DB"), ("#111827", "#374151"), ("#475569", "#94A3B8"), ("#334155", "#64748B")]),
-  "lemon": ("Lemon Zest", "#CA8A04", "#A3E635", "#121200", "#FEFCE8", [("#A16207", "#EAB308"), ("#CA8A04", "#FACC15"), ("#65A30D", "#A3E635"), ("#EAB308", "#FDE047"), ("#F59E0B", "#FBBF24"), ("#84CC16", "#BEF264"), ("#16A34A", "#4ADE80")]),
-  # V6.20 NEW - Black & Navy (user request)
-  "black": ("Pure Black - \u0623\u0633\u0648\u062f", "#232329", "#8B8B9E", "#000000", "#FAFAFA", [("#18181B", "#3F3F46"), ("#27272A", "#52525B"), ("#09090B", "#27272A"), ("#3F3F46", "#71717A"), ("#18181B", "#52525B"), ("#27272A", "#A1A1AA"), ("#09090B", "#3F3F46")]),
-  "navy": ("Navy Blue - \u0643\u062d\u0644\u064a", "#1E3A8A", "#3B82F6", "#020617", "#DBEAFE", [("#1E3A8A", "#2563EB"), ("#1D4ED8", "#3B82F6"), ("#0F172A", "#1E40AF"), ("#1E293B", "#334155"), ("#172554", "#1D4ED8"), ("#0C4A6E", "#0284C7"), ("#1E3A8A", "#60A5FA")]),
+  # V6.21 ELEGANT GLOSSY - old themes replaced. label, btn_c1, btn_c2, body_bg, body_fg, tiles (7 pairs)
+  "upanel": ("Royal Gold", "#A9852F", "#E9CE7A", "#0B0906", "#F4EDDA", [("#8A6D24", "#C9A94F"), ("#6E571E", "#A9852F"), ("#7A5F20", "#D9B95E"), ("#94802E", "#E9CE7A"), ("#5E4C1A", "#8A6D24"), ("#A9852F", "#F4E3A0"), ("#7A5F20", "#C9A94F")]),
+  "gold": ("Champagne Gold", "#9A7B2D", "#E5C97E", "#0C0A06", "#F6F0DD", [("#7E6524", "#C4A455"), ("#65511D", "#9A7B2D"), ("#6E5A20", "#D3B46A"), ("#8A7430", "#E5C97E"), ("#55461A", "#7E6524"), ("#9A7B2D", "#F0E2A8"), ("#6E5A20", "#C4A455")]),
+  "neon": ("Midnight Neon", "#1F6F9E", "#7C5CD6", "#05060F", "#E4ECFF", [("#5B3FA8", "#9678D6"), ("#8E2438", "#D4627A"), ("#0E6E8C", "#2FA8C9"), ("#A9852F", "#E9CE7A"), ("#C9A227", "#F0D060"), ("#243B6B", "#4A76C4"), ("#1F6F9E", "#5FA8D6")]),
+  "black": ("Pure Black", "#26262C", "#8A8A99", "#000000", "#FAFAFA", [("#18181B", "#3F3F46"), ("#27272A", "#52525B"), ("#09090B", "#27272A"), ("#3F3F46", "#71717A"), ("#18181B", "#52525B"), ("#27272A", "#A1A1AA"), ("#09090B", "#3F3F46")]),
+  "ocean": ("Ocean Deep", "#0E6E8C", "#2FA8C9", "#03141F", "#E0F2F7", [("#0B556E", "#1E8AA8"), ("#16486B", "#2F6FA8"), ("#0E5E5E", "#2FA89A"), ("#0A4A6E", "#2F8AC9"), ("#0C3A52", "#1E6E9E"), ("#125E6E", "#2FA8C9"), ("#1A3A6B", "#4A76C4")]),
+  "navy": ("Navy Blue", "#243B6B", "#4A76C4", "#060A16", "#DCE6F7", [("#1B2E52", "#385A9E"), ("#1D3A6B", "#3F6FBF"), ("#141C33", "#243B6B"), ("#1E2A44", "#3A4A6B"), ("#16264A", "#2F4E8C"), ("#0E4A6E", "#2F8AC9"), ("#243B6B", "#6E9AD6")]),
+  "frost": ("Arctic Frost", "#4A6FA5", "#8FB8D8", "#E9EEF3", "#1B2A3A", [("#3A5A87", "#6E94BC"), ("#2F7A8C", "#5FA8BC"), ("#3A6E9E", "#7FB0D0"), ("#2F5E8C", "#6E9EC4"), ("#3A4A8C", "#7E8AC4"), ("#4A8CA5", "#8FC4D8"), ("#3A5A87", "#8FB8D8")]),
+  "ember": ("Ember Fire", "#B4551F", "#E07B3A", "#170D06", "#FDEBD9", [("#8A3E14", "#C45F24"), ("#8A2438", "#C44A5E"), ("#A84A18", "#D9732F"), ("#B4551F", "#E89A6B"), ("#8A4A14", "#C47B24"), ("#8A2438", "#E07B8A"), ("#6E3410", "#D97B3A")]),
+  "crimson": ("Crimson Rose", "#8E2438", "#D4627A", "#150609", "#FDE8EC", [("#6E1A2A", "#A83A4E"), ("#7A1E2E", "#C44A5E"), ("#8E2438", "#E08AA0"), ("#8A3414", "#D9732F"), ("#A82E44", "#E07B8A"), ("#6E1E33", "#C44A5E"), ("#5E1A24", "#D4627A")]),
+  "sunset": ("Sunset Amber", "#B0722A", "#E0A458", "#150F06", "#FDF0DA", [("#8A571D", "#C48A3A"), ("#8A6D24", "#C9A94F"), ("#A86A1E", "#D99A44"), ("#B0722A", "#E8B877"), ("#7A5A14", "#B08A2E"), ("#8A4A24", "#D97B5E"), ("#6E4E14", "#C48A3A")]),
+  "violet": ("Royal Violet", "#5B3FA8", "#9678D6", "#0E071F", "#EDE9FB", [("#4A3287", "#7A5FC4"), ("#8A244A", "#D4628A"), ("#5E34A8", "#9A7CD6"), ("#8A6D24", "#C9A94F"), ("#7A5A24", "#C4A455"), ("#6E2E8C", "#C47BD6"), ("#3A2470", "#6E4AB0")]),
+  "grape": ("Grape Purple", "#4A2E6B", "#8A5FBF", "#0D0718", "#EDE7F7", [("#382352", "#6E4A9E"), ("#4A2E6B", "#9A7CD6"), ("#2E1F4A", "#5B3FA8"), ("#6E3A7A", "#C47BC4"), ("#3A2E52", "#7A5FA8"), ("#4A2E6B", "#A87ED6"), ("#2E1F4A", "#6E4AB0")]),
+  "rose": ("Rose Pink", "#9E3D5E", "#E08AA8", "#170A10", "#FDEAF0", [("#7A2E47", "#C45E80"), ("#8A2438", "#D4627A"), ("#9E3D5E", "#E8A8BC"), ("#8A4A2E", "#D98A6E"), ("#A83A5E", "#E08AA8"), ("#6E2438", "#C45E80"), ("#5E1E33", "#D4627A")]),
+  "emerald": ("Forest Emerald", "#1E6B4A", "#4FA87E", "#06120C", "#D9F2E3", [("#144A33", "#2F8A5E"), ("#14522E", "#3FA86B"), ("#166B3A", "#5EBC8A"), ("#5E7A14", "#A8BC4A"), ("#8A6D24", "#C9A94F"), ("#0E5E5E", "#2FA89A"), ("#14522E", "#4FA87E")]),
+  "mint": ("Mint Light", "#3D8A7A", "#7FC4B2", "#EDF5F1", "#16382F", [("#2F6E62", "#5EAA96"), ("#2E7A52", "#5EBC8A"), ("#2F7A6E", "#7FC4B2"), ("#3D8A4A", "#7FBC6E"), ("#8A7A24", "#C4B04F"), ("#2F7A8C", "#5FA8BC"), ("#2F6E8C", "#5FA8C4")]),
+  "lemon": ("Lemon Zest", "#9A8A1F", "#D9C94F", "#121204", "#FBF8E0", [("#7A6E18", "#B8A83A"), ("#8A7A24", "#C9A94F"), ("#5E7A14", "#A8BC4A"), ("#C9A227", "#F0D060"), ("#B08A24", "#E0C44F"), ("#6E9E14", "#A8D94F"), ("#3D8A4A", "#7FBC6E")]),
+  "graphite": ("Graphite", "#4A5058", "#8A919C", "#101114", "#EFF1F4", [("#33383F", "#5E646E"), ("#3A4048", "#6E7580"), ("#1E2226", "#3A4048"), ("#5E646E", "#A8ADB5"), ("#14171A", "#33383F"), ("#3A4A5E", "#7A8494"), ("#2A2E33", "#5E646E")]),
+  "silver": ("Silver Mono", "#6E7378", "#C9CDD2", "#17181A", "#EDEFF1", [("#4A4E52", "#7A7F85"), ("#5E6266", "#9EA3A8"), ("#2E3134", "#4A4E52"), ("#6E7378", "#B8BDC4"), ("#3A3E42", "#7A7F85"), ("#5E6266", "#C9CDD2"), ("#2E3134", "#6E7378")]),
+  "paper": ("Paper Light", "#8A6D3B", "#C9A959", "#F7F1DE", "#2A2518", [("#6E5518", "#A8853A"), ("#7A3A1E", "#C45E2F"), ("#6E5E14", "#A8853A"), ("#8A6D3B", "#D9B95E"), ("#7A6D18", "#B8A83A"), ("#5E5E52", "#8A8A7A"), ("#4A4438", "#6E6858")]),
 }
 WEB_THEME_GROUPS = {
-  # V6.20 RE-ORGANIZED: Premium Dark first (incl. NEW Black + Navy), then Deep colours, then Light.
-  "PREMIUM DARK": ["upanel", "midnight", "black", "navy", "graphite"],
-  "DEEP & VIVID": ["ocean", "royal", "forest", "ember", "crimson"],
-  "LIGHT & FRESH": ["arctic", "paper", "mint", "lemon"],
+  # V6.21 PREMIUM DIVISION - Signature first, then mood groups.
+  "SIGNATURE": ["upanel", "neon", "black", "gold"],
+  "COOL & CALM": ["ocean", "navy", "frost"],
+  "BOLD & WARM": ["ember", "crimson", "sunset"],
+  "ROYAL": ["violet", "grape", "rose"],
+  "FRESH": ["emerald", "mint", "lemon"],
+  "MINIMAL": ["graphite", "silver", "paper"],
 }
 WEB_THEME_GROUP_META = {
-  "PREMIUM DARK": ("\U0001f319", "Deep dark backgrounds - easy on the eyes at night"),
-  "DEEP & VIVID": ("\U0001f48e", "Rich saturated colours - bold and premium"),
-  "LIGHT & FRESH": ("\u2600\ufe0f", "Bright clean backgrounds - clear in daylight"),
+  "SIGNATURE": ("👑", "The signature U-Panel looks - gold, neon, pure black"),
+  "COOL & CALM": ("💎", "Cool elegant blues - calm and refined"),
+  "BOLD & WARM": ("🔥", "Warm elegant reds and ambers - rich but soft"),
+  "ROYAL": ("💜", "Royal purples and rose - luxurious and deep"),
+  "FRESH": ("🌿", "Fresh greens and lemon - clean and lively"),
+  "MINIMAL": ("⬛", "Minimal greys and paper - quiet and classy"),
 }
 def _theme_groups_html(_cur):
     # Premium grouped theme picker: one card per group, grid of theme cards inside.
@@ -812,6 +822,10 @@ def _web_theme_current():
                 if _ln.startswith("WEB_THEME="):
                     _tv = _ln.split("=", 1)[1].strip()
                     if _tv == "uscript": _tv = "upanel"
+
+                    # V6.21 - old theme keys map to the new elegant colours
+
+                    _tv = {"midnight": "neon", "forest": "emerald", "royal": "violet", "arctic": "frost"}.get(_tv, _tv)
                     if _tv in WEB_THEMES: return _tv
     except Exception:
         pass
@@ -870,31 +884,52 @@ def _web_theme_css():
     return _css
 
 PANEL_SHAPES = {
-  # label, radius, padding
-  "rounded": ("Rounded", 10, 16),
-  "soft": ("Soft", 22, 16),
-  "pill": ("Pill", 26, 18),
-  "square": ("Square", 0, 16),
-  "compact": ("Compact", 10, 12),
-  "slim": ("Slim", 6, 10),
-  # V6.20 NEW TILE SHAPES - from user screenshots (Tile Shapes)
-  "arch": ("Arch - \u0642\u0648\u0633", 18, 16),
-  "hexagon": ("Hexagon - \u0633\u062f\u0627\u0633\u064a", 12, 16),
-  "leaf": ("Leaf - \u0648\u0631\u0642\u0629", 16, 16),
-  "blob": ("Blob - \u0641\u0642\u0627\u0639\u0629", 16, 16),
-  "ticket": ("Ticket - \u062a\u0630\u0643\u0631\u0629", 12, 16),
-  "shield": ("Shield - \u062f\u0631\u0639", 12, 16),
+  # V6.21 - OLD SHAPES REMOVED ([STRIPPED 74 bytes]).
+  # label, radius, padding. MAIN shape = Dial.
+  "dial": ("Dial - القرص - الرئيسي", 50, 14),
+  "list": ("List - ليستة", 14, 14),
+  "grouped": ("Grouped Sections - أقسام", 16, 14),
+  "tabs": ("Tabs - تابات", 16, 14),
+  "bento": ("Bento - موزاييك", 18, 14),
+  "compact": ("Compact Tiles - بلاطات صغيرة", 20, 12),
+  "pills": ("Pills - كبسولات", 999, 14),
+  "hero": ("Hero Stack - كروت بوصف", 20, 16),
+  "radial": ("Radial Circle - دايرة حول اللوجو", 50, 12),
+  "circle": ("Circle Tiles - بلاطات دائرية", 50, 12),
+  "arc": ("Arc Fan - مروحة", 50, 12),
 }
-# V6.20: clip-path / radius override per new tile shape. Applied to .grid2 a only,
-# .wide tiles keep a readable rectangle so long titles never clip.
+PANEL_SHAPE_GROUPS = {
+  "MAIN": ["dial"],
+  "CLASSIC": ["list", "grouped", "tabs"],
+  "MODERN": ["bento", "compact", "pills", "hero"],
+  "CIRCULAR": ["radial", "circle", "arc"],
+}
+PANEL_SHAPE_GROUP_META = {
+  "MAIN": ("⭐", "The main U-Panel look - Dial is the default"),
+  "CLASSIC": ("📋", "Classic clean layouts - simple and fast"),
+  "MODERN": ("✨", "Modern layouts - tiles, pills and hero cards"),
+  "CIRCULAR": ("⭕", "Circular layouts - orbs, rings and fans"),
+}
+# V6.21 - grid-based shapes. NO absolute positioning, NO transforms, NO overlap.
+_GLOSS = ".grid2 a{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -10px 18px rgba(0,0,0,.28),0 10px 24px rgba(0,0,0,.45)!important;border:1px solid rgba(255,255,255,.30)!important}"
+_EMBLEM = ".grid2::before{content:'U';grid-column:1/-1;display:flex;align-items:center;justify-content:center;height:118px;border-radius:50%;font-size:56px;font-weight:900;color:rgba(255,255,255,.95);background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,.06) 55%,rgba(0,0,0,.35));border:2px solid rgba(255,255,255,.45);box-shadow:0 0 34px rgba(255,255,255,.28),inset 0 2px 6px rgba(255,255,255,.4)}"
+_CIRCLES = ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:12px}.grid2 a{border-radius:50%!important;aspect-ratio:1/1;min-height:0!important;height:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px;text-align:center!important;font-size:11px!important;line-height:1.25!important;padding:10px 6px!important;overflow:hidden}.grid2 a .ic{font-size:22px!important;line-height:1!important}.grid2 a svg{width:24px!important;height:24px!important}.grid2 a.wide{grid-column:span 1!important}"
+_CIRCLES4 = ".grid2{display:grid;grid-template-columns:repeat(4,1fr)!important;gap:8px}.grid2 a{border-radius:50%!important;aspect-ratio:1/1;min-height:0!important;height:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px;text-align:center!important;font-size:10px!important;line-height:1.2!important;padding:6px 3px!important;overflow:hidden}.grid2 a .ic{font-size:19px!important;line-height:1!important}.grid2 a svg{width:20px!important;height:20px!important}.grid2 a.wide{grid-column:span 1!important}"
 PANEL_SHAPE_CSS = {
-  "arch": ".grid2 a{border-radius:999px 999px 18px 18px!important}",
-  "hexagon": ".grid2 a{border-radius:12px!important;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}",
-  "leaf": ".grid2 a{border-radius:0 50% 0 50%!important}",
-  "blob": ".grid2 a{border-radius:60% 40% 55% 45%/50% 60% 40% 50%!important}",
-  "ticket": ".grid2 a{border-radius:12px!important;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(50% - 12px),calc(100% - 8px) 50%,100% calc(50% + 12px),100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 calc(50% + 12px),8px 50%,0 calc(50% - 12px),0 12px)}",
-  "shield": ".grid2 a{border-radius:12px 12px 0 0!important;clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%)}",
+  "dial": _GLOSS + _EMBLEM + _CIRCLES,
+  "radial": _GLOSS + _EMBLEM + _CIRCLES4,
+  "arc": _GLOSS + ".grid2::before{content:'U-PANEL';grid-column:1/-1;display:flex;align-items:center;justify-content:center;height:64px;border-radius:999px 999px 24px 24px;font-size:22px;font-weight:900;letter-spacing:3px;color:rgba(255,255,255,.95);background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,.06) 55%,rgba(0,0,0,.35));border:2px solid rgba(255,255,255,.45);box-shadow:0 0 24px rgba(255,255,255,.22),inset 0 2px 6px rgba(255,255,255,.4)}" + _CIRCLES,
+  "circle": _GLOSS + _CIRCLES,
+  "list": _GLOSS + ".grid2{display:flex;flex-direction:column}.grid2 a{display:flex;align-items:center;text-align:left;gap:12px;width:100%;min-height:64px;border-radius:16px!important}",
+  "grouped": _GLOSS + ".sec{border-radius:14px;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}.grid2 a{border-left:4px solid rgba(255,255,255,.55)!important}",
+  "tabs": _GLOSS + ".grid2::before{content:'All  •  Setup  •  Backup  •  Tools  •  Media';display:block;grid-column:1/-1;text-align:center;font-size:13px;font-weight:700;letter-spacing:.5px;padding:10px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}.grid2 a{border-radius:999px!important}",
+  "bento": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(4,1fr)!important;gap:10px}.grid2 a:nth-child(1){grid-column:span 4}.grid2 a:nth-child(2){grid-column:span 2}.grid2 a:nth-child(3){grid-column:span 2}.grid2 a:nth-child(4){grid-column:span 2}.grid2 a:nth-child(5){grid-column:span 2}.grid2 a.wide{grid-column:span 4!important}",
+  "compact": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:8px}.grid2 a{flex-direction:column!important;justify-content:center!important;text-align:center!important;gap:6px;min-height:104px!important;padding:12px 6px!important;font-size:12px!important;line-height:1.25!important;border-radius:20px!important}.grid2 a.wide{grid-column:span 3!important;flex-direction:row!important;font-size:16px!important}",
+  "pills": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(2,1fr)!important;gap:10px}.grid2 a{border-radius:999px!important;justify-content:center!important;text-align:center!important}.grid2 a.wide{grid-column:span 2!important}",
+  "hero": _GLOSS + ".grid2{display:flex;flex-direction:column}.grid2 a{width:100%;min-height:92px!important;border-radius:22px!important;font-size:18px!important;justify-content:center!important;text-align:center!important}",
 }
+# V6.21 DOCK - SOLID floating dock on EVERY page. flex:1 tabs so all 5 tabs fit.
+DOCK_CSS = "html body{padding-bottom:118px!important}.up-tabs{position:fixed!important;left:50%!important;bottom:12px!important;transform:translateX(-50%)!important;display:flex!important;gap:4px!important;width:94vw!important;max-width:480px!important;padding:8px!important;border-radius:999px!important;background:rgba(14,14,20,.97)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 12px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.35)!important;z-index:999!important}.up-tabs a{flex:1 1 0!important;min-width:0!important;flex-direction:column!important;gap:2px!important;padding:6px 2px!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;font-size:10px!important}.up-tabs a.on{background:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)!important}.up-tabs a svg{width:20px!important;height:20px!important}.up-tabs a .ut-lb{font-size:10px!important;white-space:nowrap!important}"
 def _panel_shape_current():
     try:
         with open("/etc/u-panel-panel-shape.conf") as _f:
@@ -904,94 +939,47 @@ def _panel_shape_current():
                     if _sv in PANEL_SHAPES: return _sv
     except Exception:
         pass
-    return "rounded"
+    return "dial"
 def _panel_shape_css():
     _sv = _panel_shape_current()
-    if _sv == "rounded": return ""
-    _lbl, _rad, _pad = PANEL_SHAPES[_sv]
-    if _sv in PANEL_SHAPE_CSS:
-        return "<style>a,button{border-radius:%spx}.grid2 a.wide{border-radius:18px!important;clip-path:none!important}" % (_rad,) + PANEL_SHAPE_CSS[_sv] + "</style>"
-    return "<style>a,button{border-radius:%spx}.grid2 a{border-radius:%spx}</style>" % (_rad, _rad)
+    _css = PANEL_SHAPE_CSS.get(_sv, "")
+    return "<style>" + _css + DOCK_CSS + "</style>"
+
 
 PANEL_LAYOUTS = {
-    # key: (label, )
-    "grid2": ("Grid - 2 Columns (Current)",),
-    "list": ("1 - List - 1 Column",),
-    "compact": ("2 - Compact - 3 Columns",),
-    "tiles": ("4 - Tiles - Square Grid",),
-    "sidebar": ("5 - Sidebar - Icon Rail",),
-    "featured": ("7 - Featured - Hero + Small",),
-    "circles9": ("9 - Circles - Glowing Rings",),
-    "pills": ("3 - Pills - Full-Width Pills",),
-    "cards": ("6 - Cards - Big Cards",),
-    "mini": ("8 - Mini - 4-Column Icons",),
-    "split": ("10 - Split - Big Icon + Text",),
-    "cover": ("11 - Cover - Big Cover + Grid",),
-    # V6.20 NEW MENU LAYOUTS - from user screenshots (Menu Layouts)
-    "bento": ("Bento - \u0628\u064a\u0646\u062a\u0648",),
-    "masonry": ("Masonry - \u0645\u062a\u062f\u0631\u062c",),
-    "stack": ("Stack - \u0645\u062a\u0631\u0627\u0635",),
-    "zigzag": ("Zigzag - \u0645\u062a\u0639\u0631\u062c",),
-    "centerstage": ("Center Stage - \u0627\u0644\u0645\u0633\u0631\u062d",),
-    "duo": ("Duo - \u062b\u0646\u0627\u0626\u064a",),
+    # V6.21 - OLD LAYOUTS REMOVED ([STRIPPED 111 bytes] Stage/Duo).
+    # Menu layout is now the SHAPE system (PANEL_SHAPES) - this dict only keeps valid keys for saved values.
+    "dial": ("Dial - القرص - الرئيسي",),
+    "list": ("List - ليستة",),
+    "grouped": ("Grouped Sections - أقسام",),
+    "tabs": ("Tabs - تابات",),
+    "bento": ("Bento - موزاييك",),
+    "compact": ("Compact Tiles - بلاطات صغيرة",),
+    "pills": ("Pills - كبسولات",),
+    "hero": ("Hero Stack - كروت بوصف",),
+    "radial": ("Radial Circle - دايرة حول اللوجو",),
+    "circle": ("Circle Tiles - بلاطات دائرية",),
+    "arc": ("Arc Fan - مروحة",),
 }
 def _panel_layout_current():
+    # V6.21 - old layouts (sidebar/grid2/tiles/...) were removed. Any saved old
+    # value now maps to Dial instead of crashing the Theme page (KeyError ->
+    # "server dropped"). The returned key is ALWAYS in PANEL_LAYOUTS.
     try:
         with open("/etc/u-panel-menu-layout.conf") as _f:
             for _ln in _f:
                 if _ln.startswith("MENU_LAYOUT="):
                     _sv = _ln.split("=", 1)[1].strip()
-                    if _sv == "horizontal": _sv = "tiles"
                     if _sv in PANEL_LAYOUTS: return _sv
+                    return "dial"
     except Exception:
         pass
-    return "sidebar"
+    return "dial"
+
 def _panel_layout_css():
-    _sv = _panel_layout_current()
-    if _sv == "grid2": return ""
-    if _sv == "list":
-        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;min-height:72px}</style>"
-    if _sv == "compact":
-        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:8px}.grid2 a{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:104px;padding:12px 6px;font-size:13px;line-height:1.25}.grid2 a::after{display:none}.grid2 a .ic{width:38px;height:38px;flex-shrink:0}.grid2 a.wide{grid-column:span 3;flex-direction:row;font-size:17px}.grid2 a.wide::after{display:block}</style>"
-    if _sv == "tiles":
-        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:10px;align-items:start}.grid2 a{aspect-ratio:1/1;min-height:0;flex-direction:column;justify-content:center;text-align:center;gap:6px;padding:8px 6px;font-size:12px;line-height:1.25;overflow:hidden}.grid2 a::after{display:none}.grid2 a .ic{width:40px;height:40px;flex-shrink:0}.grid2 a.wide{grid-column:span 3;aspect-ratio:auto;flex-direction:row;min-height:64px;font-size:17px}.grid2 a.wide::after{display:block}</style>"
-    if _sv == "sidebar":
-        _tv, _c1, _c2, _bg, _fg, _card, _lc2, _dc1, _dark, _rgb = _theme_vals()
-        return "<style>.ml-sidebar{display:flex;gap:12px;align-items:flex-start}.ml-nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:8px;padding:10px 6px;border-radius:16px;background:rgba(255,255,255,.06)}.ml-nav a{display:flex;width:52px;height:52px;min-height:52px;border-radius:50%;align-items:center;justify-content:center;margin:0;padding:0}.ml-nav a .ic{margin:0}.ml-main{flex:1;min-width:0}.ml-main .grid2{display:flex;flex-direction:column}.ml-main .grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;min-height:64px}.ml-sidebar .ml-nav a{background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "66;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 12px " + _c2 + "55}.ml-sidebar .ml-nav a:active{transform:scale(.94);filter:brightness(1.15)}</style>"
-    if _sv == "featured":
-        return "<style>.grid2 a:first-child{grid-column:1/-1;min-height:128px;font-size:21px}.grid2 a:first-child .ic{width:60px;height:60px}</style>"
-    if _sv == "circles9":
-        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:18px 10px;align-items:start}.grid2 a{aspect-ratio:1/1;min-height:0;border-radius:50%!important;flex-direction:column;justify-content:center;text-align:center;gap:4px;padding:8px 6px;font-size:11px;line-height:1.2;overflow:hidden;box-shadow:0 0 0 4px rgba(0,180,196,.35),0 0 24px rgba(0,180,196,.55),0 10px 22px rgba(0,0,0,.5)}.grid2 a::after{display:none}.grid2 a .ic{width:36px;height:36px;margin:0 auto;flex-shrink:0}.grid2 a.wide{grid-column:span 3;aspect-ratio:auto;border-radius:22px!important;flex-direction:row;min-height:64px;font-size:17px}.grid2 a.wide::after{display:block}</style>"
-    if _sv == "pills":
-        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;border-radius:999px!important;min-height:56px}.grid2 a.wide{border-radius:999px!important}</style>"
-    if _sv == "cards":
-        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;width:100%;min-height:110px;gap:16px;font-size:19px;padding:16px 20px}.grid2 a .ic{width:64px;height:64px}</style>"
-    if _sv == "mini":
-        return "<style>.grid2{grid-template-columns:repeat(4,1fr);gap:8px}.grid2 a{flex-direction:column;justify-content:center;text-align:center;gap:4px;min-height:100px;padding:10px 4px;font-size:11px;line-height:1.25}.grid2 a::after{display:none}.grid2 a .ic{width:30px;height:30px;flex-shrink:0}.grid2 a.wide{grid-column:span 4;flex-direction:row;font-size:16px;min-height:56px}.grid2 a.wide::after{display:block}</style>"
-    if _sv == "split":
-        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;width:100%;gap:14px;min-height:76px;padding:12px 16px}.grid2 a .ic{width:56px;height:56px;flex:0 0 56px}</style>"
-    if _sv == "cover":
-        return "<style>.grid2 a:first-child{grid-column:1/-1;min-height:150px;font-size:22px;flex-direction:column}.grid2 a:first-child .ic{width:72px;height:72px}</style>"
-    if _sv == "bento":
-        # Bento: 1st tile 2x2 big, 2nd wide, rest small. nth-child works on .grid2 order.
-        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a:nth-child(1){grid-column:span 1;grid-row:span 2;min-height:210px;font-size:19px;flex-direction:column}.grid2 a:nth-child(1) .ic{width:60px;height:60px}.grid2 a:nth-child(2){grid-column:span 1;min-height:100px}.grid2 a.wide{grid-column:span 2;min-height:64px}</style>"
-    if _sv == "masonry":
-        # Masonry: CSS columns, tiles keep natural height, order flows top-down per column.
-        return "<style>.grid2{display:block;columns:2;column-gap:12px}.grid2 a{display:flex;break-inside:avoid;margin-bottom:12px;min-height:92px}.grid2 a:nth-child(3n){min-height:128px}.grid2 a.wide{width:100%;min-height:72px}</style>"
-    if _sv == "stack":
-        # Stack: one full-width row per tile, compact.
-        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;min-height:64px;padding:12px 16px}.grid2 a .ic{width:40px;height:40px}</style>"
-    if _sv == "zigzag":
-        # Zigzag: 2 small, 1 wide, 2 small, 1 wide ... (nth-child on grid)
-        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a{width:100%;min-height:92px}.grid2 a:nth-child(3n){grid-column:span 2;min-height:64px;flex-direction:row}.grid2 a.wide{grid-column:span 2}</style>"
-    if _sv == "centerstage":
-        # Center Stage: 1st tile 2x2 centre, small tiles around it.
-        return "<style>.grid2{grid-template-columns:repeat(3,1fr)}.grid2 a:first-child{grid-column:2;grid-row:1/span 2;min-height:200px;font-size:19px;flex-direction:column}.grid2 a:first-child .ic{width:60px;height:60px}.grid2 a.wide{grid-column:span 3;min-height:64px}</style>"
-    if _sv == "duo":
-        # Duo: top grid (2-col) + bottom vertical list, via .grid2 split is not possible in pure CSS,
-        # so: first half as grid, tiles after 4th become full-width rows.
-        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a:nth-child(n+5){grid-column:span 2;min-height:64px;flex-direction:row}.grid2 a.wide{grid-column:span 2}</style>"
+    # V6.21 - layout is owned by the SHAPE system (_panel_shape_css). Nothing here.
     return ""
+
 def _button_size_css():
     _press = (
         # kill the browser default grey tap flash - our glass effect replaces it
@@ -2162,7 +2150,7 @@ def _app_shell_top(path):
     return "<header class='up-head'><div class='up-logo'>U-PANEL</div><span class='up-online'><i></i>Online</span></header>"
 def _app_shell_bottom(path):
     if path.startswith("/login"): return ""
-    _tabs = [("/", "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "Home"), ("/panel", "M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm0-7h5V5h-5v6zm6-6v6h5V5h-5zm0 7h5v6h-5v-6z", "Panel"), ("/live", "M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z", "Live TV"), ("/setting", "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z", "Settings")]
+    _tabs = [("/", "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "Home"), ("/setup", "M12 2 2 9h3v11h6v-6h2v6h6V9h3L12 2z", "Setup"), ("/backups", "M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z", "Backup"), ("/streaming", "M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z", "Media"), ("/setting", "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z", "Setting")]
     _out = "<nav class='up-tabs'>"
     for _href, _d, _lbl in _tabs:
         _cls = " class='on'" if path == _href or (path.startswith(_href + "/") and _href != "/") else ""
@@ -2171,32 +2159,30 @@ def _app_shell_bottom(path):
     return _out
 
 def _layout_mock(_lk):
+    # V6.21 - previews for the 11 new shapes (old shape previews removed).
     def _bx(_w, _h, _r):
         return "<span style='display:inline-block;width:%spx;height:%spx;border-radius:%spx;background:linear-gradient(135deg,#ec4899,#a855f7);margin:2px;vertical-align:middle'></span>" % (_w, _h, _r)
+    if _lk == "dial":
+        return _bx(30, 30, 15) + _bx(30, 30, 15) + _bx(30, 30, 15) + "<br>" + _bx(18, 18, 9) + _bx(18, 18, 9) + _bx(18, 18, 9) + _bx(18, 18, 9)
+    if _lk in ("radial", "circle"):
+        return (_bx(30, 30, 15) * 3) + "<br>" + (_bx(30, 30, 15) * 3)
+    if _lk == "arc":
+        return _bx(26, 26, 13) + _bx(26, 26, 13) + _bx(26, 26, 13) + "<br>" + (_bx(30, 30, 15) * 3)
     if _lk == "list":
         return _bx(150, 14, 6) + "<br>" + _bx(150, 14, 6) + "<br>" + _bx(150, 14, 6)
+    if _lk == "grouped":
+        return _bx(150, 12, 6) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6) + "<br>" + _bx(150, 12, 6) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
+    if _lk == "tabs":
+        return _bx(40, 14, 7) + _bx(40, 14, 7) + _bx(40, 14, 7) + "<br>" + _bx(70, 22, 6) + _bx(70, 22, 6)
+    if _lk == "bento":
+        return _bx(150, 30, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6) + "<br>" + _bx(45, 22, 6) + _bx(45, 22, 6) + _bx(45, 22, 6)
     if _lk == "compact":
         return (_bx(30, 20, 5) * 3) + "<br>" + (_bx(30, 20, 5) * 3)
-    if _lk == "tiles":
-        return (_bx(30, 30, 5) * 3) + "<br>" + (_bx(30, 30, 5) * 3)
-    if _lk == "sidebar":
-        return "<span style='display:inline-block;width:14px;height:56px;border-radius:7px;background:rgba(255,255,255,.25);margin:2px;vertical-align:middle'></span>" + _bx(110, 14, 6) + "<br><span style='display:inline-block;width:14px;height:1px;margin:2px'></span>" + _bx(110, 14, 6)
-    if _lk == "featured":
-        return _bx(150, 30, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
-    if _lk == "circles9":
-        return _bx(30, 30, 15) + _bx(30, 30, 15) + _bx(30, 30, 15)
     if _lk == "pills":
         return _bx(150, 16, 8) + "<br>" + _bx(150, 16, 8) + "<br>" + _bx(150, 16, 8)
-    if _lk == "cards":
+    if _lk == "hero":
         return _bx(150, 34, 8) + "<br>" + _bx(150, 34, 8)
-    if _lk == "mini":
-        return (_bx(22, 22, 5) * 4) + "<br>" + (_bx(22, 22, 5) * 4)
-    if _lk == "split":
-        return _bx(26, 26, 6) + _bx(110, 14, 6) + "<br>" + _bx(26, 26, 6) + _bx(110, 14, 6)
-    if _lk == "cover":
-        return _bx(150, 34, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
     return _bx(70, 22, 6) + _bx(70, 22, 6) + "<br>" + _bx(70, 22, 6) + _bx(70, 22, 6)
-
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
@@ -3452,29 +3438,29 @@ class H(BaseHTTPRequestHandler):
             try:
                 with _uu.urlopen("http://127.0.0.1/web/zap?sRef=" + _pp.quote(_found[0], safe=":"), timeout=5) as _r: pass
                 _ch = _found[0]
-                    # V6.20 FIX - signal needs ~5s to settle after a zap (reported 25 Nov):
-                    # /web/zap returns at once, but the tuner needs seconds to lock, so the
-                    # first /api/signal read after the redirect still showed the OLD channel's
-                    # signal. Poll getcurrent until the wanted ref lands, then poll /api/signal
-                    # until SNR > 0 / locked (max 5s) - only then redirect, so the first
-                    # displayed signal is the NEW channel's settled signal, not the old one.
-                    # If the channel really has no signal, the 5s cap still expires and we
-                    # redirect anyway - the page then honestly shows No signal / NO LOCK.
-                    import json as _jj2
-                    for _zi in range(16):
-                        try:
-                            with _uu.urlopen("http://127.0.0.1/api/getcurrent", timeout=2) as _zr:
-                                if str(((_jj2.loads(_zr.read().decode("utf-8", "ignore")).get("info") or {}).get("ref", "")) or "") == _ch: break
-                        except Exception: pass
-                        import time as _tt2; _tt2.sleep(0.3)
-                    for _si in range(16):
-                        try:
-                            with _uu.urlopen("http://127.0.0.1/api/signal", timeout=2) as _sr:
-                                _sd = _jj2.loads(_sr.read().decode("utf-8", "ignore"))
-                                _ssnr = int(str(_sd.get("snr", "0")).replace("%", "").strip() or 0)
-                                if _ssnr > 0: break
-                        except Exception: pass
-                        import time as _tt2; _tt2.sleep(0.3)
+                # V6.20 FIX - signal needs ~5s to settle after a zap (reported 25 Nov):
+                # /web/zap returns at once, but the tuner needs seconds to lock, so the
+                # first /api/signal read after the redirect still showed the OLD channel's
+                # signal. Poll getcurrent until the wanted ref lands, then poll /api/signal
+                # until SNR > 0 / locked (max 5s) - only then redirect, so the first
+                # displayed signal is the NEW channel's settled signal, not the old one.
+                # If the channel really has no signal, the 5s cap still expires and we
+                # redirect anyway - the page then honestly shows No signal / NO LOCK.
+                import json as _jj2
+                for _zi in range(16):
+                    try:
+                        with _uu.urlopen("http://127.0.0.1/api/getcurrent", timeout=2) as _zr:
+                            if str(((_jj2.loads(_zr.read().decode("utf-8", "ignore")).get("info") or {}).get("ref", "")) or "") == _ch: break
+                    except Exception: pass
+                    import time as _tt2; _tt2.sleep(0.3)
+                for _si in range(16):
+                    try:
+                        with _uu.urlopen("http://127.0.0.1/api/signal", timeout=2) as _sr:
+                            _sd = _jj2.loads(_sr.read().decode("utf-8", "ignore"))
+                            _ssnr = int(str(_sd.get("snr", "0")).replace("%", "").strip() or 0)
+                            if _ssnr > 0: break
+                    except Exception: pass
+                    import time as _tt2; _tt2.sleep(0.3)
                 self.send_response(302); self.send_header("Location", _back + "&tuned=" + _pp.quote(_found[1] or _found[0])); self.end_headers(); return
             except Exception as _e:
                 self.send_html("<h1>Tune failed</h1><div class='card'>%s</div><a href='%s'>Back</a>" % (html.escape(str(_e)), _back)); return
