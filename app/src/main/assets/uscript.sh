@@ -14,7 +14,7 @@
 # V3.1 + U-Panel Folders + Plugins Backup Python Major.Minor Only - Python3.14
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
-_SCRIPT_VERSION="V 6.20 - U-PANEL"
+_SCRIPT_VERSION="V 6.22 - U-PANEL" | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
 # V6.20: THEME GROUPS RE-ORGANIZED + NEW Black & Navy themes, premium grouped cards.
 # V6.20: FONTS PER LANGUAGE - EN/AR/FR font lists filtered by current PANEL_LANG in Panel UI Font page + Theme setting.
 # V6.20: LANGUAGE - WebUI labels only EN/AR/FR via U-Panel Setting > Language setting (/setting/language), file /etc/u-panel-lang.conf, RTL for Arabic. Commands/URLs/CLI unchanged.
@@ -1113,6 +1113,7 @@ UI_TEXT = {
   "Back": ("Back", "\u0631\u062c\u0648\u0639", "Retour"),
   "Back to Panel Menu": ("Back to Panel Menu", "\u0631\u062c\u0648\u0639 \u0644\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645", "Retour au menu du panneau"),
   "Back to Panel": ("Back to Panel", "\u0631\u062c\u0648\u0639 \u0644\u0644\u0648\u0627\u062c\u0647\u0629", "Retour au panneau"),
+  "Back to U-Panel Setting": ("Back to U-Panel Setting", "رجوع لإعدادات U-Panel", "Retour aux paramètres U-Panel"),
   "Device Setting": ("Device Setting", "\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u062c\u0647\u0627\u0632", "Param\u00e8tre de l\u2019appareil"),
   "Lock By Mac": ("Lock By Mac", "\u0627\u0644\u0642\u0641\u0644 \u0628\u0627\u0644\u0645\u0627\u0643", "Verrouillage par Mac"),
   "Owner PIN": ("Owner PIN", "\u0631\u0642\u0645 \u0627\u0644\u0645\u0627\u0644\u0643 \u0627\u0644\u0633\u0631\u064a", "Code PIN du propri\u00e9taire"),
@@ -1648,7 +1649,7 @@ def run_job(job):
     if not resolve_script():
         job["output"] = ("SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.\n"
                          "Run the script once from its real location, e.g.\n"
-                         "  sh /etc/enigma2/U-Panel-V6.20.sh\n"
+                         "  sh /etc/enigma2/U-Panel-V6.22.sh\n"
                          "then reload this page. No command was executed.\n")
         job["status"] = "done"
         return
@@ -2259,7 +2260,7 @@ def _app_shell_bottom(path):
     _out = "<nav class='up-tabs'>"
     for _href, _d, _lbl in _tabs:
         _cls = " class='on'" if path == _href or (path.startswith(_href + "/") and _href != "/") else ""
-        _out += "<a%s href='%s' aria-label='%s'><svg viewBox='0 0 24 24'><path d='%s'/></svg><span class='ut-lb'>%s</span></a>" % (_cls, _href, _lbl, _d, _lbl)
+        _out += "<a%s href='%s' aria-label='%s'><svg viewBox='0 0 24 24'><path d='%s'/></svg><span class='ut-lb'>%s</span></a>" % (_cls, _href, _tr(_lbl), _d, _tr(_lbl))
     _out += "</nav>"
     return _out
 
@@ -2339,12 +2340,12 @@ class H(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", "application/manifest+json"); self.send_header("Content-Length", str(len(_m))); self.end_headers(); self.wfile.write(_m); return
         if u.path == "/version":
             import json as _jjv
-            _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.20"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
+            _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.22"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-cache"); self.send_header("Content-Length", str(len(_vb))); self.end_headers(); self.wfile.write(_vb); return; return
         if u.path == "/restart-server":
             _sp = resolve_script()
             if not _sp:
-                self.send_html("<h1>Restart failed</h1><div class='card'>SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.<br>Re-run the script from its real location, e.g.<br>sh /etc/enigma2/U-Panel-V6.20.sh<br>then reload this page.</div><a href='/'>Back</a>"); return
+                self.send_html("<h1>Restart failed</h1><div class='card'>SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.<br>Re-run the script from its real location, e.g.<br>sh /etc/enigma2/U-Panel-V6.22.sh<br>then reload this page.</div><a href='/'>Back</a>"); return
             def _do_restart():
                 time.sleep(2)
                 try: subprocess.Popen(["sh", _sp, "--restart-server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -3341,7 +3342,7 @@ class H(BaseHTTPRequestHandler):
             _warn = ""
             if not _cur_ref:
                 _warn = "<div class='card' style='border-color:#e53935'>OpenWebif is not answering - Live TV needs OpenWebif. <a href='/plugins/install?pkg=enigma2-plugin-extensions-openwebif'>Install OpenWebif</a> then Restart Enigma.</div>"
-            body = "<style>.lvbtn{flex:1;border:1px solid " + _c2 + "66;border-radius:12px;padding:11px 8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 14px " + _glow + ";transition:transform .15s ease,filter .15s ease;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}.lvbtn::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:none;pointer-events:none;z-index:0}.lvbtn:active::before{left:130%;transition:left .45s ease}.lvbtn.ghost::after{display:none}.lvbtn:active{transform:scale(.97)}.chbtn{display:block;margin:8px 0;padding:14px 14px;border-radius:14px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "55;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 5px 14px rgba(0,0,0,.45);position:relative;overflow:hidden}.chbtn.chsel{background:linear-gradient(180deg,rgba(255,255,255,.35)," + _lc2 + " 30%," + _c1 + ");border:2px solid #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.3),0 0 20px " + _glow + "}.lvbtn.stop{background:linear-gradient(135deg,#ff5252,#c62828);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(229,57,53,.35)}.lvbtn.ghost{background:transparent;color:" + _c2 + ";border:2px solid " + _c2 + ";box-shadow:none}.lvbtn.rec{background:linear-gradient(180deg,#2a2a2a,#000);border:2px solid #ff1744;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.blk{background:linear-gradient(180deg,#2a2a2a,#000);border:1px solid #444;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.rec.on{background:linear-gradient(180deg,#2a2a2a,#000);border-color:#ff1744;box-shadow:0 0 18px rgba(255,23,68,.7)}.recdot{color:#ff1744;font-size:20px;line-height:1;text-shadow:0 0 10px #ff1744}.recdot.pulse{animation:recpulse 1s infinite}@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.2}}.lvbtn.small{padding:12px 6px;font-size:14px}.lvbtn.play{background:linear-gradient(135deg,#22c55e,#15803d);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 16px rgba(34,197,94,.5)}.lvbtn.b1{background:linear-gradient(135deg,#3b82f6,#1e40af);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(59,130,246,.4)}.lvbtn.b2{background:linear-gradient(135deg,#f59e0b,#ea580c);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(245,158,11,.4)}.lvbtn.b3{background:linear-gradient(135deg,#fde047,#eab308);color:#1a1a1a;box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 4px 14px rgba(250,204,21,.45)}</style><h1>Live TV <span style='background:#e53935;color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>LIVE</span> <span style='background:" + _c2 + ";color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>V6.09</span></h1><div class='small' id='srvver'>بيتأكد من إصدار السيرفر...</div><details><summary class='small' style='cursor:pointer;color:#aaa'>تفاصيل البث (اضغط لعرضها)</summary><div class='card' id='lvdiag' style='border-color:#f9d423'>بيفحص البث تلقائياً...</div><div class='small' id='lvplayer'>-</div><div class='small' id='lvvideo'>-</div></details>" + _warn
+            body = "<style>.lvbtn{flex:1;border:1px solid " + _c2 + "66;border-radius:12px;padding:11px 8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 14px " + _glow + ";transition:transform .15s ease,filter .15s ease;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}.lvbtn::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:none;pointer-events:none;z-index:0}.lvbtn:active::before{left:130%;transition:left .45s ease}.lvbtn.ghost::after{display:none}.lvbtn:active{transform:scale(.97)}.chbtn{display:block;margin:8px 0;padding:14px 14px;border-radius:14px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "55;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 5px 14px rgba(0,0,0,.45);position:relative;overflow:hidden}.chbtn.chsel{background:linear-gradient(180deg,rgba(255,255,255,.35)," + _lc2 + " 30%," + _c1 + ");border:2px solid #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.3),0 0 20px " + _glow + "}.lvbtn.stop{background:linear-gradient(135deg,#ff5252,#c62828);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(229,57,53,.35)}.lvbtn.ghost{background:transparent;color:" + _c2 + ";border:2px solid " + _c2 + ";box-shadow:none}.lvbtn.rec{background:linear-gradient(180deg,#2a2a2a,#000);border:2px solid #ff1744;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.blk{background:linear-gradient(180deg,#2a2a2a,#000);border:1px solid #444;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.rec.on{background:linear-gradient(180deg,#2a2a2a,#000);border-color:#ff1744;box-shadow:0 0 18px rgba(255,23,68,.7)}.recdot{color:#ff1744;font-size:20px;line-height:1;text-shadow:0 0 10px #ff1744}.recdot.pulse{animation:recpulse 1s infinite}@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.2}}.lvbtn.small{padding:12px 6px;font-size:14px}.lvbtn.play{background:linear-gradient(135deg,#22c55e,#15803d);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 16px rgba(34,197,94,.5)}.lvbtn.b1{background:linear-gradient(135deg,#3b82f6,#1e40af);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(59,130,246,.4)}.lvbtn.b2{background:linear-gradient(135deg,#f59e0b,#ea580c);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(245,158,11,.4)}.lvbtn.b3{background:linear-gradient(135deg,#fde047,#eab308);color:#1a1a1a;box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 4px 14px rgba(250,204,21,.45)}</style><h1>Live TV <span style='background:#e53935;color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>LIVE</span> <span style='background:" + _c2 + ";color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>" + html.escape(os.environ.get("U_PANEL_VERSION", "V6.22").replace("V ", "V").split(" - ")[0]) + "</span></h1><div class='small' id='srvver'>بيتأكد من إصدار السيرفر...</div><details><summary class='small' style='cursor:pointer;color:#aaa'>تفاصيل البث (اضغط لعرضها)</summary><div class='card' id='lvdiag' style='border-color:#f9d423'>بيفحص البث تلقائياً...</div><div class='small' id='lvplayer'>-</div><div class='small' id='lvvideo'>-</div></details>" + _warn
             body += ("<div class='card'>"
                      "<div id='lvbox' style='position:relative'><video id='lv' controls playsinline muted style='width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:block'></video><div id='subov' style='position:absolute;left:0;right:0;bottom:12%;text-align:center;pointer-events:none;font-size:22px;font-weight:bold;color:#ffe600;text-shadow:2px 2px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;white-space:pre-wrap;padding:0 8px'></div></div>"
                      "<p id='lvstat' style='display:none;margin:10px 0 0;padding:10px 12px;background:#1a1a2e;border:1px solid #33335a;border-radius:10px;font-size:14px;font-weight:700;color:#fff'>اضغط تشغيل لبدء البث - لازم تكون على نفس الواي فاي بتاع الرسيفر.</p>"
@@ -3908,7 +3909,7 @@ class H(BaseHTTPRequestHandler):
               "/servers": ("Sharing Servers", "YOUR OWN CCcam / Mgcamd subscription. Add/List/Delete/Backup/Restore - same files as Terminal: /etc/CCcam.cfg + /etc/tuxbox/config.", [("List my servers", "/servers/list", ""), ("Add CCcam server (form)", "/servers/add-cccam", ""), ("Add Mgcamd server (form)", "/servers/add-mgcamd", ""), ("Delete a server", "/servers/delete", ""), ("Backup my servers", "/run?action=servers-backup", ""), ("Restore my servers", "/servers/restore", "")]),
               "/iptv": ("IPTV Servers", "YOUR OWN Xtream / M3U subscription + free legal iptv-org Egypt.", [("List my IPTV", "/iptv/list", ""), ("Add Xtream server (form)", "/iptv/add-xtream", ""), ("Add M3U playlist URL (form)", "/iptv/add-m3u", ""), ("Delete an entry", "/iptv/delete", ""), ("Backup my IPTV", "/run?action=iptv-backup", ""), ("Restore my IPTV", "/iptv/restore", ""), ("Download free legal IPTV (iptv-org Egypt)", "/run?action=iptv-free", "")]),
               "/skin": ("Skin Changer", "Same items as Terminal Skin Changer.", [("1) Choose skin (installed) - list below, pick from Terminal if Enigma restart needed", "/skin/list", ""), ("2) Backup current skin setting", "/run?action=skin-backup", ""), ("3) Install skin - from Plugins menu (Skins & UI)", "/plugins/cat?cat=5", "")]),
-              "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control (mobile browser)", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
+              "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
               "/backup-manager": ("Backup Manager - List / Cleanup / Rollback", "Exact items from Terminal Backup Manager.", [("1) List All Backups", "/run?action=backup-manager-list", ""), ("List / Download / Delete backups", "/backups", ""), ("2) Cleanup - Keep Last 3 Per Group", "/run?action=backup-manager-cleanup", ""), ("3) Rollback Files (Latest BeforeRestore)", "/run?action=backup-manager-rollback", ""), ("4) Rollback Plugins (Latest BeforeRestore)", "/run?action=backup-manager-rollback-plugins", ""), ("5) Change Backup Location - HDD", "/run?action=backup-location-hdd", ""), ("5) Change Backup Location - USB", "/run?action=backup-location-usb", "")]),
               "/backup-image": ("Backup Image", "Full Image backup - same as Terminal Backup Image.", [("Backup Image now", "/run?action=backup-image", ""), ("Download / Flash Image", "/images", "")]),
               "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("## Disk Setup", "", ""), ("Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot", "/multiboot/slots-disk-management", ""), ("Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)", "/multiboot/fix-bootmenu", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("## Slots", "", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("R) Rename a slot", "/multiboot/rename", ""), ("## Images", "", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("## Protection", "", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("## Recovery", "", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", "")]),
@@ -4490,34 +4491,34 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/setting/web":
             body = "<h1>Panel Control</h1><p class='small'>This Panel UI. Start / Stop / Change PIN / Listen Address (Bind IP) - same items as Terminal Panel Control. PIN change stays in Terminal (hidden entry).</p>"
             body += "<div class='card'><b>Server:</b> %s<br><b>URL:</b> http://%s:8080<br><b>PIN set:</b> %s</div>" % ("RUNNING (you are on it)", "this receiver", "yes")
-            body += "<a href='/setting'>Back to U-Panel Setting</a>"
+            body += "<a href='/setting'>" + html.escape(_tr("Back to U-Panel Setting")) + "</a>"
             self.send_html(body); return
         if u.path == "/panel":
-            _banner2 = "<div class='banner'><div class='t'>\u2726 U-Panel</div><div class='line'></div><div class='sub'>Panel Menu</div></div>"
+            _banner2 = "<div class='banner'><div class='t'>\u2726 U-Panel</div><div class='line'></div><div class='sub'>" + html.escape(_tr("Panel Menu")) + "</div></div>"
             _layout = _panel_layout_current()
-            body = _banner2 + "<a href='/'>\u2190 Back to Panel</a>"
+            body = _banner2 + "<a href='/'>\u2190 " + _tr("Back to Panel") + "</a>"
             if _layout == "sidebar":
                 _nav = ""
                 for _sec2, _scls2, _items2 in PANEL_SECTIONS:
                     for it in _items2:
                         _icnav = "<span class='ic'>%s</span>" % ICONS.get(it[4], ICONS["grid"])
-                        _nav += "<a class='%s' href='%s' title='%s'>%s</a>" % (it[3], it[2], html.escape(it[1]), _icnav)
+                        _nav += "<a class='%s' href='%s' title='%s'>%s</a>" % (it[3], it[2], html.escape(_tr(it[1])), _icnav)
                 body += "<div class='ml-sidebar'><nav class='ml-nav'>" + _nav + "</nav><div class='ml-main'>"
             for _sec, _scls, _items in PANEL_SECTIONS:
-                body += "<div class='%s'>%s</div><div class='grid2'>" % (_scls, _sec)
+                body += "<div class='%s'>%s</div><div class='grid2'>" % (_scls, html.escape(_tr(_sec)))
                 for it in _items:
                     _ic = "<span class='ic'>%s</span>" % ICONS.get(it[4], ICONS["grid"])
-                    body += "<a class='%s' href='%s'>%s%s</a>" % (it[3], it[2], _ic, html.escape(it[1]))
+                    body += "<a class='%s' href='%s'>%s%s</a>" % (it[3], it[2], _ic, html.escape(_tr(it[1])))
                 body += "</div>"
             # Skin Changer: full-width, SAME dg colour as Picons/EPG, centered icon+text
             _ic = "<span class='ic'>%s</span>" % ICONS.get("grid", "")
-            body += "<div class='grid2'><a class='dg wide center' href='/skin'>%sSkin Changer</a></div>" % _ic
+            body += ("<div class='grid2'><a class='dg wide center' href='/skin'>%s" + html.escape(_tr("Skin Changer")) + "</a></div>") % _ic
             # U-Panel Setting: full-width centered
             _ic2 = "<span class='ic'>%s</span>" % ICONS.get("grid", "")
-            body += "<div class='grid2'><a class='dt wide center' href='/setting'>%sU-Panel Setting</a></div>" % _ic2
+            body += ("<div class='grid2'><a class='dt wide center' href='/setting'>%s" + html.escape(_tr("U-Panel Setting")) + "</a></div>") % _ic2
             if _layout == "sidebar":
                 body += "</div></div>"
-            body += "<a href='/'>\u2190 Back to Panel</a>"
+            body += "<a href='/'>\u2190 " + _tr("Back to Panel") + "</a>"
             self.send_html(body); return
         if u.path == "/panel/run":
             _go = (q.get("go") or [""])[0]
@@ -4532,7 +4533,7 @@ class H(BaseHTTPRequestHandler):
         body = ""
         _devcard = "<div class='card' style='padding:4px 16px'>" + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.25)'><span style='opacity:.65'>Device</span><b>%s</b></div>" % html.escape((box or "").replace("\n", " \u2022 ")) + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.25)'><span style='opacity:.65'>Image</span><b>%s</b></div>" % html.escape(_clean_image_version(img)) + "<div style='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0'><span style='opacity:.65'>HDD</span><b>%s</b></div></div>" % html.escape(_clean_disk_line(disk))
         body = _devcard
-        body += "<p class='small'>Panel %s - Theme: %s</p>" % (os.environ.get("U_PANEL_VERSION", "V6.20"), html.escape(WEB_THEMES[_web_theme_current()][0]))
+        body += "<p class='small'>Panel %s - Theme: %s</p>" % (os.environ.get("U_PANEL_VERSION", "V6.22"), html.escape(WEB_THEMES[_web_theme_current()][0]))
         body += "<div class='grid2'>"
         for _idx, it in enumerate(DASHBOARD):
             _extra = " wide center" if _idx in (0, 1) else ""
@@ -9169,7 +9170,8 @@ upanel_wipe() {
     rm -rf "$_DEST" && mkdir -p "$_DEST" || { echo "[WIPE-FAIL] Cannot erase subdir."; umount "$_MP" 2>/dev/null; printf "Press ENTER... "; read _b; return 0; }
     sync; umount "$_MP" 2>/dev/null
   else
-    umount "$_RP" 2>/dev/null
+    echo "[WIPE] Unmounting $_RP (the running image may have auto-mounted it)..."
+    if ! upanel_unmount_device "$_RP"; then echo "[WIPE-FAIL] SLOT $_WS partition $_RP is STILL mounted at: $(awk -v d="$_RP" '$1==d {print $2}' /proc/mounts 2>/dev/null | tr '\n' ' ') - it is in use by the running image. NOTHING was changed."; printf "Press ENTER... "; read _b; return 0; fi
     echo "[WIPE] Formatting $_RP as ext4 (LABEL=linux$_WS)..."
     mkfs.ext4 -L "linux$_WS" -F "$_RP" >/dev/null 2>/tmp/upanel_wipe_err || { echo "[WIPE-FAIL] mkfs failed: $(cat /tmp/upanel_wipe_err)"; printf "Press ENTER... "; read _b; return 0; }
     sync
@@ -9184,6 +9186,27 @@ upanel_wipe() {
 }
 
 # --- flash a downloaded image into any slot (1-20) ---
+upanel_unmount_device() { # $1=device - unmount ALL mountpoints of a device; returns 0 only when FULLY unmounted (never touches /)
+  _UD="$1"
+  _MPS=$(awk -v d="$_UD" '$1==d {print $2}' /proc/mounts 2>/dev/null)
+  case " $_MPS " in *" / "*) echo "[UNMOUNT] REFUSED: $_UD is the running root (/) - will NOT unmount."; return 2;; esac
+  _TRY=0
+  while grep -qF "$_UD " /proc/mounts 2>/dev/null; do
+    _MPS=$(awk -v d="$_UD" '$1==d {print $2}' /proc/mounts 2>/dev/null)
+    for _MP in $_MPS; do umount "$_MP" 2>/dev/null; done
+    umount "$_UD" 2>/dev/null
+    _TRY=$((_TRY+1)); [ "$_TRY" -ge 3 ] && break
+    sleep 1
+  done
+  if grep -qF "$_UD " /proc/mounts 2>/dev/null; then
+    _MPS=$(awk -v d="$_UD" '$1==d {print $2}' /proc/mounts 2>/dev/null)
+    for _MP in $_MPS; do umount -l "$_MP" 2>/dev/null; done
+    umount -l "$_UD" 2>/dev/null
+    sleep 1
+  fi
+  if grep -qF "$_UD " /proc/mounts 2>/dev/null; then return 1; fi
+  return 0
+}
 upanel_flash() {
   show_banner; line; info "Flash Image to Slot - installs a downloaded image from HDD into any slot (1-14)"
   _CS=$(upanel_current)
@@ -9253,7 +9276,8 @@ upanel_flash() {
   else
     [ -z "$_RP" ] && { echo "[FLASH-FAIL] No root partition found for SLOT $_TS (no STARTUP file, no LABEL=linux$_TS). Create its STARTUP_LINUX_$_TS first or pick another slot."; printf "Press ENTER... "; read _b; return 0; }
     echo "[FLASH] SLOT $_TS is a partition slot: $_RP"
-    umount "$_RP" 2>/dev/null
+    echo "[FLASH] Unmounting $_RP (the running image may have auto-mounted it)..."
+    if ! upanel_unmount_device "$_RP"; then echo "[FLASH-FAIL] SLOT $_TS partition $_RP is STILL mounted at: $(awk -v d="$_RP" '$1==d {print $2}' /proc/mounts 2>/dev/null | tr '\n' ' ') - it is in use by the running image. NOTHING was changed. Reboot to another slot and try again."; printf "Press ENTER... "; read _b; return 0; fi
     echo "[FLASH] Formatting $_RP as ext4 (LABEL=linux$_TS)..."; mkfs.ext4 -L "linux$_TS" -F "$_RP" >/dev/null 2>/tmp/upanel_flash_err || { echo "[FLASH-FAIL] mkfs failed: $(cat /tmp/upanel_flash_err)"; printf "Press ENTER... "; read _b; return 0; }
     _MP=/tmp/upanel_flash_mnt; mkdir -p "$_MP"
     mount "$_RP" "$_MP" 2>/tmp/upanel_flash_err || { echo "[FLASH-FAIL] Cannot mount fresh $_RP: $(cat /tmp/upanel_flash_err)"; printf "Press ENTER... "; read _b; return 0; }
