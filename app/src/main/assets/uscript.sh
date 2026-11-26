@@ -25,7 +25,7 @@ _SCRIPT_VERSION="V 6.20 - U-PANEL"
 # V5.90: DASHBOARD reorder - Image with Essentials moved to index 1, right under Panel Menu. Home page renders indices 0+1 full-width ("wide center"), so Panel Menu + Image with Essentials are now both full-width stacked, Virtual Remote back to half-width. No other change.
 # V5.90: ESSENTIALS_PLUGINS += 6 EmuInstaller + 8 Epg-Grabber + 32 oscam-by-lenuxsat + 33 AutoSub appended (now 28 plugins).
 # V5.90: ESSENTIALS_PLUGINS += 3 AJPanel + 4 SubsSupportPro appended (now 24 plugins) - user asked to add them with the 22.
-# V5.90: ESSENTIALS_PLUGINS = user-confirmed 27 plugins in user order (19 47 34 42 22 39 37 29 26 24 21 20 18 17 16 15 11 10 7 5 1) - replaces the V5.82 default. Image Build with Essentials flow unchanged.
+# V5.90: ESSENTIALS_PLUGINS = user-confirmed 22 plugins in user order (19 47 34 42 22 41 39 37 29 26 24 21 20 18 17 16 15 11 10 7 5 1) - replaces the V5.82 default. Image Build with Essentials flow unchanged.
 # V5.90: NEW Image Build with Essentials - Terminal menu 21) + Web UI /image-essentials. Flow: Step 0 snapshot -> Step 1 Packages (package commands) -> Step 2 Essentials Plugins (ESSENTIALS_PLUGINS numbers, per image+Python via plugin installers) -> Step 3 BootLogo Auto (image+device) -> Step 4 Khalid Ali channel list (khaled) -> ONE reboot at the very END only (guard blocks every earlier reboot; web uses delayed /sbin/reboot so the job page shows Done first). Web UI: DASHBOARD under Virtual Remote + Panel Menu next to Ur Favourite Setup. ESSENTIALS_PLUGINS default is a placeholder - replace with user list when sent.
 # V5.90: RENAME old menu-page name -> "Panel Menu" everywhere visible in Panel UI - /panel banner subtitle, home link, all "Back to ..." links, menu-layout description. "Panel Control (mobile browser)" setting name untouched - different thing.
 # V5.90: HIDE script-style choices from Web UI - UI Style + UI Color removed from U-Panel Setting list (renumbered), their pages now show "Terminal only", and their /run actions are blocked in Web UI. Terminal CLI (--web-ui-style / --web-ui-color) still works - script style is Terminal-only now. Panel UI look stays in Theme setting.
@@ -746,20 +746,12 @@ SCRIPT = find_script()
 def resolve_script():
     # V5.91: SCRIPT was resolved ONCE at server start - if the server was started
     # by an old copy (or the script moved to /etc/enigma2), re-find it now.
-    # V6.20 FIX (25 Nov): when the server was started from the obfuscated
-    # wrapper, SCRIPT was the wrapper's temp file (/tmp/tmp.XXXX) - the wrapper
-    # deleted it after the server daemonized (nohup), so jobs ran
-    # "sh <deleted file>" -> "No such file or directory" + [EXIT 127].
-    # Never return a stale path: return "" so run_job shows SCRIPT NOT FOUND
-    # instead of EXIT 127.
     global SCRIPT
     if SCRIPT and os.path.isfile(SCRIPT):
         return SCRIPT
     _found = find_script()
     if _found:
         SCRIPT = _found
-        return SCRIPT
-    SCRIPT = ""
     return SCRIPT
 BACKUP_ROOTS = os.environ.get("U_PANEL_BACKUP_ROOTS", "/media/hdd:/media/usb").split(":")
 ENIGMA2_DIR = os.environ.get("U_PANEL_ENIGMA2_DIR", "/etc/enigma2")
@@ -768,44 +760,33 @@ FLASH_SCAN_ROOTS = os.environ.get("U_PANEL_FLASH_ROOTS", "/media/hdd:/media/usb:
 JOBS = {}
 SETUP_STATE = {}
 WEB_THEMES = {
-  # V6.21 ELEGANT GLOSSY - old themes replaced. label, btn_c1, btn_c2, body_bg, body_fg, tiles (7 pairs)
-  "upanel": ("Royal Gold", "#A9852F", "#E9CE7A", "#0B0906", "#F4EDDA", [("#8A6D24", "#C9A94F"), ("#6E571E", "#A9852F"), ("#7A5F20", "#D9B95E"), ("#94802E", "#E9CE7A"), ("#5E4C1A", "#8A6D24"), ("#A9852F", "#F4E3A0"), ("#7A5F20", "#C9A94F")]),
-  "gold": ("Champagne Gold", "#9A7B2D", "#E5C97E", "#0C0A06", "#F6F0DD", [("#7E6524", "#C4A455"), ("#65511D", "#9A7B2D"), ("#6E5A20", "#D3B46A"), ("#8A7430", "#E5C97E"), ("#55461A", "#7E6524"), ("#9A7B2D", "#F0E2A8"), ("#6E5A20", "#C4A455")]),
-  "neon": ("Midnight Neon", "#1F6F9E", "#7C5CD6", "#05060F", "#E4ECFF", [("#5B3FA8", "#9678D6"), ("#8E2438", "#D4627A"), ("#0E6E8C", "#2FA8C9"), ("#A9852F", "#E9CE7A"), ("#C9A227", "#F0D060"), ("#243B6B", "#4A76C4"), ("#1F6F9E", "#5FA8D6")]),
-  "black": ("Pure Black", "#26262C", "#8A8A99", "#000000", "#FAFAFA", [("#18181B", "#3F3F46"), ("#27272A", "#52525B"), ("#09090B", "#27272A"), ("#3F3F46", "#71717A"), ("#18181B", "#52525B"), ("#27272A", "#A1A1AA"), ("#09090B", "#3F3F46")]),
-  "ocean": ("Ocean Deep", "#0E6E8C", "#2FA8C9", "#03141F", "#E0F2F7", [("#0B556E", "#1E8AA8"), ("#16486B", "#2F6FA8"), ("#0E5E5E", "#2FA89A"), ("#0A4A6E", "#2F8AC9"), ("#0C3A52", "#1E6E9E"), ("#125E6E", "#2FA8C9"), ("#1A3A6B", "#4A76C4")]),
-  "navy": ("Navy Blue", "#243B6B", "#4A76C4", "#060A16", "#DCE6F7", [("#1B2E52", "#385A9E"), ("#1D3A6B", "#3F6FBF"), ("#141C33", "#243B6B"), ("#1E2A44", "#3A4A6B"), ("#16264A", "#2F4E8C"), ("#0E4A6E", "#2F8AC9"), ("#243B6B", "#6E9AD6")]),
-  "frost": ("Arctic Frost", "#4A6FA5", "#8FB8D8", "#E9EEF3", "#1B2A3A", [("#3A5A87", "#6E94BC"), ("#2F7A8C", "#5FA8BC"), ("#3A6E9E", "#7FB0D0"), ("#2F5E8C", "#6E9EC4"), ("#3A4A8C", "#7E8AC4"), ("#4A8CA5", "#8FC4D8"), ("#3A5A87", "#8FB8D8")]),
-  "ember": ("Ember Fire", "#B4551F", "#E07B3A", "#170D06", "#FDEBD9", [("#8A3E14", "#C45F24"), ("#8A2438", "#C44A5E"), ("#A84A18", "#D9732F"), ("#B4551F", "#E89A6B"), ("#8A4A14", "#C47B24"), ("#8A2438", "#E07B8A"), ("#6E3410", "#D97B3A")]),
-  "crimson": ("Crimson Rose", "#8E2438", "#D4627A", "#150609", "#FDE8EC", [("#6E1A2A", "#A83A4E"), ("#7A1E2E", "#C44A5E"), ("#8E2438", "#E08AA0"), ("#8A3414", "#D9732F"), ("#A82E44", "#E07B8A"), ("#6E1E33", "#C44A5E"), ("#5E1A24", "#D4627A")]),
-  "sunset": ("Sunset Amber", "#B0722A", "#E0A458", "#150F06", "#FDF0DA", [("#8A571D", "#C48A3A"), ("#8A6D24", "#C9A94F"), ("#A86A1E", "#D99A44"), ("#B0722A", "#E8B877"), ("#7A5A14", "#B08A2E"), ("#8A4A24", "#D97B5E"), ("#6E4E14", "#C48A3A")]),
-  "violet": ("Royal Violet", "#5B3FA8", "#9678D6", "#0E071F", "#EDE9FB", [("#4A3287", "#7A5FC4"), ("#8A244A", "#D4628A"), ("#5E34A8", "#9A7CD6"), ("#8A6D24", "#C9A94F"), ("#7A5A24", "#C4A455"), ("#6E2E8C", "#C47BD6"), ("#3A2470", "#6E4AB0")]),
-  "grape": ("Grape Purple", "#4A2E6B", "#8A5FBF", "#0D0718", "#EDE7F7", [("#382352", "#6E4A9E"), ("#4A2E6B", "#9A7CD6"), ("#2E1F4A", "#5B3FA8"), ("#6E3A7A", "#C47BC4"), ("#3A2E52", "#7A5FA8"), ("#4A2E6B", "#A87ED6"), ("#2E1F4A", "#6E4AB0")]),
-  "rose": ("Rose Pink", "#9E3D5E", "#E08AA8", "#170A10", "#FDEAF0", [("#7A2E47", "#C45E80"), ("#8A2438", "#D4627A"), ("#9E3D5E", "#E8A8BC"), ("#8A4A2E", "#D98A6E"), ("#A83A5E", "#E08AA8"), ("#6E2438", "#C45E80"), ("#5E1E33", "#D4627A")]),
-  "emerald": ("Forest Emerald", "#1E6B4A", "#4FA87E", "#06120C", "#D9F2E3", [("#144A33", "#2F8A5E"), ("#14522E", "#3FA86B"), ("#166B3A", "#5EBC8A"), ("#5E7A14", "#A8BC4A"), ("#8A6D24", "#C9A94F"), ("#0E5E5E", "#2FA89A"), ("#14522E", "#4FA87E")]),
-  "mint": ("Mint Light", "#3D8A7A", "#7FC4B2", "#EDF5F1", "#16382F", [("#2F6E62", "#5EAA96"), ("#2E7A52", "#5EBC8A"), ("#2F7A6E", "#7FC4B2"), ("#3D8A4A", "#7FBC6E"), ("#8A7A24", "#C4B04F"), ("#2F7A8C", "#5FA8BC"), ("#2F6E8C", "#5FA8C4")]),
-  "lemon": ("Lemon Zest", "#9A8A1F", "#D9C94F", "#121204", "#FBF8E0", [("#7A6E18", "#B8A83A"), ("#8A7A24", "#C9A94F"), ("#5E7A14", "#A8BC4A"), ("#C9A227", "#F0D060"), ("#B08A24", "#E0C44F"), ("#6E9E14", "#A8D94F"), ("#3D8A4A", "#7FBC6E")]),
-  "graphite": ("Graphite", "#4A5058", "#8A919C", "#101114", "#EFF1F4", [("#33383F", "#5E646E"), ("#3A4048", "#6E7580"), ("#1E2226", "#3A4048"), ("#5E646E", "#A8ADB5"), ("#14171A", "#33383F"), ("#3A4A5E", "#7A8494"), ("#2A2E33", "#5E646E")]),
-  "silver": ("Silver Mono", "#6E7378", "#C9CDD2", "#17181A", "#EDEFF1", [("#4A4E52", "#7A7F85"), ("#5E6266", "#9EA3A8"), ("#2E3134", "#4A4E52"), ("#6E7378", "#B8BDC4"), ("#3A3E42", "#7A7F85"), ("#5E6266", "#C9CDD2"), ("#2E3134", "#6E7378")]),
-  "paper": ("Paper Light", "#8A6D3B", "#C9A959", "#F7F1DE", "#2A2518", [("#6E5518", "#A8853A"), ("#7A3A1E", "#C45E2F"), ("#6E5E14", "#A8853A"), ("#8A6D3B", "#D9B95E"), ("#7A6D18", "#B8A83A"), ("#5E5E52", "#8A8A7A"), ("#4A4438", "#6E6858")]),
+  # label, btn_c1, btn_c2, body_bg, body_fg, tiles (dv, dr, dg, dp, dc, dt, dl) each (c1, c2)
+  "upanel": ("U-Panel", "#7C3AED", "#C026D3", "#161638", "#ffffff", [("#7C3AED", "#C026D3"), ("#DB2777", "#F472B6"), ("#10B981", "#34D399"), ("#FB923C", "#FACC15"), ("#F59E0B", "#FBBF24"), ("#0EA5E9", "#22D3EE"), ("#2563EB", "#38BDF8")]),
+  "midnight": ("Midnight Neon", "#0EA5E9", "#A855F7", "#050510", "#E0F2FE", [("#7C3AED", "#A855F7"), ("#DB2777", "#F472B6"), ("#0891B2", "#22D3EE"), ("#F59E0B", "#FBBF24"), ("#EAB308", "#FDE047"), ("#2563EB", "#38BDF8"), ("#0EA5E9", "#67E8F9")]),
+  "ocean": ("Ocean Deep", "#0891B2", "#22D3EE", "#031525", "#E0F2FE", [("#0E7490", "#06B6D4"), ("#1D4ED8", "#3B82F6"), ("#0F766E", "#14B8A6"), ("#0369A1", "#38BDF8"), ("#0C4A6E", "#0284C7"), ("#155E75", "#22D3EE"), ("#1E40AF", "#60A5FA")]),
+  "forest": ("Forest", "#059669", "#A3E635", "#07170C", "#D1FAE5", [("#14532D", "#22C55E"), ("#166534", "#4ADE80"), ("#15803D", "#86EFAC"), ("#65A30D", "#A3E635"), ("#A16207", "#FACC15"), ("#0F766E", "#2DD4BF"), ("#047857", "#34D399")]),
+  "ember": ("Ember Fire", "#EA580C", "#EF4444", "#1A0A05", "#FFEDD5", [("#9A3412", "#F97316"), ("#991B1B", "#EF4444"), ("#C2410C", "#FB923C"), ("#EA580C", "#FDBA74"), ("#B45309", "#F59E0B"), ("#9F1239", "#FB7185"), ("#7C2D12", "#FF8C42")]),
+  "royal": ("Royal Violet", "#7C3AED", "#F59E0B", "#120826", "#EDE9FE", [("#6D28D9", "#A855F7"), ("#9D174D", "#EC4899"), ("#7E22CE", "#C084FC"), ("#B45309", "#F59E0B"), ("#A16207", "#FBBF24"), ("#86198F", "#E879F9"), ("#4C1D95", "#8B5CF6")]),
+  "crimson": ("Crimson", "#BE123C", "#FB7185", "#160608", "#FFE4E6", [("#9F1239", "#FB7185"), ("#991B1B", "#EF4444"), ("#BE123C", "#FDA4AF"), ("#9A3412", "#F97316"), ("#E11D48", "#F472B6"), ("#881337", "#F43F5E"), ("#7F1D1D", "#F87171")]),
+  "arctic": ("Arctic Light", "#2563EB", "#38BDF8", "#F1F5F9", "#0F172A", [("#1D4ED8", "#3B82F6"), ("#0E7490", "#06B6D4"), ("#0369A1", "#38BDF8"), ("#0284C7", "#7DD3FC"), ("#1E40AF", "#818CF8"), ("#0EA5E9", "#67E8F9"), ("#2563EB", "#60A5FA")]),
+  "paper": ("Paper Light", "#B45309", "#F59E0B", "#FDF6E3", "#292524", [("#92400E", "#D97706"), ("#9A3412", "#EA580C"), ("#854D0E", "#CA8A04"), ("#B45309", "#F59E0B"), ("#A16207", "#EAB308"), ("#78716C", "#A8A29E"), ("#57534E", "#78716C")]),
+  "mint": ("Mint Light", "#0D9488", "#34D399", "#F0FDF4", "#134E4A", [("#0D9488", "#2DD4BF"), ("#059669", "#34D399"), ("#0F766E", "#5EEAD4"), ("#16A34A", "#4ADE80"), ("#CA8A04", "#FACC15"), ("#0891B2", "#22D3EE"), ("#0369A1", "#38BDF8")]),
+  "graphite": ("Graphite", "#64748B", "#E2E8F0", "#101114", "#F1F5F9", [("#374151", "#6B7280"), ("#4B5563", "#9CA3AF"), ("#1F2937", "#4B5563"), ("#6B7280", "#D1D5DB"), ("#111827", "#374151"), ("#475569", "#94A3B8"), ("#334155", "#64748B")]),
+  "lemon": ("Lemon Zest", "#CA8A04", "#A3E635", "#121200", "#FEFCE8", [("#A16207", "#EAB308"), ("#CA8A04", "#FACC15"), ("#65A30D", "#A3E635"), ("#EAB308", "#FDE047"), ("#F59E0B", "#FBBF24"), ("#84CC16", "#BEF264"), ("#16A34A", "#4ADE80")]),
+  # V6.20 NEW - Black & Navy (user request)
+  "black": ("Pure Black - \u0623\u0633\u0648\u062f", "#232329", "#8B8B9E", "#000000", "#FAFAFA", [("#18181B", "#3F3F46"), ("#27272A", "#52525B"), ("#09090B", "#27272A"), ("#3F3F46", "#71717A"), ("#18181B", "#52525B"), ("#27272A", "#A1A1AA"), ("#09090B", "#3F3F46")]),
+  "navy": ("Navy Blue - \u0643\u062d\u0644\u064a", "#1E3A8A", "#3B82F6", "#020617", "#DBEAFE", [("#1E3A8A", "#2563EB"), ("#1D4ED8", "#3B82F6"), ("#0F172A", "#1E40AF"), ("#1E293B", "#334155"), ("#172554", "#1D4ED8"), ("#0C4A6E", "#0284C7"), ("#1E3A8A", "#60A5FA")]),
 }
-
 WEB_THEME_GROUPS = {
-  # V6.21 PREMIUM DIVISION - Signature first, then mood groups.
-  "SIGNATURE": ["upanel", "neon", "black", "gold"],
-  "COOL & CALM": ["ocean", "navy", "frost"],
-  "BOLD & WARM": ["ember", "crimson", "sunset"],
-  "ROYAL": ["violet", "grape", "rose"],
-  "FRESH": ["emerald", "mint", "lemon"],
-  "MINIMAL": ["graphite", "silver", "paper"],
+  # V6.20 RE-ORGANIZED: Premium Dark first (incl. NEW Black + Navy), then Deep colours, then Light.
+  "PREMIUM DARK": ["upanel", "midnight", "black", "navy", "graphite"],
+  "DEEP & VIVID": ["ocean", "royal", "forest", "ember", "crimson"],
+  "LIGHT & FRESH": ["arctic", "paper", "mint", "lemon"],
 }
 WEB_THEME_GROUP_META = {
-  "SIGNATURE": ("👑", "The signature U-Panel looks - gold, neon, pure black"),
-  "COOL & CALM": ("💎", "Cool elegant blues - calm and refined"),
-  "BOLD & WARM": ("🔥", "Warm elegant reds and ambers - rich but soft"),
-  "ROYAL": ("💜", "Royal purples and rose - luxurious and deep"),
-  "FRESH": ("🌿", "Fresh greens and lemon - clean and lively"),
-  "MINIMAL": ("⬛", "Minimal greys and paper - quiet and classy"),
+  "PREMIUM DARK": ("\U0001f319", "Deep dark backgrounds - easy on the eyes at night"),
+  "DEEP & VIVID": ("\U0001f48e", "Rich saturated colours - bold and premium"),
+  "LIGHT & FRESH": ("\u2600\ufe0f", "Bright clean backgrounds - clear in daylight"),
 }
 def _theme_groups_html(_cur):
     # Premium grouped theme picker: one card per group, grid of theme cards inside.
@@ -831,8 +812,6 @@ def _web_theme_current():
                 if _ln.startswith("WEB_THEME="):
                     _tv = _ln.split("=", 1)[1].strip()
                     if _tv == "uscript": _tv = "upanel"
-                    # V6.21 - old theme keys map to the new elegant colours
-                    _tv = {"midnight": "neon", "forest": "emerald", "royal": "violet", "arctic": "frost"}.get(_tv, _tv)
                     if _tv in WEB_THEMES: return _tv
     except Exception:
         pass
@@ -891,54 +870,31 @@ def _web_theme_css():
     return _css
 
 PANEL_SHAPES = {
-  # V6.21 - OLD SHAPES REMOVED (Rounded/Soft/Pill/Square/Compact/Slim/Arch/Hexagon/Leaf/Blob/Ticket/Shield).
-  # label, radius, padding. MAIN shape = Dial.
-  "dial": ("Dial - القرص - الرئيسي", 50, 14),
-  "list": ("List - ليستة", 14, 14),
-  "grouped": ("Grouped Sections - أقسام", 16, 14),
-  "tabs": ("Tabs - تابات", 16, 14),
-  "bento": ("Bento - موزاييك", 18, 14),
-  "compact": ("Compact Tiles - بلاطات صغيرة", 20, 12),
-  "pills": ("Pills - كبسولات", 999, 14),
-  "hero": ("Hero Stack - كروت بوصف", 20, 16),
-  "radial": ("Radial Circle - دايرة حول اللوجو", 50, 12),
-  "circle": ("Circle Tiles - بلاطات دائرية", 50, 12),
-  "arc": ("Arc Fan - مروحة", 50, 12),
+  # label, radius, padding
+  "rounded": ("Rounded", 10, 16),
+  "soft": ("Soft", 22, 16),
+  "pill": ("Pill", 26, 18),
+  "square": ("Square", 0, 16),
+  "compact": ("Compact", 10, 12),
+  "slim": ("Slim", 6, 10),
+  # V6.20 NEW TILE SHAPES - from user screenshots (Tile Shapes)
+  "arch": ("Arch - \u0642\u0648\u0633", 18, 16),
+  "hexagon": ("Hexagon - \u0633\u062f\u0627\u0633\u064a", 12, 16),
+  "leaf": ("Leaf - \u0648\u0631\u0642\u0629", 16, 16),
+  "blob": ("Blob - \u0641\u0642\u0627\u0639\u0629", 16, 16),
+  "ticket": ("Ticket - \u062a\u0630\u0643\u0631\u0629", 12, 16),
+  "shield": ("Shield - \u062f\u0631\u0639", 12, 16),
 }
-PANEL_SHAPE_GROUPS = {
-  "MAIN": ["dial"],
-  "CLASSIC": ["list", "grouped", "tabs"],
-  "MODERN": ["bento", "compact", "pills", "hero"],
-  "CIRCULAR": ["radial", "circle", "arc"],
-}
-PANEL_SHAPE_GROUP_META = {
-  "MAIN": ("⭐", "The main U-Panel look - Dial is the default"),
-  "CLASSIC": ("📋", "Classic clean layouts - simple and fast"),
-  "MODERN": ("✨", "Modern layouts - tiles, pills and hero cards"),
-  "CIRCULAR": ("⭕", "Circular layouts - orbs, rings and fans"),
-}
-# V6.21: glossy + layout CSS per shape. Applied to .grid2 only.
-# The Dial/Radial/Arc ring holds the first 8/12/6 items; the rest flow as circles below.
-_GLOSS = ".grid2 a{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -10px 18px rgba(0,0,0,.28),0 10px 24px rgba(0,0,0,.45)!important;border:1px solid rgba(255,255,255,.30)!important}"
-_DIAL_RING = ".grid2{position:relative;padding-top:350px!important}.grid2::before{content:'U';position:absolute;top:170px;left:50%;transform:translate(-50%,-50%);width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;color:rgba(255,255,255,.92);background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,.06) 55%,rgba(0,0,0,.35));border:2px solid rgba(255,255,255,.45);box-shadow:0 0 34px rgba(255,255,255,.28),inset 0 2px 6px rgba(255,255,255,.4);z-index:1}.grid2 a{position:absolute!important;width:86px!important;height:86px!important;min-height:0!important;border-radius:50%!important;flex-direction:column!important;justify-content:center!important;text-align:center!important;font-size:11px!important;line-height:1.25!important;padding:8px 4px!important;z-index:2}.grid2 a:nth-child(1){left:50%;top:170px;transform:translate(-50%,-50%) rotate(0deg) translateY(-142px) rotate(0deg)}.grid2 a:nth-child(2){left:50%;top:170px;transform:translate(-50%,-50%) rotate(45deg) translateY(-142px) rotate(-45deg)}.grid2 a:nth-child(3){left:50%;top:170px;transform:translate(-50%,-50%) rotate(90deg) translateY(-142px) rotate(-90deg)}.grid2 a:nth-child(4){left:50%;top:170px;transform:translate(-50%,-50%) rotate(135deg) translateY(-142px) rotate(-135deg)}.grid2 a:nth-child(5){left:50%;top:170px;transform:translate(-50%,-50%) rotate(180deg) translateY(-142px) rotate(-180deg)}.grid2 a:nth-child(6){left:50%;top:170px;transform:translate(-50%,-50%) rotate(225deg) translateY(-142px) rotate(-225deg)}.grid2 a:nth-child(7){left:50%;top:170px;transform:translate(-50%,-50%) rotate(270deg) translateY(-142px) rotate(-270deg)}.grid2 a:nth-child(8){left:50%;top:170px;transform:translate(-50%,-50%) rotate(315deg) translateY(-142px) rotate(-315deg)}.grid2 a:nth-child(n+9){position:static!important;transform:none!important}.grid2 a.wide{grid-column:span 1!important}"
-_RADIAL_RING = ".grid2{position:relative;padding-top:380px!important}.grid2::before{content:'U';position:absolute;top:185px;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;color:rgba(255,255,255,.92);background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,.06) 55%,rgba(0,0,0,.35));border:2px solid rgba(255,255,255,.45);box-shadow:0 0 34px rgba(255,255,255,.28),inset 0 2px 6px rgba(255,255,255,.4);z-index:1}.grid2 a{position:absolute!important;width:78px!important;height:78px!important;min-height:0!important;border-radius:50%!important;flex-direction:column!important;justify-content:center!important;text-align:center!important;font-size:10px!important;line-height:1.25!important;padding:6px 4px!important;z-index:2}.grid2 a:nth-child(1){left:50%;top:185px;transform:translate(-50%,-50%) rotate(0deg) translateY(-158px) rotate(0deg)}.grid2 a:nth-child(2){left:50%;top:185px;transform:translate(-50%,-50%) rotate(30deg) translateY(-158px) rotate(-30deg)}.grid2 a:nth-child(3){left:50%;top:185px;transform:translate(-50%,-50%) rotate(60deg) translateY(-158px) rotate(-60deg)}.grid2 a:nth-child(4){left:50%;top:185px;transform:translate(-50%,-50%) rotate(90deg) translateY(-158px) rotate(-90deg)}.grid2 a:nth-child(5){left:50%;top:185px;transform:translate(-50%,-50%) rotate(120deg) translateY(-158px) rotate(-120deg)}.grid2 a:nth-child(6){left:50%;top:185px;transform:translate(-50%,-50%) rotate(150deg) translateY(-158px) rotate(-150deg)}.grid2 a:nth-child(7){left:50%;top:185px;transform:translate(-50%,-50%) rotate(180deg) translateY(-158px) rotate(-180deg)}.grid2 a:nth-child(8){left:50%;top:185px;transform:translate(-50%,-50%) rotate(210deg) translateY(-158px) rotate(-210deg)}.grid2 a:nth-child(9){left:50%;top:185px;transform:translate(-50%,-50%) rotate(240deg) translateY(-158px) rotate(-240deg)}.grid2 a:nth-child(10){left:50%;top:185px;transform:translate(-50%,-50%) rotate(270deg) translateY(-158px) rotate(-270deg)}.grid2 a:nth-child(11){left:50%;top:185px;transform:translate(-50%,-50%) rotate(300deg) translateY(-158px) rotate(-300deg)}.grid2 a:nth-child(12){left:50%;top:185px;transform:translate(-50%,-50%) rotate(330deg) translateY(-158px) rotate(-330deg)}.grid2 a:nth-child(n+13){position:static!important;transform:none!important}.grid2 a.wide{grid-column:span 1!important}"
-_ARC_FAN = ".grid2{position:relative;padding-top:190px!important}.grid2 a{position:absolute!important;width:82px!important;height:82px!important;min-height:0!important;border-radius:50%!important;flex-direction:column!important;justify-content:center!important;text-align:center!important;font-size:11px!important;line-height:1.25!important;padding:8px 4px!important;z-index:2}.grid2 a:nth-child(1){left:6%;top:56px;transform:translate(0,-50%)}.grid2 a:nth-child(2){left:22%;top:20px;transform:translate(0,-50%)}.grid2 a:nth-child(3){left:41%;top:4px;transform:translate(0,-50%)}.grid2 a:nth-child(4){left:59%;top:4px;transform:translate(-100%,-50%)}.grid2 a:nth-child(5){left:78%;top:20px;transform:translate(-100%,-50%)}.grid2 a:nth-child(6){left:94%;top:56px;transform:translate(-100%,-50%)}.grid2 a:nth-child(n+7){position:static!important;transform:none!important}.grid2 a.wide{grid-column:span 1!important}"
+# V6.20: clip-path / radius override per new tile shape. Applied to .grid2 a only,
+# .wide tiles keep a readable rectangle so long titles never clip.
 PANEL_SHAPE_CSS = {
-  "dial": _GLOSS + _DIAL_RING + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:10px}.grid2 a:nth-child(n+9){aspect-ratio:1/1}",
-  "radial": _GLOSS + _RADIAL_RING + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:10px}.grid2 a:nth-child(n+13){aspect-ratio:1/1}",
-  "arc": _GLOSS + _ARC_FAN + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:10px}.grid2 a:nth-child(n+7){aspect-ratio:1/1}",
-  "circle": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:10px}.grid2 a{border-radius:50%!important;aspect-ratio:1/1;flex-direction:column!important;justify-content:center!important;text-align:center!important;font-size:11px!important;line-height:1.25!important;padding:8px 4px!important}.grid2 a.wide{grid-column:span 1!important}",
-  "list": _GLOSS + ".grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:left;gap:12px;width:100%;min-height:64px;border-radius:16px!important}",
-  "grouped": _GLOSS + ".sec{border-radius:14px;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}.grid2 a{border-left:4px solid rgba(255,255,255,.55)!important}",
-  "tabs": _GLOSS + ".grid2::before{content:'All  •  Setup  •  Backup  •  Tools  •  Media';display:block;grid-column:1/-1;text-align:center;font-size:13px;font-weight:700;letter-spacing:.5px;padding:10px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}.grid2 a{border-radius:999px!important}",
-  "bento": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(4,1fr)!important;gap:10px}.grid2 a:nth-child(1){grid-column:span 4}.grid2 a:nth-child(2){grid-column:span 2}.grid2 a:nth-child(3){grid-column:span 2}.grid2 a:nth-child(4){grid-column:span 2}.grid2 a:nth-child(5){grid-column:span 2}.grid2 a.wide{grid-column:span 4!important}",
-  "compact": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:8px}.grid2 a{flex-direction:column!important;justify-content:center!important;text-align:center!important;gap:6px;min-height:104px!important;padding:12px 6px!important;font-size:12px!important;line-height:1.25!important;border-radius:20px!important}.grid2 a.wide{grid-column:span 3!important;flex-direction:row!important;font-size:16px!important}",
-  "pills": _GLOSS + ".grid2{display:grid;grid-template-columns:repeat(2,1fr)!important;gap:10px}.grid2 a{border-radius:999px!important;justify-content:center!important;text-align:center!important}.grid2 a.wide{grid-column:span 2!important}",
-  "hero": _GLOSS + ".grid2{display:flex;flex-direction:column}.grid2 a{width:100%;min-height:92px!important;border-radius:22px!important;font-size:18px!important;justify-content:center!important;text-align:center!important}",
+  "arch": ".grid2 a{border-radius:999px 999px 18px 18px!important}",
+  "hexagon": ".grid2 a{border-radius:12px!important;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}",
+  "leaf": ".grid2 a{border-radius:0 50% 0 50%!important}",
+  "blob": ".grid2 a{border-radius:60% 40% 55% 45%/50% 60% 40% 50%!important}",
+  "ticket": ".grid2 a{border-radius:12px!important;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(50% - 12px),calc(100% - 8px) 50%,100% calc(50% + 12px),100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 calc(50% + 12px),8px 50%,0 calc(50% - 12px),0 12px)}",
+  "shield": ".grid2 a{border-radius:12px 12px 0 0!important;clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%)}",
 }
-# V6.21 DOCK - floating glass dock, on EVERY page (5 tabs, see _app_shell_bottom).
-DOCK_CSS = "body{padding-bottom:104px!important}.up-tabs{position:fixed!important;left:50%!important;bottom:12px!important;transform:translateX(-50%)!important;display:flex!important;gap:6px!important;width:auto!important;max-width:94vw!important;padding:8px 12px!important;border-radius:999px!important;background:rgba(18,18,24,.72)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 12px 32px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.35)!important;z-index:999!important}.up-tabs a{flex-direction:column!important;gap:2px!important;min-width:56px!important;padding:6px 4px!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;font-size:10px!important}.up-tabs a.on{background:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)!important}.up-tabs a svg{width:22px!important;height:22px!important}.up-tabs a .ut-lb{font-size:10px!important}"
-
 def _panel_shape_current():
     try:
         with open("/etc/u-panel-panel-shape.conf") as _f:
@@ -948,26 +904,36 @@ def _panel_shape_current():
                     if _sv in PANEL_SHAPES: return _sv
     except Exception:
         pass
-    return "dial"
+    return "rounded"
 def _panel_shape_css():
     _sv = _panel_shape_current()
-    _css = PANEL_SHAPE_CSS.get(_sv, "")
-    return "<style>" + _css + DOCK_CSS + "</style>"
+    if _sv == "rounded": return ""
+    _lbl, _rad, _pad = PANEL_SHAPES[_sv]
+    if _sv in PANEL_SHAPE_CSS:
+        return "<style>a,button{border-radius:%spx}.grid2 a.wide{border-radius:18px!important;clip-path:none!important}" % (_rad,) + PANEL_SHAPE_CSS[_sv] + "</style>"
+    return "<style>a,button{border-radius:%spx}.grid2 a{border-radius:%spx}</style>" % (_rad, _rad)
 
 PANEL_LAYOUTS = {
-    # V6.21 - OLD LAYOUTS REMOVED (Grid/List/Compact/Tiles/Sidebar/Featured/Circles/Pills/Cards/Mini/Split/Cover/Bento/Masonry/Stack/Zigzag/Center Stage/Duo).
-    # Menu layout is now the SHAPE system (PANEL_SHAPES) - this dict only keeps valid keys for saved values.
-    "dial": ("Dial - القرص - الرئيسي",),
-    "list": ("List - ليستة",),
-    "grouped": ("Grouped Sections - أقسام",),
-    "tabs": ("Tabs - تابات",),
-    "bento": ("Bento - موزاييك",),
-    "compact": ("Compact Tiles - بلاطات صغيرة",),
-    "pills": ("Pills - كبسولات",),
-    "hero": ("Hero Stack - كروت بوصف",),
-    "radial": ("Radial Circle - دايرة حول اللوجو",),
-    "circle": ("Circle Tiles - بلاطات دائرية",),
-    "arc": ("Arc Fan - مروحة",),
+    # key: (label, )
+    "grid2": ("Grid - 2 Columns (Current)",),
+    "list": ("1 - List - 1 Column",),
+    "compact": ("2 - Compact - 3 Columns",),
+    "tiles": ("4 - Tiles - Square Grid",),
+    "sidebar": ("5 - Sidebar - Icon Rail",),
+    "featured": ("7 - Featured - Hero + Small",),
+    "circles9": ("9 - Circles - Glowing Rings",),
+    "pills": ("3 - Pills - Full-Width Pills",),
+    "cards": ("6 - Cards - Big Cards",),
+    "mini": ("8 - Mini - 4-Column Icons",),
+    "split": ("10 - Split - Big Icon + Text",),
+    "cover": ("11 - Cover - Big Cover + Grid",),
+    # V6.20 NEW MENU LAYOUTS - from user screenshots (Menu Layouts)
+    "bento": ("Bento - \u0628\u064a\u0646\u062a\u0648",),
+    "masonry": ("Masonry - \u0645\u062a\u062f\u0631\u062c",),
+    "stack": ("Stack - \u0645\u062a\u0631\u0627\u0635",),
+    "zigzag": ("Zigzag - \u0645\u062a\u0639\u0631\u062c",),
+    "centerstage": ("Center Stage - \u0627\u0644\u0645\u0633\u0631\u062d",),
+    "duo": ("Duo - \u062b\u0646\u0627\u0626\u064a",),
 }
 def _panel_layout_current():
     try:
@@ -981,7 +947,50 @@ def _panel_layout_current():
         pass
     return "sidebar"
 def _panel_layout_css():
-    # V6.21 - layout is owned by the SHAPE system (_panel_shape_css). Nothing here.
+    _sv = _panel_layout_current()
+    if _sv == "grid2": return ""
+    if _sv == "list":
+        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;min-height:72px}</style>"
+    if _sv == "compact":
+        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:8px}.grid2 a{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:104px;padding:12px 6px;font-size:13px;line-height:1.25}.grid2 a::after{display:none}.grid2 a .ic{width:38px;height:38px;flex-shrink:0}.grid2 a.wide{grid-column:span 3;flex-direction:row;font-size:17px}.grid2 a.wide::after{display:block}</style>"
+    if _sv == "tiles":
+        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:10px;align-items:start}.grid2 a{aspect-ratio:1/1;min-height:0;flex-direction:column;justify-content:center;text-align:center;gap:6px;padding:8px 6px;font-size:12px;line-height:1.25;overflow:hidden}.grid2 a::after{display:none}.grid2 a .ic{width:40px;height:40px;flex-shrink:0}.grid2 a.wide{grid-column:span 3;aspect-ratio:auto;flex-direction:row;min-height:64px;font-size:17px}.grid2 a.wide::after{display:block}</style>"
+    if _sv == "sidebar":
+        _tv, _c1, _c2, _bg, _fg, _card, _lc2, _dc1, _dark, _rgb = _theme_vals()
+        return "<style>.ml-sidebar{display:flex;gap:12px;align-items:flex-start}.ml-nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:8px;padding:10px 6px;border-radius:16px;background:rgba(255,255,255,.06)}.ml-nav a{display:flex;width:52px;height:52px;min-height:52px;border-radius:50%;align-items:center;justify-content:center;margin:0;padding:0}.ml-nav a .ic{margin:0}.ml-main{flex:1;min-width:0}.ml-main .grid2{display:flex;flex-direction:column}.ml-main .grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;min-height:64px}.ml-sidebar .ml-nav a{background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "66;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 12px " + _c2 + "55}.ml-sidebar .ml-nav a:active{transform:scale(.94);filter:brightness(1.15)}</style>"
+    if _sv == "featured":
+        return "<style>.grid2 a:first-child{grid-column:1/-1;min-height:128px;font-size:21px}.grid2 a:first-child .ic{width:60px;height:60px}</style>"
+    if _sv == "circles9":
+        return "<style>.grid2{grid-template-columns:repeat(3,1fr);gap:18px 10px;align-items:start}.grid2 a{aspect-ratio:1/1;min-height:0;border-radius:50%!important;flex-direction:column;justify-content:center;text-align:center;gap:4px;padding:8px 6px;font-size:11px;line-height:1.2;overflow:hidden;box-shadow:0 0 0 4px rgba(0,180,196,.35),0 0 24px rgba(0,180,196,.55),0 10px 22px rgba(0,0,0,.5)}.grid2 a::after{display:none}.grid2 a .ic{width:36px;height:36px;margin:0 auto;flex-shrink:0}.grid2 a.wide{grid-column:span 3;aspect-ratio:auto;border-radius:22px!important;flex-direction:row;min-height:64px;font-size:17px}.grid2 a.wide::after{display:block}</style>"
+    if _sv == "pills":
+        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;border-radius:999px!important;min-height:56px}.grid2 a.wide{border-radius:999px!important}</style>"
+    if _sv == "cards":
+        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;width:100%;min-height:110px;gap:16px;font-size:19px;padding:16px 20px}.grid2 a .ic{width:64px;height:64px}</style>"
+    if _sv == "mini":
+        return "<style>.grid2{grid-template-columns:repeat(4,1fr);gap:8px}.grid2 a{flex-direction:column;justify-content:center;text-align:center;gap:4px;min-height:100px;padding:10px 4px;font-size:11px;line-height:1.25}.grid2 a::after{display:none}.grid2 a .ic{width:30px;height:30px;flex-shrink:0}.grid2 a.wide{grid-column:span 4;flex-direction:row;font-size:16px;min-height:56px}.grid2 a.wide::after{display:block}</style>"
+    if _sv == "split":
+        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;width:100%;gap:14px;min-height:76px;padding:12px 16px}.grid2 a .ic{width:56px;height:56px;flex:0 0 56px}</style>"
+    if _sv == "cover":
+        return "<style>.grid2 a:first-child{grid-column:1/-1;min-height:150px;font-size:22px;flex-direction:column}.grid2 a:first-child .ic{width:72px;height:72px}</style>"
+    if _sv == "bento":
+        # Bento: 1st tile 2x2 big, 2nd wide, rest small. nth-child works on .grid2 order.
+        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a:nth-child(1){grid-column:span 1;grid-row:span 2;min-height:210px;font-size:19px;flex-direction:column}.grid2 a:nth-child(1) .ic{width:60px;height:60px}.grid2 a:nth-child(2){grid-column:span 1;min-height:100px}.grid2 a.wide{grid-column:span 2;min-height:64px}</style>"
+    if _sv == "masonry":
+        # Masonry: CSS columns, tiles keep natural height, order flows top-down per column.
+        return "<style>.grid2{display:block;columns:2;column-gap:12px}.grid2 a{display:flex;break-inside:avoid;margin-bottom:12px;min-height:92px}.grid2 a:nth-child(3n){min-height:128px}.grid2 a.wide{width:100%;min-height:72px}</style>"
+    if _sv == "stack":
+        # Stack: one full-width row per tile, compact.
+        return "<style>.grid2{display:flex;flex-direction:column}.grid2 a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;text-align:center;gap:12px;width:100%;min-height:64px;padding:12px 16px}.grid2 a .ic{width:40px;height:40px}</style>"
+    if _sv == "zigzag":
+        # Zigzag: 2 small, 1 wide, 2 small, 1 wide ... (nth-child on grid)
+        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a{width:100%;min-height:92px}.grid2 a:nth-child(3n){grid-column:span 2;min-height:64px;flex-direction:row}.grid2 a.wide{grid-column:span 2}</style>"
+    if _sv == "centerstage":
+        # Center Stage: 1st tile 2x2 centre, small tiles around it.
+        return "<style>.grid2{grid-template-columns:repeat(3,1fr)}.grid2 a:first-child{grid-column:2;grid-row:1/span 2;min-height:200px;font-size:19px;flex-direction:column}.grid2 a:first-child .ic{width:60px;height:60px}.grid2 a.wide{grid-column:span 3;min-height:64px}</style>"
+    if _sv == "duo":
+        # Duo: top grid (2-col) + bottom vertical list, via .grid2 split is not possible in pure CSS,
+        # so: first half as grid, tiles after 4th become full-width rows.
+        return "<style>.grid2{grid-template-columns:repeat(2,1fr)}.grid2 a:nth-child(n+5){grid-column:span 2;min-height:64px;flex-direction:row}.grid2 a.wide{grid-column:span 2}</style>"
     return ""
 def _button_size_css():
     _press = (
@@ -1057,12 +1066,6 @@ PANEL_LANGS = {
 }
 # UI_TEXT[key] = (en, ar, fr). Fallback = en when a translation is missing.
 UI_TEXT = {
-  "Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot": ("Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot", "إدارة ديسك السلوتس - زرار واحد: تقسيم + تخزين + مزامنة + إخفاء الفاضي + أسماء + ريبوت", "Gestion disque des slots - UN BOUTON : partition + stockage + synchro + masquer les vides + noms + redémarrage"),
-  "Disk Setup": ("Disk Setup", "تجهيز الديسك", "Configuration du disque"),
-  "Slots": ("Slots", "السلوتس", "Slots"),
-  "Images": ("Images", "الصور", "Images"),
-  "Protection": ("Protection", "الحماية", "Protection"),
-  "Recovery": ("Recovery", "الريكفري", "Recovery"),
   "Panel Menu": ("Panel Menu", "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645", "Menu du panneau"),
   "U-Panel Setting": ("U-Panel Setting", "\u0625\u0639\u062f\u0627\u062f\u0627\u062a U-Panel", "Param\u00e8tres U-Panel"),
   "Language setting": ("Language setting", "\u0636\u0628\u0637 \u0627\u0644\u0644\u063a\u0629", "Param\u00e8tre de langue"),
@@ -1087,50 +1090,6 @@ UI_TEXT = {
   "Saved": ("Saved", "\u062a\u0645 \u0627\u0644\u062d\u0641\u0638", "Enregistr\u00e9"),
   "Language": ("Language", "\u0627\u0644\u0644\u063a\u0629", "Langue"),
   "Choose language": ("Choose language - tap one, it applies at once.", "\u0627\u062e\u062a\u0631 \u0627\u0644\u0644\u063a\u0629 - \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0648\u0627\u062d\u062f\u0629 \u0648\u0633\u062a\u0637\u0628\u0642 \u0641\u0648\u0631\u0627.", "Choisissez la langue - touchez-en une, elle s\u2019applique aussit\u00f4t."),
-  # V6.20 FIX (25 Nov): Home cards + bottom tabs + Panel page printed the raw
-  # English labels - they never went through _tr(), and most labels were not
-  # in UI_TEXT at all, so switching to Arabic only flipped dir=rtl while every
-  # label stayed English. All labels below are now in the dict.
-  "Image with Essentials": ("Image with Essentials", "صورة بالإضافات", "Image avec essentiels"),
-  "Reboot Receiver": ("Reboot Receiver", "إعادة تشغيل الرسيفر", "Redémarrer le récepteur"),
-  "Restart Enigma Only": ("Restart Enigma Only", "إعادة تشغيل إنيجما فقط", "Redémarrer Enigma uniquement"),
-  "Disk Cleanup": ("Disk Cleanup", "تنظيف القرص", "Nettoyage du disque"),
-  "Scheduled Backup": ("Scheduled Backup", "نسخ احتياطي مجدول", "Sauvegarde planifiée"),
-  "Download / Flash Image": ("Download / Flash Image", "تحميل / تفليش صورة", "Télécharger / Flasher une image"),
-  "Recording Timers": ("Recording Timers", "مؤقتات التسجيل", "Minuteries d'enregistrement"),
-  "Receiver Status": ("Receiver Status", "حالة الرسيفر", "État du récepteur"),
-  "EPG Refresh (auto)": ("EPG Refresh (auto)", "تحديث EPG (تلقائي)", "Actualisation EPG (auto)"),
-  "EPG + Alerts": ("EPG + Alerts", "EPG + تنبيهات", "EPG + Alertes"),
-  "Plugin Manager": ("Plugin Manager", "مدير الإضافات", "Gestionnaire de plugins"),
-  "Smart Restore": ("Smart Restore", "استعادة ذكية", "Restauration intelligente"),
-  "Telegram": ("Telegram", "تيليجرام", "Telegram"),
-  "View Last Log": ("View Last Log", "عرض آخر سجل", "Voir le dernier journal"),
-  "Logout": ("Logout", "تسجيل الخروج", "Déconnexion"),
-  "Home": ("Home", "الرئيسية", "Accueil"),
-  "Panel": ("Panel", "البانل", "Panneau"),
-  "Settings": ("Settings", "الإعدادات", "Paramètres"),
-  "Online": ("Online", "متصل", "En ligne"),
-  "Skin Changer": ("Skin Changer", "تغيير الشكل", "Changer de thème"),
-  "INSTALLATION": ("INSTALLATION", "التثبيت", "INSTALLATION"),
-  "BACKUP AND RESTORE": ("BACKUP AND RESTORE", "النسخ والاستعادة", "SAUVEGARDE ET RESTAURATION"),
-  "ENIGMA UI": ("ENIGMA UI", "واجهة إنيجما", "Interface Enigma"),
-  "TOOLS & MANAGEMENT": ("TOOLS & MANAGEMENT", "الأدوات والإدارة", "OUTILS ET GESTION"),
-  "Setup your Enigma": ("Setup your Enigma", "إعداد إنيجما", "Configurer Enigma"),
-  "Ur Favourite Setup": ("Ur Favourite Setup", "إعداد المفضلة", "Configuration préférée"),
-  "Plugins Manual": ("Plugins Manual", "تثبيت الإضافات يدويًا", "Installation manuelle de plugins"),
-  "Packages Only": ("Packages Only", "الحزم فقط", "Paquets uniquement"),
-  "Backup Ur Data": ("Backup Ur Data", "نسخ بياناتك", "Sauvegarder vos données"),
-  "Backup Ur Files": ("Backup Ur Files", "نسخ ملفاتك", "Sauvegarder vos fichiers"),
-  "Custom Restore": ("Custom Restore", "استعادة مخصصة", "Restauration personnalisée"),
-  "Streaming": ("Streaming", "البث", "Streaming"),
-  "Picons": ("Picons", "أيقونات القنوات", "Picons"),
-  "EPG": ("EPG", "دليل البرامج", "EPG"),
-  "Multiboot Manager": ("Multiboot Manager", "مدير المالتي بوت", "Gestionnaire Multiboot"),
-  "Image Update": ("Image Update", "تحديث الصورة", "Mise à jour de l'image"),
-  "Download Image": ("Download Image", "تحميل صورة", "Télécharger une image"),
-  "Backup Image": ("Backup Image", "نسخ الصورة", "Sauvegarder l'image"),
-  "Backup Manager": ("Backup Manager", "مدير النسخ", "Gestionnaire de sauvegardes"),
-  "Enigma Tools": ("Enigma Tools", "أدوات إنيجما", "Outils Enigma"),
 }
 def _panel_lang_current():
     try:
@@ -1312,7 +1271,7 @@ ACTIONS = {
     "web-image-essentials": ("Image with Essentials", True, ["--web-image-essentials"]),
 }
 PLUGINS_WEB = ["MyStreamer","novalerdownloader","AJPanel","SubsSupportPro","internet-speedtest","EmuInstaller","IPAudioPro","Epg-Grabber","EmilRemovePackage","customchannelselection","crashlogviewer","cacheflush","bitrate","AutoZap-Recovery","ArabicSavior","SimplySports","buttonpatcher","FootOnsat","LukaTV","novalerStore","ipaudiplus","Aglare","RaedQuickSignal","NewVirtualKeyBoard","AutoBiss","auto-dcw-key-add","FuryBiss","hisnmuslim","netusagepro","quran","myhits","oscam-by-lenuxsat","AutoSub","SubExtractorLite","FurySkin","lukaatv-skin","JediMakerXtream","EnigmaPlay-Repo","Chromium","Novaler-Multiboot","MohamedStore","ServerColoring-Fury","sherlockmod","BouquetMakerXtream","NeoBoot-Fury","Auto-ChannelList","LukaConnect"]
-CAT_WEB = [(1,"Streaming / IPTV",[1,19,31,37,39,44,47]),(2,"Sport",[7,16,18,21]),(3,"Sat and TV",[8,10,14,23,25,27,42,26,46]),(4,"Subtitles",[4,33,34]),(5,"Skins & UI",[22,35,36]),(6,"Emu & Keys & Biss",[6,32]),(7,"System & Tools",[2,5,9,11,12,13,15,17,24,29,40]),(8,"Stores",[3,20,38,43]),(9,"Islamic",[28,30]),(10,"Multiboot",[2,40,45])]
+CAT_WEB = [(1,"Streaming / IPTV",[1,19,31,37,39,44,47]),(2,"Sport",[7,16,18,21]),(3,"Sat and TV",[8,10,14,23,25,27,42,26,46]),(4,"Subtitles",[4,33,34]),(5,"Skins & UI",[22,35,36]),(6,"Emu & Keys & Biss",[6,32]),(7,"System & Tools",[2,5,9,11,12,13,15,17,24,29,40]),(8,"Stores",[3,20,38,41,43]),(9,"Islamic",[28,30]),(10,"Multiboot",[2,40,45])]
 for _n,_nm in enumerate(PLUGINS_WEB,1):
     ACTIONS["plugin-install-%d" % _n] = ("Install Plugin [%d] %s" % (_n,_nm), True, ["--web-plugin-install", str(_n)])
     ACTIONS["plugin-update-%d" % _n] = ("Update Plugin [%d] %s (Force Reinstall)" % (_n,_nm), True, ["--web-plugin-update", str(_n)])
@@ -1832,21 +1791,12 @@ def flash_image_list():
 
 def multiboot_slots():
     # FIX V4.64: mirror shell upanel_slots(): slots = STARTUP_LINUX_N / STARTUP_N files, not len(STARTUP*) count
-    # V6.20: ALSO scan blkid LABEL=linuxN - an Empty external slot has NO STARTUP
-    # file (so Recovery hides it), but the Panel must still list it for flashing.
     try:
         import re as _re2
         slots = set()
         for f in os.listdir("/boot"):
             m = _re2.match(r"STARTUP(?:_LINUX)?_(\d+)$", f)
             if m: slots.add(int(m.group(1)))
-        try:
-            import subprocess as _sp2
-            _out = _sp2.check_output(["blkid"], text=True, timeout=10)
-            for m in _re2.finditer(r'LABEL="linux(\d+)"', _out):
-                slots.add(int(m.group(1)))
-        except Exception:
-            pass
         if slots: return sorted(slots)
     except Exception:
         pass
@@ -2209,66 +2159,48 @@ PAGE_CSS = "<style>body{background:#080808;color:#eee;font-family:'Century Gothi
 PREMIUM_CSS = "<style>body{background:radial-gradient(600px 300px at 85% -50px,rgba(0,102,255,.45),transparent),radial-gradient(500px 300px at 0% 0%,rgba(123,47,247,.4),transparent),#161638;color:#fff;max-width:480px;margin:0 auto;padding:16px 16px 96px;min-height:100vh}h1{color:#fff;font-size:24px;font-weight:800;letter-spacing:.3px}a,button{background:#1E1E4A;color:#fff;border:1px solid rgba(0,150,255,.45);border-radius:18px;padding:16px;margin:10px 0;font-size:17px;font-weight:600;text-align:center;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}a.primary,button.primary{background:linear-gradient(135deg,#2563EB,#38BDF8);color:#fff;border:0;box-shadow:0 0 20px rgba(56,189,248,.5),inset 0 1px 0 rgba(255,255,255,.4)}a.gold,button.gold{background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#1A1405;border:0}a.danger,button.danger{background:linear-gradient(135deg,#E11D48,#FB7185);color:#fff;border:0;box-shadow:0 0 20px rgba(225,29,72,.4)}a.green,button.green{background:linear-gradient(135deg,#059669,#34D399);color:#fff;border:0;box-shadow:0 0 20px rgba(5,150,105,.4)}a.signal,button.signal{background:linear-gradient(135deg,#7C3AED,#C026D3);color:#fff;border:0;box-shadow:0 0 20px rgba(124,58,237,.4)}.card{background:linear-gradient(135deg,#1A1A3E,#22224A);border:1px solid rgba(0,150,255,.55);border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 0 20px rgba(0,102,255,.3),0 8px 24px rgba(0,0,0,.4)}.sec{font-size:12px;font-weight:800;letter-spacing:2px;color:#7DD3FC;text-transform:uppercase;margin:20px 2px 8px}.sec.r{color:#F9A8D4}.sec.g{color:#67E8F9}.sec.d{color:#8FA3C4}.small{color:#A8B8D4;font-size:13px}.banner{text-align:center;padding:12px 0 4px;margin:0}.banner .t{font-size:28px;font-weight:900;letter-spacing:3px;color:#FFFFFF;text-shadow:0 0 24px rgba(56,189,248,.9),0 2px 8px rgba(0,0,0,.5)}.banner .line{height:4px;background:linear-gradient(90deg,#38BDF8,#818CF8,#C026D3);border-radius:2px;margin:12px auto 8px;max-width:280px;box-shadow:0 0 16px rgba(56,189,248,.8)}.banner .sub{font-size:13px;font-weight:600;color:#7DD3FC}.grid2 a{margin:0;display:flex;align-items:center;gap:12px;text-align:left;min-height:88px;padding:18px 14px;font-size:16px;font-weight:700;border-radius:18px;color:#fff;border:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 20px rgba(0,0,0,.4)}.grid2 a::after{content:\">\";margin-left:auto;font-size:26px;font-weight:800;opacity:.9;line-height:1}.grid2 a.center{justify-content:center;text-align:center}.grid2 a.dv{background:linear-gradient(135deg,#7C3AED,#C026D3);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(192,38,211,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dr{background:linear-gradient(135deg,#DB2777,#F472B6);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(244,114,182,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dg{background:linear-gradient(135deg,#10B981,#34D399);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(52,211,153,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dp{background:linear-gradient(135deg,#FB923C,#FACC15);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(250,204,21,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dc{background:linear-gradient(135deg,#F59E0B,#FBBF24);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(251,191,36,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dt{background:linear-gradient(135deg,#0EA5E9,#22D3EE);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(34,211,238,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.dl{background:linear-gradient(135deg,#2563EB,#38BDF8);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 20px rgba(56,189,248,.45),0 8px 20px rgba(0,0,0,.4)}.grid2 a.wide{background:linear-gradient(135deg,#7C3AED,#C026D3);color:#fff;border:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 24px rgba(192,38,211,.5),0 8px 24px rgba(0,0,0,.45);grid-column:span 2;min-height:96px;padding:20px;font-size:19px}.grid2 a.wide.dc{background:linear-gradient(135deg,#7C3AED,#C026D3)}.grid2 a.wide.dv{background:linear-gradient(135deg,#2563EB,#38BDF8);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 24px rgba(56,189,248,.5),0 8px 24px rgba(0,0,0,.45)}.ic{display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 auto;border-radius:14px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}.ic svg{width:22px;height:22px;display:block;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.grid2 a.dv .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dv .ic svg{stroke:#fff}.grid2 a.dr .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dr .ic svg{stroke:#fff}.grid2 a.dg .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dg .ic svg{stroke:#fff}.grid2 a.dp .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dp .ic svg{stroke:#fff}.grid2 a.dc .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dc .ic svg{stroke:#fff}.grid2 a.dt .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dt .ic svg{stroke:#fff}.grid2 a.dl .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}.grid2 a.dl .ic svg{stroke:#fff}.grid2 a.wide .ic{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4)}.grid2 a.wide .ic svg{stroke:#fff}.grid2 a.wide .badge-new{background:linear-gradient(135deg,#FDE047,#F59E0B);color:#1A1405}select,input{background:#1E1E4A;color:#fff;border:1px solid rgba(0,150,255,.55);border-radius:14px}.pill{background:#1E1E4A;color:#fff}.pill.on{background:linear-gradient(135deg,#2563EB,#38BDF8);color:#fff}.sigbar{background:#2A2A5A}.up-head{display:flex;justify-content:space-between;align-items:center;padding:10px 2px 14px;position:sticky;top:0;background:rgba(22,22,56,.95);border-bottom:1px solid rgba(0,150,255,.35);z-index:10}.up-logo{font-size:21px;font-weight:900;letter-spacing:3px;color:#FFFFFF;text-shadow:0 0 16px rgba(56,189,248,.9)}.up-online{display:flex;align-items:center;gap:6px;font-size:12px;color:#C7D2FE;background:#1E1E4A;border:1px solid rgba(0,150,255,.55);padding:6px 12px;border-radius:999px}.up-online i{display:block;width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 10px rgba(34,197,94,.8)}.up-tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;gap:4px;justify-content:space-around;background:#12122E;border-top:1px solid rgba(0,150,255,.35);padding:10px 8px calc(10px + env(safe-area-inset-bottom))}.up-tabs a{display:flex;flex-direction:column;align-items:center;gap:3px;margin:0;padding:8px 10px;font-size:11px;font-weight:700;color:#8FA3C4;background:none;border:0;box-shadow:none;border-radius:12px}.up-tabs a.on{color:#38BDF8;text-shadow:0 0 12px rgba(56,189,248,.8)}.badge-new{background:linear-gradient(135deg,#FDE047,#F59E0B);color:#1A1405}</style>"
 def _app_shell_top(path):
     if path.startswith("/login"): return ""
-    return "<header class='up-head'><div class='up-logo'>U-PANEL</div><span class='up-online'><i></i>%s</span></header>" % html.escape(_tr("Online"))
+    return "<header class='up-head'><div class='up-logo'>U-PANEL</div><span class='up-online'><i></i>Online</span></header>"
 def _app_shell_bottom(path):
     if path.startswith("/login"): return ""
-    _tabs = [("/", "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "Home"), ("/setup", "M12 2 2 9h3v11h6v-6h2v6h6V9h3L12 2z", "Setup"), ("/backups", "M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z", "Backup"), ("/streaming", "M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z", "Media"), ("/setting", "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z", "Setting")]
+    _tabs = [("/", "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "Home"), ("/panel", "M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm0-7h5V5h-5v6zm6-6v6h5V5h-5zm0 7h5v6h-5v-6z", "Panel"), ("/live", "M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z", "Live TV"), ("/setting", "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z", "Settings")]
     _out = "<nav class='up-tabs'>"
     for _href, _d, _lbl in _tabs:
         _cls = " class='on'" if path == _href or (path.startswith(_href + "/") and _href != "/") else ""
-        _tl = _tr(_lbl)
-        _out += "<a%s href='%s' aria-label='%s'><svg viewBox='0 0 24 24'><path d='%s'/></svg><span class='ut-lb'>%s</span></a>" % (_cls, _href, html.escape(_tl), _d, html.escape(_tl))
+        _out += "<a%s href='%s' aria-label='%s'><svg viewBox='0 0 24 24'><path d='%s'/></svg><span class='ut-lb'>%s</span></a>" % (_cls, _href, _lbl, _d, _lbl)
     _out += "</nav>"
     return _out
 
 def _layout_mock(_lk):
-    # V6.21 - previews for the 11 new shapes (old shape previews removed).
     def _bx(_w, _h, _r):
         return "<span style='display:inline-block;width:%spx;height:%spx;border-radius:%spx;background:linear-gradient(135deg,#ec4899,#a855f7);margin:2px;vertical-align:middle'></span>" % (_w, _h, _r)
-    if _lk == "dial":
-        return _bx(30, 30, 15) + _bx(30, 30, 15) + _bx(30, 30, 15) + "<br>" + _bx(18, 18, 9) + _bx(18, 18, 9) + _bx(18, 18, 9) + _bx(18, 18, 9)
-    if _lk in ("radial", "circle"):
-        return (_bx(30, 30, 15) * 3) + "<br>" + (_bx(30, 30, 15) * 3)
-    if _lk == "arc":
-        return _bx(26, 26, 13) + _bx(26, 26, 13) + _bx(26, 26, 13) + "<br>" + (_bx(30, 30, 15) * 3)
     if _lk == "list":
         return _bx(150, 14, 6) + "<br>" + _bx(150, 14, 6) + "<br>" + _bx(150, 14, 6)
-    if _lk == "grouped":
-        return _bx(150, 12, 6) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6) + "<br>" + _bx(150, 12, 6) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
-    if _lk == "tabs":
-        return _bx(40, 14, 7) + _bx(40, 14, 7) + _bx(40, 14, 7) + "<br>" + _bx(70, 22, 6) + _bx(70, 22, 6)
-    if _lk == "bento":
-        return _bx(150, 30, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6) + "<br>" + _bx(45, 22, 6) + _bx(45, 22, 6) + _bx(45, 22, 6)
     if _lk == "compact":
         return (_bx(30, 20, 5) * 3) + "<br>" + (_bx(30, 20, 5) * 3)
+    if _lk == "tiles":
+        return (_bx(30, 30, 5) * 3) + "<br>" + (_bx(30, 30, 5) * 3)
+    if _lk == "sidebar":
+        return "<span style='display:inline-block;width:14px;height:56px;border-radius:7px;background:rgba(255,255,255,.25);margin:2px;vertical-align:middle'></span>" + _bx(110, 14, 6) + "<br><span style='display:inline-block;width:14px;height:1px;margin:2px'></span>" + _bx(110, 14, 6)
+    if _lk == "featured":
+        return _bx(150, 30, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
+    if _lk == "circles9":
+        return _bx(30, 30, 15) + _bx(30, 30, 15) + _bx(30, 30, 15)
     if _lk == "pills":
         return _bx(150, 16, 8) + "<br>" + _bx(150, 16, 8) + "<br>" + _bx(150, 16, 8)
-    if _lk == "hero":
+    if _lk == "cards":
         return _bx(150, 34, 8) + "<br>" + _bx(150, 34, 8)
+    if _lk == "mini":
+        return (_bx(22, 22, 5) * 4) + "<br>" + (_bx(22, 22, 5) * 4)
+    if _lk == "split":
+        return _bx(26, 26, 6) + _bx(110, 14, 6) + "<br>" + _bx(26, 26, 6) + _bx(110, 14, 6)
+    if _lk == "cover":
+        return _bx(150, 34, 8) + "<br>" + _bx(70, 20, 6) + _bx(70, 20, 6)
     return _bx(70, 22, 6) + _bx(70, 22, 6) + "<br>" + _bx(70, 22, 6) + _bx(70, 22, 6)
 
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
-    def _dbg(self, msg):
-        # V6.20 DIAG - checkpoint log with immediate flush+fsync, so it survives
-        # even if the process is killed mid-request (buffered writes would be lost).
-        try:
-            with open("/tmp/prepare-debug.log", "a") as _f:
-                _f.write(msg + "\n"); _f.flush()
-                import os as _o2; _o2.fsync(_f.fileno())
-        except Exception: pass
-    def handle_error(self, request, client_address):
-        # V6.20 DIAG - log the FULL traceback whenever a request drops the
-        # connection (e.g. /multiboot/prepare "server dropped"). Without this,
-        # BaseHTTPRequestHandler prints to stderr only and the cause is lost.
-        import traceback
-        try:
-            with open("/tmp/u-panel-web-error.log", "a") as _ef:
-                _ef.write("=== ERROR %s %s ===\n" % (client_address, request))
-                _ef.write(traceback.format_exc() + "\n")
-        except Exception: pass
     def authed(self):
         ck = self.headers.get("Cookie", "")
         return ("upanel_pin=" + get_pin()) in ck
@@ -2299,9 +2231,7 @@ class H(BaseHTTPRequestHandler):
             _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.20"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-cache"); self.send_header("Content-Length", str(len(_vb))); self.end_headers(); self.wfile.write(_vb); return; return
         if u.path == "/restart-server":
-            _sp = resolve_script()
-            if not _sp:
-                self.send_html("<h1>Restart failed</h1><div class='card'>SCRIPT NOT FOUND - the Panel server cannot find the U-Panel script file.<br>Re-run the script from its real location, e.g.<br>sh /etc/enigma2/U-Panel-V6.20.sh<br>then reload this page.</div><a href='/'>Back</a>"); return
+            _sp = SCRIPT or os.environ.get("U_PANEL_PATH", "")
             def _do_restart():
                 time.sleep(2)
                 try: subprocess.Popen(["sh", _sp, "--restart-server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -3252,7 +3182,7 @@ class H(BaseHTTPRequestHandler):
                 try:
                     with _uu.urlopen("http://127.0.0.1/web/zap?sRef=" + _pp.quote(_want, safe=":"), timeout=5): pass
                 except Exception as _e:
-                    self.send_html("<h1>Zap failed</h1><div class='card'>%s<br><br>Zap needs OpenWebif on the receiver. If it is not installed: <a href='/plugins/install?pkg=enigma2-plugin-extensions-openwebif'>Install OpenWebif</a> then Restart Enigma.</div><a href='/live'>Back to Live TV</a>" % html.escape(str(_e))); return
+                    self.send_html("<h1>Zap failed</h1><div class='card'>%s</div><a href='/live'>Back to Live TV</a>" % html.escape(str(_e))); return
                 # V6.20 FIX - Live TV zap race (reported 25 Nov): /web/zap returns as soon as
                 # Enigma2 ACCEPTS the zap, but the tuner needs 1-3s to actually switch. The
                 # old code 302-redirected instantly, so the reloaded page called
@@ -3284,25 +3214,19 @@ class H(BaseHTTPRequestHandler):
             _names = lamedb_names()
             _rows = ""
             _count = 0
-            try:
-                for _fn, _bnm in bouquet_list():
-                    _rows += "<div class='card' style='margin-bottom:4px'><b>%s</b></div>" % html.escape(_bnm)
-                    for _ln, _ref, _nm in bouquet_channels(_fn):
-                        _rr = _ref[len("#SERVICE "):] if _ref.startswith("#SERVICE ") else _ref
-                        _dn = display_name(_ref, _nm, _names)
-                        _sel = " class='chbtn chsel'" if (_rr == _cur_ref and _cur_ref) else " class='chbtn'"
-                        _rows += "<a href='/live?ref=%s'%s>%s</a>" % (html.escape(_pp.quote(_rr, safe=":")), _sel, html.escape(_dn))
-                        _count += 1
-            except Exception as _e_rows:
-                _rows = "<div class='card' style='border-color:#e53935'>Channel list failed: %s - check your bouquets / channel list.</div>" % html.escape(str(_e_rows))
+            for _fn, _bnm in bouquet_list():
+                _rows += "<div class='card' style='margin-bottom:4px'><b>%s</b></div>" % html.escape(_bnm)
+                for _ln, _ref, _nm in bouquet_channels(_fn):
+                    _rr = _ref[len("#SERVICE "):] if _ref.startswith("#SERVICE ") else _ref
+                    _dn = display_name(_ref, _nm, _names)
+                    _sel = " class='chbtn chsel'" if (_rr == _cur_ref and _cur_ref) else " class='chbtn'"
+                    _rows += "<a href='/live?ref=%s'%s>%s</a>" % (html.escape(_pp.quote(_rr, safe=":")), _sel, html.escape(_dn))
+                    _count += 1
             if not _count:
                 _rows = "<div class='card'>No channels found - check your bouquets / channel list.</div>"
             _warn = ""
             if not _cur_ref:
-                # V6.20 FIX (25 Nov): Live TV looked completely dead when OpenWebif
-                # was not answering - the old warning was one small line. Now a
-                # big card that says WHY and fixes it with two taps.
-                _warn = ("<div class='card' style='border:2px solid #e53935;padding:14px'><b style='font-size:16px'>⚠️ Live TV needs OpenWebif - it is not answering on this receiver.</b><br><span class='small'>Without OpenWebif there is no current channel, no zap and no stream - that is why Live TV looks dead. The receiver may also be in standby, or no channel is playing.</span><br><br><a class='primary' href='/plugins/install?pkg=enigma2-plugin-extensions-openwebif'>Install OpenWebif</a> <a class='primary' href='/run?action=enigma-restart'>Restart Enigma</a></div>")
+                _warn = "<div class='card' style='border-color:#e53935'>OpenWebif is not answering - Live TV needs OpenWebif. <a href='/plugins/install?pkg=enigma2-plugin-extensions-openwebif'>Install OpenWebif</a> then Restart Enigma.</div>"
             body = "<style>.lvbtn{flex:1;border:1px solid " + _c2 + "66;border-radius:12px;padding:11px 8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 4px 14px " + _glow + ";transition:transform .15s ease,filter .15s ease;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}.lvbtn::before{content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:none;pointer-events:none;z-index:0}.lvbtn:active::before{left:130%;transition:left .45s ease}.lvbtn.ghost::after{display:none}.lvbtn:active{transform:scale(.97)}.chbtn{display:block;margin:8px 0;padding:14px 14px;border-radius:14px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(180deg,#3d3d3d,#1a1a1a 42%,#000);border:1px solid " + _c2 + "55;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -8px 12px rgba(0,0,0,.65),0 5px 14px rgba(0,0,0,.45);position:relative;overflow:hidden}.chbtn.chsel{background:linear-gradient(180deg,rgba(255,255,255,.35)," + _lc2 + " 30%," + _c1 + ");border:2px solid #fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -5px 10px rgba(0,0,0,.3),0 0 20px " + _glow + "}.lvbtn.stop{background:linear-gradient(135deg,#ff5252,#c62828);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(229,57,53,.35)}.lvbtn.ghost{background:transparent;color:" + _c2 + ";border:2px solid " + _c2 + ";box-shadow:none}.lvbtn.rec{background:linear-gradient(180deg,#2a2a2a,#000);border:2px solid #ff1744;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.blk{background:linear-gradient(180deg,#2a2a2a,#000);border:1px solid #444;box-shadow:0 4px 14px rgba(0,0,0,.5)}.lvbtn.rec.on{background:linear-gradient(180deg,#2a2a2a,#000);border-color:#ff1744;box-shadow:0 0 18px rgba(255,23,68,.7)}.recdot{color:#ff1744;font-size:20px;line-height:1;text-shadow:0 0 10px #ff1744}.recdot.pulse{animation:recpulse 1s infinite}@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.2}}.lvbtn.small{padding:12px 6px;font-size:14px}.lvbtn.play{background:linear-gradient(135deg,#22c55e,#15803d);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 16px rgba(34,197,94,.5)}.lvbtn.b1{background:linear-gradient(135deg,#3b82f6,#1e40af);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(59,130,246,.4)}.lvbtn.b2{background:linear-gradient(135deg,#f59e0b,#ea580c);box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),0 4px 14px rgba(245,158,11,.4)}.lvbtn.b3{background:linear-gradient(135deg,#fde047,#eab308);color:#1a1a1a;box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 4px 14px rgba(250,204,21,.45)}</style><h1>Live TV <span style='background:#e53935;color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>LIVE</span> <span style='background:" + _c2 + ";color:#fff;font-size:12px;padding:3px 8px;border-radius:8px'>V6.09</span></h1><div class='small' id='srvver'>بيتأكد من إصدار السيرفر...</div><details><summary class='small' style='cursor:pointer;color:#aaa'>تفاصيل البث (اضغط لعرضها)</summary><div class='card' id='lvdiag' style='border-color:#f9d423'>بيفحص البث تلقائياً...</div><div class='small' id='lvplayer'>-</div><div class='small' id='lvvideo'>-</div></details>" + _warn
             body += ("<div class='card'>"
                      "<div id='lvbox' style='position:relative'><video id='lv' controls playsinline muted style='width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:block'></video><div id='subov' style='position:absolute;left:0;right:0;bottom:12%;text-align:center;pointer-events:none;font-size:22px;font-weight:bold;color:#ffe600;text-shadow:2px 2px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;white-space:pre-wrap;padding:0 8px'></div></div>"
@@ -3528,29 +3452,29 @@ class H(BaseHTTPRequestHandler):
             try:
                 with _uu.urlopen("http://127.0.0.1/web/zap?sRef=" + _pp.quote(_found[0], safe=":"), timeout=5) as _r: pass
                 _ch = _found[0]
-                # V6.20 FIX - signal needs ~5s to settle after a zap (reported 25 Nov):
-                # /web/zap returns at once, but the tuner needs seconds to lock, so the
-                # first /api/signal read after the redirect still showed the OLD channel's
-                # signal. Poll getcurrent until the wanted ref lands, then poll /api/signal
-                # until SNR > 0 / locked (max 5s) - only then redirect, so the first
-                # displayed signal is the NEW channel's settled signal, not the old one.
-                # If the channel really has no signal, the 5s cap still expires and we
-                # redirect anyway - the page then honestly shows No signal / NO LOCK.
-                import json as _jj2
-                for _zi in range(16):
-                    try:
-                        with _uu.urlopen("http://127.0.0.1/api/getcurrent", timeout=2) as _zr:
-                            if str(((_jj2.loads(_zr.read().decode("utf-8", "ignore")).get("info") or {}).get("ref", "")) or "") == _ch: break
-                    except Exception: pass
-                    import time as _tt2; _tt2.sleep(0.3)
-                for _si in range(16):
-                    try:
-                        with _uu.urlopen("http://127.0.0.1/api/signal", timeout=2) as _sr:
-                            _sd = _jj2.loads(_sr.read().decode("utf-8", "ignore"))
-                            _ssnr = int(str(_sd.get("snr", "0")).replace("%", "").strip() or 0)
-                            if _ssnr > 0: break
-                    except Exception: pass
-                    import time as _tt2; _tt2.sleep(0.3)
+                    # V6.20 FIX - signal needs ~5s to settle after a zap (reported 25 Nov):
+                    # /web/zap returns at once, but the tuner needs seconds to lock, so the
+                    # first /api/signal read after the redirect still showed the OLD channel's
+                    # signal. Poll getcurrent until the wanted ref lands, then poll /api/signal
+                    # until SNR > 0 / locked (max 5s) - only then redirect, so the first
+                    # displayed signal is the NEW channel's settled signal, not the old one.
+                    # If the channel really has no signal, the 5s cap still expires and we
+                    # redirect anyway - the page then honestly shows No signal / NO LOCK.
+                    import json as _jj2
+                    for _zi in range(16):
+                        try:
+                            with _uu.urlopen("http://127.0.0.1/api/getcurrent", timeout=2) as _zr:
+                                if str(((_jj2.loads(_zr.read().decode("utf-8", "ignore")).get("info") or {}).get("ref", "")) or "") == _ch: break
+                        except Exception: pass
+                        import time as _tt2; _tt2.sleep(0.3)
+                    for _si in range(16):
+                        try:
+                            with _uu.urlopen("http://127.0.0.1/api/signal", timeout=2) as _sr:
+                                _sd = _jj2.loads(_sr.read().decode("utf-8", "ignore"))
+                                _ssnr = int(str(_sd.get("snr", "0")).replace("%", "").strip() or 0)
+                                if _ssnr > 0: break
+                        except Exception: pass
+                        import time as _tt2; _tt2.sleep(0.3)
                 self.send_response(302); self.send_header("Location", _back + "&tuned=" + _pp.quote(_found[1] or _found[0])); self.end_headers(); return
             except Exception as _e:
                 self.send_html("<h1>Tune failed</h1><div class='card'>%s</div><a href='%s'>Back</a>" % (html.escape(str(_e)), _back)); return
@@ -3853,7 +3777,7 @@ class H(BaseHTTPRequestHandler):
                 _img = _names.get(_n, "Empty / Unknown")
                 body += "<div%s><b>%s - %s%s</b><br><a href='/multiboot/switch?slot=%d'>Switch to this slot + Reboot</a><a href='/multiboot/wipe?slot=%d'>Wipe this slot</a><a href='/multiboot/rename?slot=%d'>Rename this slot</a></div>" % (_cls, html.escape(_lbl), html.escape(_img), _here, _n, _n, _n)
             body += "<div class='sec'>SUB-ACTIONS - same as Terminal Boot Slot Manager</div>"
-            body += "<a href='/multiboot/slots-disk-management'>Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot</a><a href='/multiboot/fix-bootmenu'>Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)</a><a href='/multiboot/sync'>Sync Slots to /boot - if prepared slots do NOT show in the Panel / Flash page (no format, safe)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
+            body += "<a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/prepare'>Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)</a><a href='/multiboot/rename'>Rename a slot</a>"
             body += "<a href='/multiboot'>Back to Multiboot Manager</a><a href='/'>Back to Panel</a>"
             self.send_html(body); return
         if u.path in ("/tools", "/servers", "/iptv", "/streaming", "/picons", "/skin", "/setting", "/channellist", "/bouquet", "/transponder", "/image-update", "/backup-manager", "/backup-image", "/multiboot", "/epg-download", "/factory-reset"):
@@ -3873,17 +3797,13 @@ class H(BaseHTTPRequestHandler):
               "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control (mobile browser)", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
               "/backup-manager": ("Backup Manager - List / Cleanup / Rollback", "Exact items from Terminal Backup Manager.", [("1) List All Backups", "/run?action=backup-manager-list", ""), ("List / Download / Delete backups", "/backups", ""), ("2) Cleanup - Keep Last 3 Per Group", "/run?action=backup-manager-cleanup", ""), ("3) Rollback Files (Latest BeforeRestore)", "/run?action=backup-manager-rollback", ""), ("4) Rollback Plugins (Latest BeforeRestore)", "/run?action=backup-manager-rollback-plugins", ""), ("5) Change Backup Location - HDD", "/run?action=backup-location-hdd", ""), ("5) Change Backup Location - USB", "/run?action=backup-location-usb", "")]),
               "/backup-image": ("Backup Image", "Full Image backup - same as Terminal Backup Image.", [("Backup Image now", "/run?action=backup-image", ""), ("Download / Flash Image", "/images", "")]),
-              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("## Disk Setup", "", ""), ("Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot", "/multiboot/slots-disk-management", ""), ("Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)", "/multiboot/fix-bootmenu", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("## Slots", "", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("R) Rename a slot", "/multiboot/rename", ""), ("## Images", "", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("## Protection", "", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("## Recovery", "", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", "")]),
+              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("1) Show Slots", "/multiboot/slots", ""), ("2) Switch Slot + Reboot", "/multiboot/switch", ""), ("3) Backup Current Slot", "/run?action=multiboot-backup", ""), ("4) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("5) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("6) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("7) Flash Image to Slot", "/images", ""), ("8) Download Image from Internet", "/download-image", ""), ("9) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("10) Wipe Slot", "/multiboot/wipe", ""), ("R) Rename a slot", "/multiboot/rename", "")]),
             }
             _title, _desc, _items = _PAGES[u.path]
             body = "<h1>%s</h1><p class='small'>%s</p>" % (html.escape(_tr(_title) if _title in UI_TEXT else _title), html.escape(_desc))
             for _lbl, _href, _note in _items:
                 _plain = _menu_label(_lbl)
-                if _plain.startswith("## "):
-                    _gkey = _plain[3:]
-                    body += "<div class='sec'>%s</div>" % html.escape(_tr(_gkey) if _gkey in UI_TEXT else _gkey)
-                else:
-                    body += "<a href='%s'>%s</a>" % (html.escape(_href), html.escape(_tr(_plain) if _plain in UI_TEXT else _plain))
+                body += "<a href='%s'>%s</a>" % (html.escape(_href), html.escape(_tr(_plain) if _plain in UI_TEXT else _plain))
             body += "<a href='/panel'>%s</a><a href='/'>%s</a>" % (_tr("Back to Panel Menu"), _tr("Back to Panel"))
             self.send_html(body); return
         if u.path == "/tools/password":
@@ -4026,7 +3946,6 @@ class H(BaseHTTPRequestHandler):
             _en = "ENABLED" if _sv.get("LOCK_MAC_ENABLED", "") == "1" else "DISABLED"
             _ps = "SET" if _sv.get("LOCK_MAC_PIN_ENABLED", "") == "1" else "NOT SET"
             body = "<h1>Lock By Mac</h1><div class='card'><b>Lock By Mac:</b> %s<br><b>MAC Lock PIN:</b> %s<br><span class='small'>Every change needs your MAC Lock PIN. If no MAC Lock PIN is set yet, leave Current PIN empty and fill New PIN twice - Enable will ask you to set it first.</span></div><form method='post' action='/setting/mac-change'><label>Action</label><select name='action'><option value='enable'>Enable Lock (bind to THIS device)</option><option value='disable'>Disable Lock</option><option value='transfer'>Transfer to New Device</option><option value='setpin'>Set / Change MAC Lock PIN</option></select><input name='pin' type='password' placeholder='Current MAC Lock PIN'><input name='newpin' type='password' placeholder='New MAC Lock PIN (for Enable-first-time / Set PIN)'><input name='newpin2' type='password' placeholder='Repeat new MAC Lock PIN'><button>Run</button></form><a href='/panel'>Back to Panel Menu</a><a href='/'>Back</a>" % (html.escape(_en), html.escape(_ps))
-            self._dbg("PREPARE: sending html, body=%d chars" % len(body))
             self.send_html(body); return
         if u.path == "/setting/web":
             _bind = "0.0.0.0"
@@ -4270,22 +4189,7 @@ class H(BaseHTTPRequestHandler):
                 self.send_html(body); return
             # V5.96 FIX: branches above only set body - send it for every page in this block
             self.send_html(body); return
-        if u.path == "/multiboot/sync":
-            ACTIONS["multiboot-sync"] = ("Multiboot - Sync Slots to /boot", True, ["--web-multiboot-sync"])
-            self.send_response(302); self.send_header("Location", "/run?action=multiboot-sync"); self.end_headers(); return
-        if u.path == "/multiboot/recovery-hide":
-            ACTIONS["recovery-names-hide"] = ("Multiboot - Recovery Slot Names - Hide empty slots", True, ["--web-recovery-names-hide"])
-            self.send_response(302); self.send_header("Location", "/run?action=recovery-names-hide"); self.end_headers(); return
-        if u.path == "/multiboot/recovery-apply":
-            ACTIONS["recovery-names-apply"] = ("Multiboot - Recovery Slot Names - Apply names to ALL slots", True, ["--web-recovery-names-apply"])
-            self.send_response(302); self.send_header("Location", "/run?action=recovery-names-apply"); self.end_headers(); return
-        if u.path == "/multiboot/internal-check":
-            ACTIONS["internal-check"] = ("Multiboot - Check internal slots", True, ["--web-internal-check"])
-            self.send_response(302); self.send_header("Location", "/run?action=internal-check"); self.end_headers(); return
-        if u.path == "/multiboot/fix-bootmenu":
-            ACTIONS["fix-bootmenu"] = ("Multiboot - Fix Bootmenu (one click)", True, ["--web-fix-bootmenu"])
-            self.send_response(302); self.send_header("Location", "/run?action=fix-bootmenu"); self.end_headers(); return
-        if u.path in ("/multiboot/switch", "/multiboot/wipe", "/multiboot/rename", "/multiboot/slots-disk-management", "/download-image/pin"):
+        if u.path in ("/multiboot/switch", "/multiboot/wipe", "/multiboot/rename", "/multiboot/prepare", "/download-image/pin"):
             if u.path == "/multiboot/switch":
                 _slot=(q.get("slot") or [""])[0]
                 _cf=(q.get("confirm") or [""])[0]
@@ -4313,73 +4217,11 @@ class H(BaseHTTPRequestHandler):
                     ACTIONS["multiboot-rename-%s" % _slot] = ("Multiboot - Rename SLOT %s" % _slot, False, ["--web-multiboot-rename", _slot, _label])
                     self.send_response(302); self.send_header("Location", "/run?action=multiboot-rename-%s" % _slot); self.end_headers(); return
                 body = "<h1>Rename a slot</h1><p class='small'>Custom label for a slot. Empty label = clear.</p><form method='get' action='/multiboot/rename'><input name='slot' placeholder='Slot number' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><input name='label' placeholder='New label' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>Rename Slot</button></form><a href='/multiboot'>Back to Multiboot</a>"
-            elif u.path == "/multiboot/slots-disk-management":
-                # V6.20 - DEVICE-AWARE: same entry, different option per family.
-                # Vu+ / Dreambox never get the partitioner form - they get their own option.
-                self._dbg("SLOTS-DISK-MANAGEMENT: entered handler")
-                _fam="hisilicon"
-                try:
-                    import re as _reF
-                    _mdl=open("/proc/stb/info/model").read().strip().lower() if True else ""
-                    _imgv=open("/etc/image-version").read().lower() if True else ""
-                    _hay=_mdl+" "+_imgv
-                    if "vu" in _hay or "vuplus" in _hay: _fam="vuplus"
-                    elif "dream" in _hay or "dm9" in _hay or "dm8" in _hay or "dm7" in _hay or "dm5" in _hay: _fam="dreambox"
-                    import os as _osF
-                    if _osF.path.exists("/etc/dreambox-version"): _fam="dreambox"
-                except Exception: pass
-                if _fam=="vuplus":
-                    body=("<h1>Multiboot on Vu+</h1><div class='card'><b>Vu+ does NOT use this partitioner</b> - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots, so partitioning a disk this way would only create slots it can never boot from. No disk will be touched.</div>"
-                    "<div class='card'><b>Option A - Vu+ 4K (Uno / Solo / Ultimo / Duo 4K, Zero 4K):</b><br>Hardware multiboot is already built in. The internal flash already has 4 slots (Duo 4K Lite: 8). Use: Menu &gt; Setup &gt; Flash image, pick a free slot, flash there. No disk partitioning needed.</div>"
-                    "<div class='card'><b>Option B - Vu+ NOT 4K (Solo2 / Duo2 / Solo SE / Zero / Solo / Duo / Ultimo):</b><br>No hardware multiboot. Use the <b>OpenMultiBoot</b> plugin: install it on the running image, let IT format the USB / HDD (folders, not slot partitions), then install images from inside the plugin.</div>"
-                    "<a href='/multiboot'>Back to Multiboot</a>")
-                    self.send_html(body); return
-                if _fam=="dreambox":
-                    body=("<h1>Multiboot on Dreambox</h1><div class='card'><b>Dreambox does NOT use this partitioner</b> - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots, so partitioning a disk this way would only create slots it can never boot from. No disk will be touched.</div>"
-                    "<div class='card'><b>Option A - Dream One / Dream Two (DreamOS):</b><br>Use the DreamOS Recovery / Flash menu - multiboot via SD / USB is handled by the DreamOS image itself (Allan Turing / recovery multiboot). Do NOT partition the disk with this tool.</div>"
-                    "<div class='card'><b>Option B - DM800 / DM8000 / DM820 / DM7080 / DM520 / DM525:</b><br>Use the <b>MeoBoot</b> plugin (or Barry Allen on supported models): install it on the running image, let IT prepare the USB / CF / SD card, then install images from inside the plugin.</div>"
-                    "<a href='/multiboot'>Back to Multiboot</a>")
-                    self.send_html(body); return
-                self._dbg("FORMATTING-SLOTS: fam=%s" % _fam)
+            elif u.path == "/multiboot/prepare":
                 _disk=(q.get("disk") or [""])[0]; _slots=(q.get("slots") or [""])[0]; _size=(q.get("size") or [""])[0]; _cf=(q.get("confirm") or [""])[0]
-                _sc=(q.get("storage") or ["0"])[0]; _ss=[(q.get("s%d"%_k) or ["0"])[0] for _k in range(1,5)]
-                _spec=""; _stor_ok=True; _stor_txt=""
-                if not _sc.isdigit() or not 0 <= int(_sc) <= 4: _stor_ok=False
-                else:
-                    _sc=int(_sc)
-                    if _sc>0:
-                        for _k in range(1,_sc):
-                            if not _ss[_k-1].isdigit() or int(_ss[_k-1])<1: _stor_ok=False
-                        _spec=",".join(_ss[:_sc-1]+["0"]) if _sc>1 else "0"
-                        _parts=[]
-                        for _k in range(1,_sc+1):
-                            _lbl2="STORAGE" if _k==1 else "STORAGE%d"%_k
-                            if _k<_sc: _parts.append("%s %sG"%(_lbl2,_ss[_k-1]))
-                            else: _parts.append("%s (rest)"%_lbl2)
-                        _stor_txt=" + "+" + ".join(_parts)
-                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf not in ("ERASE", "erase", "e", "E"):
-                    # V6.20 - RE-PARTITION preview: disk chosen, ERASE not typed yet.
-                    # Show the disk's CURRENT layout (old slots, if any) so the user sees
-                    # exactly what will be erased, then ask for ERASE on the same page.
-                    _lay=""
-                    try:
-                        import subprocess as _sp2
-                        _out=_sp2.run(["blkid"], capture_output=True, text=True, timeout=10).stdout
-                        for _bl in _out.splitlines():
-                            if ("/dev/%s" % _disk) in _bl: _lay+=html.escape(_bl)+"<br>"
-                        if not _lay: _lay="(no partitions found - disk looks empty)"
-                    except Exception: _lay="(could not read current layout)"
-                    # V6.20 FIX: was "%" formatting with a literal width:100% in the
-                    # template -> TypeError -> empty reply (curl 52). Concatenation only.
-                    body=("<h1>Slots disk management - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
-                    "<div class='card'><b>NEW layout:</b> p1 FAT32 512M BOOT + " + _slots + " slots x " + _size + "G ext4 (linux5..linux" + str(_slots + 4) + ")" + _stor_txt + "</div>" | " <div class='card'><b>Then, automatically:</b> Sync STARTUP files + Hide empty slots + Apply image names - then <b>REBOOT</b>.</div>"
-                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'><input type='hidden' name='storage' value='" + str(_sc) + "'><input type='hidden' name='s1' value='" + _ss[0] + "'><input type='hidden' name='s2' value='" + _ss[1] + "'><input type='hidden' name='s3' value='" + _ss[2] + "'><input type='hidden' name='s4' value='" + _ss[3] + "'>"
-                    "<label>Type ERASE or e to erase /dev/" + _disk + " and run Slots disk management + reboot:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Slots disk management + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
-                    self.send_html(body); return
-                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf in ("ERASE", "erase", "e", "E"):
-                    ACTIONS["formatting-slots-%s" % _disk] = ("Slots disk management - /dev/%s (%s slots x %sG%s - ERASES DISK + Fix Bootmenu + Reboot)" % (_disk, _slots, _size, _stor_txt), True, ["--web-formatting-slots", _disk, _slots, _size, _spec])
-                    self.send_response(302); self.send_header("Location", "/run?action=formatting-slots-%s" % _disk); self.end_headers(); return
+                if _disk and _slots in ("2","3","4") and _size in ("2","3","4","5","6","7","8") and _cf == "ERASE":
+                    ACTIONS["multiboot-prepare-%s" % _disk] = ("Multiboot - Prepare /dev/%s for Multiboot (%s slots x %sG - ERASES DISK)" % (_disk, _slots, _size), True, ["--web-multiboot-prepare", _disk, _slots, _size])
+                    self.send_response(302); self.send_header("Location", "/run?action=multiboot-prepare-%s" % _disk); self.end_headers(); return
                 _opts=""
                 try:
                     import os as _os2
@@ -4388,60 +4230,24 @@ class H(BaseHTTPRequestHandler):
                     for _ml in _rootdev:
                         _mp=_ml.split()
                         if len(_mp)>=2 and _mp[1]=="/":
-                            import re as _re2
-                            _rs=_mp[0]
-                            if _rs=="/dev/root":
-                                try:
-                                    _cmd=open("/proc/cmdline").read()
-                                    _m2=_re2.search(r"root=/dev/([^ ]+)", _cmd); _rs="/dev/"+(_m2.group(1) if _m2 else "")
-                                except Exception: pass
-                            # same stripping as shell, via match (no sed/sub chains):
-                            # mmcblk0p23 -> mmcblk0, nvme0n1p2 -> nvme0n1, sda1 -> sda
-                            _mm=_re2.match(r"^/dev/(mmcblk[0-9]+|nvme[0-9]+n[0-9]+)", _rs)
-                            if _mm: _rootdisk=_mm.group(1)
-                            else:
-                                _mm2=_re2.match(r"^/dev/([a-z]+)", _rs); _rootdisk=_mm2.group(1) if _mm2 else ""
-                            break
-                    _di=0
+                            import re as _re2; _rootdisk=_re2.sub(r"^/dev/(mmcblk[0-9]+|nvme[0-9]+n[0-9]+|sd[a-z]+|vd[a-z]+|hd[a-z]+)[p0-9]*$", r"\1", _mp[0]); break
                     for _d in sorted(_os2.listdir("/sys/block")):
-                        try:
-                            # ANY external disk: USB HDD / USB flash / SD / memory card -
-                            # every block device except the root (internal flash) disk,
-                            # loop/ram/dm devices, and zero-size devices. No name filter.
-                            if _d.startswith("loop") or _d.startswith("ram") or _d.startswith("dm-") or _d.startswith("zram"): continue
-                            if "boot" in _d: continue  # eMMC boot areas (mmcblk0boot0/1) are not disks
-                            import os as _os3
-                            if _os3.path.exists("/sys/block/%s/partition" % _d): continue  # a partition, not a whole disk
-                            if _d==_rootdisk: continue
-                            try: _sz=int(open("/sys/block/%s/size"%_d).read().strip())*512//1048576
-                            except Exception: _sz=0
-                            if _sz<=0: continue
-                            _kind="External disk"
-                            try:
-                                if open("/sys/block/%s/removable"%_d).read().strip()=="1": _kind="Removable (USB flash / SD / memory card)"
-                            except Exception: pass
-                            if _d.startswith("mmcblk"): _kind="Memory card (SD / MMC)"
-                            elif _d.startswith("nvme"): _kind="NVMe / external SSD"
-                            _di+=1
-                            _opts+="<option value='%s'>%d - /dev/%s - %d MB - %s</option>" % (_d, _di, _d, _sz, _kind)
-                        except Exception: pass  # one bad disk must never kill the page/server
+                        if not (_d.startswith("sd") or _d.startswith("mmcblk") or _d.startswith("nvme") or _d.startswith("vd") or _d.startswith("hd")): continue
+                        if _d==_rootdisk: continue
+                        try: _sz=int(open("/sys/block/%s/size"%_d).read().strip())*512//1048576
+                        except Exception: _sz=0
+                        if _sz<1024: continue
+                        _opts+="<option value='%s'>/dev/%s - %d MB</option>" % (_d, _d, _sz)
                 except Exception: pass
-                self._dbg("SLOTS-DISK-MANAGEMENT: disk scan done, opts=%d chars" % len(_opts))
                 if not _opts:
-                    body="<h1>Slots disk management - ONE BUTTON</h1><div class='card'>No external disk found - plug a USB HDD / USB flash / SD / memory card first. The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
+                    body="<h1>Prepare Disk for Multiboot</h1><div class='card'>No external disk found - plug a USB / HDD / SD card first. The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
                 else:
-                    body=("<h1>Slots disk management - ONE BUTTON</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + p2 EXTENDED + one ext4 logical partition per slot (linux5..linux(4+N), p5+) + optional STORAGE partitions from the remaining space (last one takes the rest). Up to 20 slots (numbered 5..24 - 1-4 reserved for the internal flash). After partitioning, the panel automatically runs: Sync + Hide empty + Apply names - then REBOOTS.</span></div>"
-                    "<form method='get' action='/multiboot/slots-disk-management'><label>Disk (whole disk will be ERASED):</label><select name='disk'>" + _opts + "</select>"
-                    "<label>Slots (2-20):</label><select name='slots'>" + "".join("<option value='%d'%s>%d slots</option>" % (_n, " selected" if _n==4 else "", _n) for _n in range(2,21)) + "</select>"
+                    body=("<h1>Prepare Disk for Multiboot</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + one ext4 partition per slot (linux1..linuxN). After preparing: reboot, then Diagnose Slots to confirm your box boots from this disk - some boxes only boot multiboot from internal flash.</span></div>"
+                    "<form method='get' action='/multiboot/prepare'><label>Disk (whole disk will be ERASED):</label><select name='disk'>%s</select>"
+                    "<label>Slots:</label><select name='slots'><option value='2'>2 slots</option><option value='3'>3 slots</option><option value='4' selected>4 slots</option></select>"
                     "<label>Size per slot (GB):</label><select name='size'><option value='2'>2 GB</option><option value='3'>3 GB</option><option value='4' selected>4 GB</option><option value='6'>6 GB</option><option value='8'>8 GB</option></select>"
-                    "<label>Storage partitions after slots (0 = no storage):</label><select name='storage'><option value='0' selected>0 - No storage</option><option value='1'>1 storage partition</option><option value='2'>2 storage partitions</option><option value='3'>3 storage partitions</option><option value='4'>4 storage partitions</option></select>"
-                    "<label>Size of STORAGE partition (GB, min 1):</label><input name='s1' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE2 partition (GB, min 1):</label><input name='s2' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE3 partition (GB, min 1):</label><input name='s3' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE4 partition (GB, min 1):</label><input name='s4' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<div class='card'><b>Storage rule:</b> enter a size for every storage partition EXCEPT the last one - the last one always takes the rest of the disk. Each size min 1 GB.</div>"
-                    "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Slots disk management + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
+                    "<label>Type ERASE to confirm:</label><input name='confirm' placeholder='ERASE' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>") % _opts
             elif u.path == "/download-image/pin":
                 _f=(q.get("file") or [""])[0]
                 if _f and "/" not in _f:
@@ -4455,31 +4261,31 @@ class H(BaseHTTPRequestHandler):
             body += "<a href='/setting'>Back to U-Panel Setting</a>"
             self.send_html(body); return
         if u.path == "/panel":
-            _banner2 = "<div class='banner'><div class='t'>\u2726 U-Panel</div><div class='line'></div><div class='sub'>%s</div></div>" % html.escape(_tr("Panel Menu"))
+            _banner2 = "<div class='banner'><div class='t'>\u2726 U-Panel</div><div class='line'></div><div class='sub'>Panel Menu</div></div>"
             _layout = _panel_layout_current()
-            body = _banner2 + "<a href='/'>\u2190 %s</a>" % html.escape(_tr("Back to Panel"))
+            body = _banner2 + "<a href='/'>\u2190 Back to Panel</a>"
             if _layout == "sidebar":
                 _nav = ""
                 for _sec2, _scls2, _items2 in PANEL_SECTIONS:
                     for it in _items2:
                         _icnav = "<span class='ic'>%s</span>" % ICONS.get(it[4], ICONS["grid"])
-                        _nav += "<a class='%s' href='%s' title='%s'>%s</a>" % (it[3], it[2], html.escape(_tr(it[1])), _icnav)
+                        _nav += "<a class='%s' href='%s' title='%s'>%s</a>" % (it[3], it[2], html.escape(it[1]), _icnav)
                 body += "<div class='ml-sidebar'><nav class='ml-nav'>" + _nav + "</nav><div class='ml-main'>"
             for _sec, _scls, _items in PANEL_SECTIONS:
-                body += "<div class='%s'>%s</div><div class='grid2'>" % (_scls, html.escape(_tr(_sec)))
+                body += "<div class='%s'>%s</div><div class='grid2'>" % (_scls, _sec)
                 for it in _items:
                     _ic = "<span class='ic'>%s</span>" % ICONS.get(it[4], ICONS["grid"])
-                    body += "<a class='%s' href='%s'>%s%s</a>" % (it[3], it[2], _ic, html.escape(_tr(it[1])))
+                    body += "<a class='%s' href='%s'>%s%s</a>" % (it[3], it[2], _ic, html.escape(it[1]))
                 body += "</div>"
             # Skin Changer: full-width, SAME dg colour as Picons/EPG, centered icon+text
             _ic = "<span class='ic'>%s</span>" % ICONS.get("grid", "")
-            body += "<div class='grid2'><a class='dg wide center' href='/skin'>%s%s</a></div>" % (_ic, html.escape(_tr("Skin Changer")))
+            body += "<div class='grid2'><a class='dg wide center' href='/skin'>%sSkin Changer</a></div>" % _ic
             # U-Panel Setting: full-width centered
             _ic2 = "<span class='ic'>%s</span>" % ICONS.get("grid", "")
-            body += "<div class='grid2'><a class='dt wide center' href='/setting'>%s%s</a></div>" % (_ic2, html.escape(_tr("U-Panel Setting")))
+            body += "<div class='grid2'><a class='dt wide center' href='/setting'>%sU-Panel Setting</a></div>" % _ic2
             if _layout == "sidebar":
                 body += "</div></div>"
-            body += "<a href='/'>\u2190 %s</a>" % html.escape(_tr("Back to Panel"))
+            body += "<a href='/'>\u2190 Back to Panel</a>"
             self.send_html(body); return
         if u.path == "/panel/run":
             _go = (q.get("go") or [""])[0]
@@ -4501,9 +4307,9 @@ class H(BaseHTTPRequestHandler):
             _badge = "<span class='badge-new'>NEW</span>" if _idx == 0 else ""
             _ic = "<span class='ic'>%s</span>" % ICONS[it[4]]
             if it[0] == "link":
-                body += "<a class='%s%s' href='%s'>%s%s%s</a>" % (it[3], _extra, it[2], _ic, html.escape(_tr(it[1])), _badge)
+                body += "<a class='%s%s' href='%s'>%s%s%s</a>" % (it[3], _extra, it[2], _ic, html.escape(it[1]), _badge)
             else:
-                body += "<a class='%s%s' href='/run?action=%s'>%s%s%s</a>" % (it[3], _extra, it[2], _ic, html.escape(_tr(it[1])), _badge)
+                body += "<a class='%s%s' href='/run?action=%s'>%s%s%s</a>" % (it[3], _extra, it[2], _ic, html.escape(it[1]), _badge)
         body += "</div>"
         body += "<p class='small'>Works only on your home WiFi (LAN). Never expose port 8080 to the internet.</p>"
         self.send_html(body)
@@ -4813,7 +4619,7 @@ if __name__ == "__main__":
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()
 PYEOF
 }
-web_ip() { _ip=$(hostname -I 2>/dev/null | cut -d' ' -f1); [ -n "$_ip" ] && { echo "$_ip"; return 0; }; ip -4 addr show scope global 2>/dev/null | grep -oE 'inet [0-9.]+' | head -1 | cut -d' ' -f2; }
+web_ip() { hostname -I 2>/dev/null | cut -d' ' -f1; }
 # V5.41 TRANSITION: kill BOTH the new server and a V5.39-or-older server (u-script-web.py) - the old one keeps port 8080
 web_pids() { for _d in /proc/[0-9]*; do if grep -q "u-panel-web.py" "$_d/cmdline" 2>/dev/null || grep -q "u-script-web.py" "$_d/cmdline" 2>/dev/null; then echo "${_d#/proc/}"; fi; done; }
 web_kill_servers() { for _p in $(web_pids); do kill "$_p" 2>/dev/null; done; pkill -f "u-panel-web.py" 2>/dev/null; pkill -f "u-script-web.py" 2>/dev/null; }
@@ -5974,7 +5780,7 @@ CAT_SKIN="22 35 36"
 CAT_EMU="6 32"
 CAT_SYSTEM="2 5 9 11 12 13 15 17 24 29 40"
 CAT_MULTIBOOT="2 40 45"
-CAT_STORES="3 20 38 43"
+CAT_STORES="3 20 38 41 43"
 CAT_ISLAMIC="28 30"
 plugin_name_by_num() { echo "$PLUGINS" | cut -d' ' -f$1; }
 is_selected() { case " $SELECTED_ALL " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
@@ -5991,10 +5797,6 @@ show_basket() { if [ -z "$SELECTED_ALL" ]; then echo "Basket: Empty"; else echo 
 install_plugin_by_num() { log_msg "Install plugin num $1";
   setup_reboot_guard "Plugin $1"
   N=$1; NAME=$(echo "$PLUGINS" | cut -d' ' -f$N)
-  # MohamedStore (#41) REMOVED from U-Panel - kept in PLUGINS only so the
-  # numbering of every other plugin stays unchanged. Anyone who still has
-  # #41 in a saved Favourite gets this message instead of a wrong install.
-  if [ "$NAME" = "MohamedStore" ]; then echo "[41] MohamedStore was removed from U-Panel - skipping."; return 0; fi
   case "$NAME" in
     NeoBoot-Fury) if ! is_vuplus; then echo "[$N] $NAME Skipped - NeoBoot is Vu+ only (this box: $BOX / $FULL_MACHINE)"; return 0; fi ;;
     Novaler-Multiboot) if ! is_multiboot_device; then echo "[$N] $NAME Skipped - Novaler-Multiboot is Novaler/Zgemma/Octagon only (this box: $BOX / $FULL_MACHINE)"; return 0; fi ;;
@@ -6044,20 +5846,14 @@ install_plugin_by_num() { log_msg "Install plugin num $1";
     EnigmaPlay-Repo) secure_run "https://raw.githubusercontent.com/Ahmadarjan1/EnigmaPlay-Repo/main/install.sh" "install.sh" ;;
     Chromium) opkg install enigma2-plugin-extensions-chromium ;;
     Novaler-Multiboot) secure_fetch_file "https://github.com/KhaledAli65/Slot/releases/download/v1.0.0/novalermultiboot.ipk" "/tmp/novalermultiboot.ipk" "novalermultiboot.ipk" && opkg install /tmp/novalermultiboot.ipk && rm -f /tmp/novalermultiboot.ipk ;;
+    MohamedStore) secure_run "https://raw.githubusercontent.com/wwwgoper77-wq/MohamedStore/main/install.sh" "install.sh" ;;
     ServerColoring-Fury) secure_run "https://raw.githubusercontent.com/islam-2412/ServerColoring/main/fury/installer.sh" "installer.sh" ;;
     sherlockmod) secure_run "https://raw.githubusercontent.com/emil237/sherlockmod/main/installer.sh" "installer.sh" ;;
     BouquetMakerXtream) secure_run "http://dreambox4u.com/emilnabil237/plugins/BouquetMakerXtream/installer.sh" "installer.sh" ;;
     NeoBoot-Fury) secure_run "https://raw.githubusercontent.com/islam-2412/neoboot/refs/heads/main/fury/installer.sh" "installer.sh" ;;
     Auto-ChannelList) cd /usr/lib/enigma2/python/Plugins/Extensions && rm -rf NGsetting NGsetting-main NGsetting-master NGsetting.zip && (secure_fetch_file "https://github.com/OpenVisionE2/NGsetting/archive/refs/heads/main.zip" "NGsetting.zip" "NGsetting.zip" || secure_fetch_file "https://github.com/OpenVisionE2/NGsetting/archive/refs/heads/master.zip" "NGsetting.zip" "NGsetting.zip") && unzip -o NGsetting.zip && { if [ -d NGsetting-main ]; then mv NGsetting-main NGsetting; elif [ -d NGsetting-master ]; then mv NGsetting-master NGsetting; fi; } && rm -f NGsetting.zip; cd / ;;
-    # V6.20 FIX: was "Skipped" with rc=0 - the basket / Essentials treated a
-    # plugin with NO installer (31 myhits, 32 oscam-by-lenuxsat, 37 JediMakerXtream)
-    # as installed. Now it fails LOUDLY so it is never mistaken for installed.
-    *) echo "[$N/47] $NAME - [ERROR] No installer defined for this plugin - NOT installed (needs its installer URL added)" ; return 1 ;;
+    *) echo "[$N/47] $NAME - No direct installer - Skipped" ;;
   esac
-  # V6.20 FIX: was unconditional Done - a refused/failed installer still printed
-  # Done and EXIT 0. Now the case result decides: fail = FAILED, never Done.
-  _IRC=$?
-  if [ "$_IRC" != "0" ]; then echo "[$N/47] $NAME FAILED - NOT installed (rc=$_IRC)"; return 1; fi
   echo "[$N/47] $NAME Done - No Reboot"
 }
 uninstall_plugin_by_num() {
@@ -6210,7 +6006,7 @@ show_plugins_menu() {
     menu_item "05) Skins & UI ($((3+_C5)))"
     menu_item "06) Emu & Keys & Biss ($((2+_C6)))"
     menu_item "07) System & Tools ($((11+_C7)))"
-    menu_item "08) Stores ($((4+_C8)))"
+    menu_item "08) Stores ($((5+_C8)))"
     menu_item "09) Islamic ($((2+_C9)))"
     menu_item "10) Multiboot ($((3+_C10)))"
     menu_sep
@@ -7214,16 +7010,9 @@ migrate_setup_cache() {
 }
 secure_run() {
   _U="$1"; _L="${2:-installer}"; _F="/tmp/secure_$$_${_L}.sh"; _F=$(echo "$_F" | tr -cd 'a-zA-Z0-9_/.=-')
-  # V6.20 FIX: key cache + hash-pin by URL, NOT by filename label.
-  # ~14 plugins share the label "installer.sh" (AJPanel, IPAudioPro, Epg-Grabber,
-  # FootOnsat, FuryBiss, quran, ...) - keying by label made the 2nd plugin's
-  # DIFFERENT installer fail HASH-FAIL against the 1st plugin's pin, and all of
-  # them overwrote the same cache file. Per-URL key = one pin per real installer.
-  _KEY=$(echo "$_U" | md5sum 2>/dev/null | cut -d' ' -f1 | cut -c1-16)
-  [ -z "$_KEY" ] && _KEY=$(echo "$_U" | tr -cd 'a-zA-Z0-9' | cut -c1-32)
   migrate_setup_cache
   _SCACHE="$(setup_cache_dir)/installers"; mkdir -p "$_SCACHE" 2>/dev/null
-  _CACHED="$_SCACHE/$_KEY.sh"
+  _CACHED="$_SCACHE/$(echo "$_L" | tr -cd 'a-zA-Z0-9_.-').sh"
   if ! secure_fetch "$_U" "$_F" "$_L" ""; then
     # V22.4 SMART: download failed - fall back to the installer cached during Setup your Enigma
     if [ -f "$_CACHED" ]; then echo "  [SMART-FALLBACK] $_L: download failed - using Setup-Cache installer: $_CACHED"; cp "$_CACHED" "$_F"; else echo "  [SMART] $_L: no cached installer - giving up"; return 1; fi
@@ -7232,17 +7021,13 @@ secure_run() {
     # so Ur Favourite Setup can replay it later with NO net.
     cp "$_F" "$_CACHED" 2>/dev/null && echo "  [SETUP-CACHE] $_L saved: $_CACHED"
   fi
-  # V20: installer hash pinning (TOFU) - first download is recorded per URL.
-  # V6.20 FIX: a changed hash NO LONGER refuses to run - authors update their
-  # installers all the time, and refusing made every updated plugin fail with
-  # HASH-FAIL while the UI still printed Done. The download is HTTPS from the
-  # SAME trusted URL, so a change is logged loudly + re-pinned, then it runs.
+  # V20: installer hash pinning (TOFU) - first download is recorded, later downloads must match
   _HASH_FILE="$(setup_hash_file)"
   _H=$(sha256sum "$_F" 2>/dev/null | cut -d' ' -f1)
   if [ -n "$_H" ]; then
-    _PIN=$(grep -F "$_KEY|" "$_HASH_FILE" 2>/dev/null | cut -d'|' -f2 | tail -1)
-    if [ -n "$_PIN" ] && [ "$_PIN" != "$_H" ]; then echo "  [HASH-CHANGED] $_L changed since first download (same URL - author updated it) - re-pinning and running"; sed -i "/^$_KEY|/d" "$_HASH_FILE" 2>/dev/null; echo "$_KEY|$_H" >> "$_HASH_FILE" 2>/dev/null; _PIN="$_H"; fi
-    if [ -z "$_PIN" ]; then echo "$_KEY|$_H" >> "$_HASH_FILE" 2>/dev/null; echo "  [HASH-PIN] $_L pinned: ${_H}"; else echo "  [HASH-OK] $_L matches pinned hash"; fi
+    _PIN=$(grep -F "$_L|" "$_HASH_FILE" 2>/dev/null | cut -d'|' -f2 | tail -1)
+    if [ -n "$_PIN" ] && [ "$_PIN" != "$_H" ]; then echo "  [HASH-FAIL] $_L changed since first download - REFUSING to run (possible tampering)"; rm -f "$_F"; return 1; fi
+    if [ -z "$_PIN" ]; then echo "$_L|$_H" >> "$_HASH_FILE" 2>/dev/null; echo "  [HASH-PIN] $_L pinned: ${_H}"; else echo "  [HASH-OK] $_L matches pinned hash"; fi
   fi
   echo "  [RUN] $_L: executing verified installer (${_F})"
   /bin/sh "$_F"; _RC=$?; rm -f "$_F"; [ "$_RC" != "0" ] && echo "  [RUN-FAIL] $_L: installer exited rc=$_RC" || echo "  [RUN-OK] $_L done"
@@ -8606,8 +8391,8 @@ save_favourite() {
 }
 # V5.90 - Image Build with Essentials: plugin NUMBERS (same numbering as PLUGINS_WEB / install_plugin_by_num - installers pick per image + Python themselves).
 # User-sent essentials list - installed in this exact order by Image Build with Essentials.
-# USER LIST (confirmed): 19 LukaTV, 47 LukaConnect, 34 SubExtractorLite, 42 ServerColoring-Fury, 22 Aglare, 39 Chromium, 37 JediMakerXtream, 29 netusagepro, 26 auto-dcw-key-add, 24 NewVirtualKeyBoard, 21 ipaudiplus, 20 novalerStore, 18 FootOnsat, 17 buttonpatcher, 16 SimplySports, 15 ArabicSavior, 11 crashlogviewer, 10 customchannelselection, 7 IPAudioPro, 5 internet-speedtest, 1 MyStreamer, + 3 AJPanel, 4 SubsSupportPro + 6 EmuInstaller, 8 Epg-Grabber, 32 oscam-by-lenuxsat, 33 AutoSub (added later).
-ESSENTIALS_PLUGINS="19 47 34 42 22 39 37 29 26 24 21 20 18 17 16 15 11 10 7 5 1 3 4 6 8 32 33"
+# USER LIST (confirmed): 19 LukaTV, 47 LukaConnect, 34 SubExtractorLite, 42 ServerColoring-Fury, 22 Aglare, 41 MohamedStore, 39 Chromium, 37 JediMakerXtream, 29 netusagepro, 26 auto-dcw-key-add, 24 NewVirtualKeyBoard, 21 ipaudiplus, 20 novalerStore, 18 FootOnsat, 17 buttonpatcher, 16 SimplySports, 15 ArabicSavior, 11 crashlogviewer, 10 customchannelselection, 7 IPAudioPro, 5 internet-speedtest, 1 MyStreamer, + 3 AJPanel, 4 SubsSupportPro + 6 EmuInstaller, 8 Epg-Grabber, 32 oscam-by-lenuxsat, 33 AutoSub (added later).
+ESSENTIALS_PLUGINS="19 47 34 42 22 41 39 37 29 26 24 21 20 18 17 16 15 11 10 7 5 1 3 4 6 8 32 33"
 image_build_essentials() {
   # $1 = mode: "" = Terminal, "web" = Web UI job
   setup_reboot_guard "Image Build with Essentials"
@@ -8817,27 +8602,8 @@ upanel_boot_mount() {
     [ -b "$_d" ] || continue
     case " $_CANDS " in *" $_d "*) ;; *) _CANDS="$_CANDS $_d";; esac
   done
-  # V6.20 FIX: try the BOOT partition of the disk we booted from FIRST.
-  # The bootloader reads STARTUP from there at power-on (Recovery + Multiboot
-  # selection). Old order was blkid order - with SD/USB inserted, /boot could
-  # mount from the EXTERNAL disk, hiding the internal flash slots.
-  _BROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
-  if [ "$_BROOTSRC" = "/dev/root" ] || [ -z "$_BROOTSRC" ]; then _BROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
-  _BROOTDISK="${_BROOTSRC#/dev/}"; case "$_BROOTDISK" in mmcblk*|nvme*) _BROOTDISK="${_BROOTDISK%%p*}";; *) _BROOTDISK="${_BROOTDISK%%[0-9]*}";; esac
-  _BSEP=""; case "$_BROOTDISK" in mmcblk*|nvme*) _BSEP="p";; esac
-  _BROOTBP="/dev/${_BROOTDISK}${_BSEP}1"
-  if [ -b "$_BROOTBP" ]; then case " $_CANDS " in *" $_BROOTBP "*) ;; *) _CANDS="$_BROOTBP $_CANDS";; esac; fi
   _FALLBACK=""
   for _CAND in $_CANDS; do
-    # V6.20 FIX (26 Nov): only vfat can be a BOOT partition. The old code tried
-    # EVERY partition (ext4 slots, exfat storage) - the fallback `mount -o ro`
-    # mounted exfat via FUSE, whose daemon printed "FUSE exfat 1.4.0 (libfuse2)"
-    # into the log, and briefly mounted a storage partition onto /boot. Skip
-    # slot partitions (LABEL=linuxN) and any known non-vfat filesystem.
-    _CT=$(blkid "$_CAND" 2>/dev/null | grep -o 'TYPE="[^"]*"' | cut -d'"' -f2)
-    _CL=$(blkid "$_CAND" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-    case "$_CL" in linux*) continue;; esac
-    case "$_CT" in vfat|fat12|fat16|fat32|msdos|"") ;; *) continue;; esac
     _MERR=$(mount -t vfat -o ro "$_CAND" /boot 2>&1) || _MERR=$(mount -o ro "$_CAND" /boot 2>&1) || { echo "[BOOT-MOUNT] $_CAND: mount failed: $_MERR"; continue; }
     if grep -qs " /boot " /proc/mounts; then
       _OK=0
@@ -9120,7 +8886,7 @@ upanel_wipe() {
   printf "Wipe which SLOT (1-14, 0 = cancel)? "; read _WS
   [ "$_WS" = "0" ] && return 0
   case "$_WS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 14 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 14 ]; then echo "Slot must be 1-14."; printf "Press ENTER... "; read _b; return 0; fi
   case " $_SL " in *" $_WS "*) ;; *) echo "SLOT $_WS not found. Available: $_SL"; printf "Press ENTER... "; read _b; return 0;; esac
   if [ "$_WS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS - you cannot wipe the running slot. Switch to another slot first."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_WS")
@@ -9159,14 +8925,11 @@ upanel_wipe() {
   fi
   rm -f "$(upanel_label_file "$_WS")"
   echo "[WIPE] SLOT $_WS wiped - now: $(upanel_name "$_WS")"
-  upanel_startup_delete_for_slot "$_WS" >/dev/null
-  echo "[WIPE] STARTUP_LINUX_$_WS removed (backed up) - the wiped slot no longer"
-  echo "[WIPE] shows in Recovery. The Panel still lists it (from LABEL=linux$_WS),"
-  echo "[WIPE] flash a new image into it anytime - Flash recreates its STARTUP."
+  echo "[WIPE] STARTUP_LINUX_$_WS kept - slot stays listed as Empty, flash a new image into it anytime."
   printf "Press ENTER to return... "; read _b; return 0
 }
 
-# --- flash a downloaded image into any slot (1-20) ---
+# --- flash a downloaded image into any slot (1-14) ---
 upanel_flash() {
   show_banner; line; info "Flash Image to Slot - installs a downloaded image from HDD into any slot (1-14)"
   _CS=$(upanel_current)
@@ -9204,19 +8967,16 @@ upanel_flash() {
     else cp -a "$_IP" "$_WK/img" 2>/dev/null; _WK="$_WK/img"; fi
   fi
   _IMGDIR="$_WK"; [ -d "$_WK/noveler" ] && _IMGDIR="$_WK/noveler"
-  _ROOTFS=$(find "$_IMGDIR" -maxdepth 3 -name 'rootfs.tar*' 2>/dev/null | head -1)
-  _ROOTDIR=$(find "$_IMGDIR" -maxdepth 3 -type d -name 'rootfs' 2>/dev/null | head -1)
-  # V6.20 FIX: was ls on depth-1 only - Egami multiboot zips keep the kernel at
-  # novaler4kpro/kernel.bin (depth 2), so _KERN came out empty, no kernel was
-  # copied, and verify failed on the missing kernel file. find, depth 3.
-  _KERN=$(find "$_IMGDIR" -maxdepth 3 \( -name 'kernel*.bin' -o -name 'uImage*' -o -name 'vmlinux*' -o -name 'zImage*' -o -name 'Image*' \) 2>/dev/null | grep -v -i 'rootfs' | head -1)
+  _ROOTFS=$(find "$_IMGDIR" -maxdepth 2 -name 'rootfs.tar*' 2>/dev/null | head -1)
+  _ROOTDIR=$(find "$_IMGDIR" -maxdepth 2 -type d -name 'rootfs' 2>/dev/null | head -1)
+  _KERN=$(ls "$_IMGDIR"/kernel*.bin "$_IMGDIR"/uImage* "$_IMGDIR"/vmlinux* "$_IMGDIR"/zImage* "$_IMGDIR"/Image* 2>/dev/null | head -1)
   if [ -z "$_ROOTFS" ] && [ -z "$_ROOTDIR" ]; then echo "No rootfs found in this image (need rootfs.tar.* or a rootfs/ folder)."; printf "Press ENTER... "; read _b; return 0; fi
   echo "Image: $(basename "$_IP") | rootfs: ${_ROOTFS:-$_ROOTDIR} | kernel: $(basename "$_KERN" 2>/dev/null || echo none)"
-  printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS
-  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS || return 0; done
+  printf "Flash to which SLOT (1-14, 0 = cancel)? "; read _TS
+  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-14, 0 = cancel)? "; read _TS || return 0; done
   [ "$_TS" = "0" ] && return 0
   case "$_TS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 20 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 14 ]; then echo "Slot must be 1-14."; printf "Press ENTER... "; read _b; return 0; fi
   if [ "$_TS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS. Switch to another slot first, then flash this one."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_TS")
   echo "TARGET: SLOT $_TS (now: $_OLD) <- $(basename "$_IP")"
@@ -9250,21 +9010,13 @@ upanel_flash() {
   if [ ! -f "$_DEST/etc/image-version" ] && [ ! -f "$_DEST/usr/bin/enigma2" ]; then echo "[FLASH-FAIL] Extraction looks wrong - no etc/image-version or enigma2 in target. Slot may be incomplete."; umount "$_MP" 2>/dev/null; printf "Press ENTER... "; read _b; return 0; fi
   sync
   umount "$_MP" 2>/dev/null
-  _TK=""
-  mount -o remount,rw /boot 2>/dev/null
   if [ -n "$_KERN" ]; then
     _CK=$(grep -oE 'kernel=[^ ]+' "/boot/STARTUP_LINUX_$_CS" 2>/dev/null | head -1 | sed 's/kernel=//')
-    if [ -n "$_CK" ]; then _TK=$(echo "$_CK" | sed "s/$_CS/$_TS/g"); [ "$_TK" = "$_CK" ] && _TK="${_CK%.*}$_TS.${_CK##*.}"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; else _TK="/boot/kernel$_TS.bin"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; fi
-    # V6.20 FIX: point the TARGET slot's STARTUP at the kernel we just copied.
-    # Before, STARTUP_LINUX_TS (written by Prepare) kept the OLD slot's kernel=
-    # while verify checked it - so verify failed on a kernel that was never the
-    # new image's, and the slot would have booted the old kernel.
-    if [ -n "$_TK" ] && [ -f "$_TK" ] && [ -f "/boot/STARTUP_LINUX_$_TS" ]; then sed -i "s|kernel=[^ ]*|kernel=$_TK|" "/boot/STARTUP_LINUX_$_TS" 2>/dev/null && echo "[FLASH] STARTUP_LINUX_$_TS kernel= -> $_TK"; fi
+    if [ -n "$_CK" ]; then _TK=$(echo "$_CK" | sed "s/$_CS/$_TS/g"); [ "$_TK" = "$_CK" ] && _TK="${_CK%.*}$_TS.${_CK##*.}"; cp "$_KERN" "$_TK" 2>/dev/null && echo "[FLASH] Kernel -> $_TK"; else cp "$_KERN" "/boot/kernel$_TS.bin" 2>/dev/null && echo "[FLASH] Kernel -> /boot/kernel$_TS.bin"; fi
   else echo "[FLASH] No kernel file in image - keeping existing kernel (image may use shared kernel)."; fi
   if [ ! -f "/boot/STARTUP_LINUX_$_TS" ]; then
     if [ -f "/boot/STARTUP_LINUX_$_CS" ]; then
       sed -e "s/rootsubdir=[^ ]*/rootsubdir=$_SUB/" -e "s/root=[^ ]*/root=$_RP/" -e "s/$_CS/$_TS/g" "/boot/STARTUP_LINUX_$_CS" > "/boot/STARTUP_LINUX_$_TS" && echo "[FLASH] Created /boot/STARTUP_LINUX_$_TS"
-      [ -z "$_SUB" ] && upanel_startup_fix_rootsubdir "/boot/STARTUP_LINUX_$_TS"
     else echo "[FLASH] WARNING: /boot/STARTUP_LINUX_$_TS does not exist and no template - create it manually or the slot will not boot."; fi
   fi
   sync; rm -rf "$_WK" /tmp/upanel_flash_mnt
@@ -9924,7 +9676,7 @@ upanel_verify_after_flash() {
   fi
   if [ "$_VOK" = "1" ]; then
     _VK=$(grep -oE 'kernel=[^ ]+' "/boot/STARTUP_LINUX_$_VS" 2>/dev/null | head -1 | sed 's/kernel=//')
-    [ -n "$_VK" ] && [ ! -e "$_VK" ] && { _VOK=0; _VWHY="kernel file missing: $_VK"; }
+    [ -n "$_VK" ] && [ ! -f "$_VK" ] && { _VOK=0; _VWHY="kernel file missing: $_VK"; }
   fi
   umount "$_VMP" 2>/dev/null
   if [ "$_VOK" = "1" ]; then echo "[VERIFY-OK] SLOT $_VS - image-version + enigma2 + kernel present."; return 0; fi
@@ -10423,779 +10175,63 @@ download_image_external_link() {
 # are listed, and the disk is wiped completely (all its data is lost).
 # Layout (DOS label, sfdisk): p1 = FAT32 512M BOOT (holds STARTUP_LINUX_N files,
 # cloned from the running slot's STARTUP, root= pointed at each new partition),
-# p2..p(N+1) = ext4, one per slot, labelled linux5..linux(4+N) - 1-4 reserved for internal.
+# p2..p(N+1) = ext4, one per slot, labelled linux1..linuxN.
 # HONEST LIMIT: whether the bootloader actually boots these external slots depends
 # on the box - Novaler / boxes with USB-multiboot support do; boxes whose bootloader
 # only scans the internal eMMC will show the slots in U-Panel Diagnose but will not
 # boot from them. After preparing, reboot and run Diagnose Slots to confirm.
-
-# V6.20 - device-aware Multiboot: the SAME "Prepare Disk" entry shows a DIFFERENT
-# option per device family, because Vu+ and Dreambox do NOT use the Novaler/HiSilicon
-# STARTUP_LINUX_N + linuxN layout. Partitioning a disk that way on Vu+/Dream would
-# produce slots the bootloader can never boot from.
-# Returns: vuplus | dreambox | hisilicon (default: Novaler / Zgemma / Octagon / ...).
-multiboot_device_family() {
-  _SLUG=$(_detect_box_slug_cached 2>/dev/null || echo "")
-  case "$_SLUG" in
-    vuplus*|*vuplus*) echo "vuplus"; return 0 ;;
-    dm*|dreambox*) echo "dreambox"; return 0 ;;
-  esac
-  # Fallbacks when slug detection is unsure: DreamOS marker file, /proc/stb model
-  [ -f /etc/dreambox-version ] && { echo "dreambox"; return 0; }
-  _MDL=$(cat /proc/stb/info/model 2>/dev/null | tr 'A-Z' 'a-z')
-  case "$_MDL" in *vu*|*vuplus*) echo "vuplus"; return 0 ;; *dream*|*dm9*|*dm8*|*dm7*|*dm5*) echo "dreambox"; return 0 ;; esac
-  echo "hisilicon"; return 0
-}
-
 multiboot_prepare_disk() {
-  _PD_DISK="${1:-}"; _PD_SLOTS="${2:-}"; _PD_SIZE="${3:-}"; _PD_STOR="${4:-}"
-  _PD_INTERACTIVE=0; [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] && _PD_INTERACTIVE=1
-  # V6.20 - DEVICE-AWARE GATE: Vu+ / Dreambox never reach the partitioner.
-  _FAM=$(multiboot_device_family)
-  if [ "$_FAM" = "vuplus" ]; then
-    echo "=== Multiboot on Vu+ ($BOX) ==="
-    echo "Vu+ does NOT use this partitioner - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots."
-    echo "Your Vu+ options (pick the one for your model):"
-    echo "  [A] Vu+ 4K (Uno/Solo/Ultimo/Duo 4K, Zero 4K): HARDWARE multiboot is already built in."
-    echo "      The internal flash already has 4 slots (Duo 4K Lite: 8). Use: Menu > Setup > Flash image,"
-    echo "      pick a free slot, flash the image there. No disk partitioning needed."
-    echo "  [B] Vu+ NOT 4K (Solo2 / Duo2 / Solo SE / Zero / Solo / Duo / Ultimo): NO hardware multiboot."
-    echo "      Use the OpenMultiBoot plugin: install it on the running image, let IT format the"
-    echo "      USB / HDD (folders, not slot partitions), then install images from inside the plugin."
-    echo "This tool will NOT partition any disk on a Vu+ - that would only create unbootable slots."
-    printf "Press ENTER... "; read _b; return 0
-  fi
-  if [ "$_FAM" = "dreambox" ]; then
-    echo "=== Multiboot on Dreambox ($BOX) ==="
-    echo "Dreambox does NOT use this partitioner - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots."
-    echo "Your Dreambox options (pick the one for your model):"
-    echo "  [A] Dream One / Dream Two (DreamOS): use the DreamOS Recovery / Flash menu - multiboot"
-    echo "      via SD / USB is handled by the DreamOS image itself (Allan Turing / recovery multiboot)."
-    echo "      Do NOT partition the disk with this tool."
-    echo "  [B] Dreambox DM800 / DM8000 / DM820 / DM7080 / DM520 / DM525: use the MeoBoot plugin"
-    echo "      (or Barry Allen on supported models): install it on the running image, let IT prepare"
-    echo "      the USB / CF / SD card, then install images from inside the plugin."
-    echo "This tool will NOT partition any disk on a Dreambox - that would only create unbootable slots."
-    printf "Press ENTER... "; read _b; return 0
-  fi
+  _PD_DISK="${1:-}"; _PD_SLOTS="${2:-}"; _PD_SIZE="${3:-}"
   command -v sfdisk >/dev/null 2>&1 || { echo "[PREPARE-FAIL] sfdisk NOT found on this image - cannot partition safely. Install util-linux / sfdisk first."; printf "Press ENTER... "; read _b; return 1; }
   command -v mkfs.vfat >/dev/null 2>&1 || command -v mkfs.fat >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.vfat NOT found - cannot make the BOOT partition."; printf "Press ENTER... "; read _b; return 1; }
   command -v mkfs.ext4 >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 NOT found."; printf "Press ENTER... "; read _b; return 1; }
-  # root disk = the disk holding / - NEVER partition it.
-  # BUGFIX (25 Nov, caught from a real screenshot): the old one-liner used `df /`,
-  # but on Enigma2 / is often reported as /dev/root (no real device name), so the
-  # sed extracted NOTHING - _ROOTDISK came out empty and the INTERNAL flash
-  # /dev/mmcblk0 was listed as "external". Now: read the real mount source for /
-  # from /proc/mounts, resolve /dev/root via cmdline root=, then strip the
-  # partition suffix (mmcblk0p4 -> mmcblk0, nvme0n1p2 -> nvme0n1, sda1 -> sda).
-  _ROOTDISK=""; _ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
-  if [ "$_ROOTSRC" = "/dev/root" ] || [ -z "$_ROOTSRC" ]; then _ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
-  [ -z "$_ROOTSRC" ] && _ROOTSRC=$(df / 2>/dev/null | tail -1 | awk '{print $1}')
-  # NO sed here: BusyBox sed on the receiver rejects the alternation syntax
-  # ("bad option in substitution expression") and leaves _ROOTDISK empty - that
-  # is exactly the bug in the screenshot. Pure shell parameter expansion instead:
-  #   /dev/mmcblk0p23 -> strip "/dev/" -> mmcblk0p23 -> strip from "p" -> mmcblk0
-  #   /dev/nvme0n1p2 -> nvme0n1p2 -> strip from "p" -> nvme0n1
-  #   /dev/sda1 -> sda1 -> strip trailing digits -> sda
-  _ROOTDISK="${_ROOTSRC#/dev/}"
-  case "$_ROOTDISK" in
-    mmcblk*|nvme*) _ROOTDISK="${_ROOTDISK%%p*}" ;;
-    *) _ROOTDISK="${_ROOTDISK%%[0-9]*}" ;;
-  esac
-  echo "  [DEBUG] root source: $_ROOTSRC -> root disk: /dev/$_ROOTDISK (hidden from the list)"
+  # root disk = the disk holding / - NEVER partition it
+  _ROOTDEV=$(df / 2>/dev/null | tail -1 | awk '{print $1}'); _ROOTDISK=$(echo "$_ROOTDEV" | sed -E 's|/dev/(mmcblk[0-9]+|nvme[0-9]+n[0-9]+|sd[a-z]+|vd[a-z]+|hd[a-z]+)[p0-9]*$|\1|; s|^/dev/||')
   echo "External disks (root disk $_ROOTDISK is HIDDEN - it can never be partitioned):"
-  _CAND=""; _CNUM=0
-  # ANY external disk counts: USB HDD, USB flash, SD / memory card, NVMe-USB, eSATA -
-  # so list EVERY block device except the root (internal flash) disk, loop/ram devices,
-  # and zero-size devices. Type label comes from the removable flag + name, not from
-  # a fixed device-name list, so no external disk is ever hidden for having an odd name.
-  for _D in /sys/block/*; do
-    [ -e "$_D" ] || continue; _DN=$(basename "$_D")
-    case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
-    # mmcblk0boot0 / mmcblk0boot1 are the eMMC BOOT AREAS (4MB) - not disks, never partitionable.
-    case "$_DN" in *boot*) continue;; esac
-    # Anything with a /partition file in sysfs IS a partition, not a whole disk.
-    [ -e "$_D/partition" ] && continue
-    [ "$_DN" = "$_ROOTDISK" ] && continue
-    _SZMB=$(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )); [ "$_SZMB" -le 0 ] && continue
-    _KIND="External disk"; [ "$(cat "$_D/removable" 2>/dev/null)" = "1" ] && _KIND="Removable (USB flash / SD / memory card)"
-    case "$_DN" in mmcblk*) _KIND="Memory card (SD / MMC)";; nvme*) _KIND="NVMe / external SSD";; esac
-    _CNUM=$((_CNUM+1))
-    echo "  [$_CNUM] /dev/$_DN - ${_SZMB} MB - $_KIND - $(cat "$_D/device/model" 2>/dev/null | tr -d '\n' || echo '')"
+  _CAND=""
+  for _D in /sys/block/sd* /sys/block/mmcblk* /sys/block/nvme* /sys/block/vd* /sys/block/hd*; do
+    [ -e "$_D" ] || continue; _DN=$(basename "$_D"); [ "$_DN" = "$_ROOTDISK" ] && continue
+    _SZMB=$(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )); [ "$_SZMB" -lt 1024 ] && continue
+    echo "  /dev/$_DN - ${_SZMB} MB - $(cat "$_D/device/model" 2>/dev/null | tr -d '\n')"
     _CAND="$_CAND $_DN"
   done
-  echo "  (internal flash /dev/$_ROOTDISK is hidden - it is never offered, per your choice)"
   [ -z "$_CAND" ] && { echo "[PREPARE] No external disk found - plug a USB / HDD / SD card first."; printf "Press ENTER... "; read _b; return 1; }
-  [ -z "$_PD_DISK" ] && { printf "Pick disk NUMBER (1-%s) - or type the device name (e.g. sda): " "$_CNUM"; read _PD_DISK; }
-  # Number -> device: "1" = first disk in the list, "2" = second, ... (what the user asked for)
-  # Device name -> used as-is, so old scripts / copy-paste still work.
-  case "$_PD_DISK" in ''|*[!0-9]*) _PD_DISK=$(basename "$_PD_DISK");; *) _PD_DISK=$(echo "$_CAND" | tr ' ' '\n' | grep -v '^$' | sed -n "${_PD_DISK}p");; esac
-  _PD_DISK=$(basename "$_PD_DISK"); case " $_CAND " in *" $_PD_DISK "*) ;; *) echo "[PREPARE-FAIL] '$_PD_DISK' is not an offered external disk (maybe it is the root disk, or not plugged in). Refused."; printf "Press ENTER... "; read _b; return 1;; esac
-  [ -z "$_PD_SLOTS" ] && { printf "How many slots? (2-20, numbered 5..24): "; read _PD_SLOTS; }
-  case "$_PD_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20) ;; *) echo "[PREPARE-FAIL] Slots must be 2-20 (numbered 5..24 - slots 1-4 are reserved for the internal flash)."; printf "Press ENTER... "; read _b; return 1;; esac
+  [ -z "$_PD_DISK" ] && { printf "Disk to prepare (e.g. sda, sdb - the WHOLE disk will be ERASED): /dev/"; read _PD_DISK; }
+  _PD_DISK=$(basename "$_PD_DISK"); case " $_CAND " in *" $_PD_DISK "*) ;; *) echo "[PREPARE-FAIL] /dev/$_PD_DISK is not an offered external disk (maybe it is the root disk, or not plugged in). Refused."; printf "Press ENTER... "; read _b; return 1;; esac
+  [ -z "$_PD_SLOTS" ] && { printf "How many slots? (2-4): "; read _PD_SLOTS; }
+  case "$_PD_SLOTS" in 2|3|4) ;; *) echo "[PREPARE-FAIL] Slots must be 2, 3 or 4."; printf "Press ENTER... "; read _b; return 1;; esac
   [ -z "$_PD_SIZE" ] && { printf "Size per slot in GB? (2-8, recommended 4): "; read _PD_SIZE; }
   case "$_PD_SIZE" in 2|3|4|5|6|7|8) ;; *) echo "[PREPARE-FAIL] Slot size must be 2-8 GB."; printf "Press ENTER... "; read _b; return 1;; esac
-  # V6.20 - STORAGE partitions (Slots disk management): $4 = comma sizes in GB,
-  # e.g. "100,0" = STORAGE 100G + STORAGE2 takes the rest. The LAST storage
-  # partition ALWAYS takes the rest of the disk - its size in $4 is ignored.
-  # Interactive (no args): ask "Split HDD for storage?" + count + sizes.
-  if [ "$_PD_INTERACTIVE" = "1" ] && [ -z "$_PD_STOR" ]; then
-    printf "Split HDD for storage? (yes/no, default no): "; read _ANS
-    case "$_ANS" in y|Y|yes|YES|Yes)
-      printf "How many storage partitions? (1-4): "; read _SC
-      case "$_SC" in 1|2|3|4) ;; *) echo "[PREPARE-FAIL] Storage partitions must be 1-4."; printf "Press ENTER... "; read _b; return 1;; esac
-      _PD_STOR=""; _SI=1
-      while [ "$_SI" -lt "$_SC" ]; do
-        printf "Size of storage partition $_SI in GB? (min 1): "; read _SS
-        case "$_SS" in ''|*[!0-9]*|0) echo "[PREPARE-FAIL] Storage size must be a number >= 1 GB."; printf "Press ENTER... "; read _b; return 1;; esac
-        _PD_STOR="${_PD_STOR}${_SS},"; _SI=$((_SI+1))
-      done
-      _PD_STOR="${_PD_STOR}0"
-      echo "  Last storage partition (STORAGE$_SC) takes the rest of the disk automatically."
-      ;;
-    esac
-  fi
-  # Parse + validate the storage spec -> _STOR_N (count), _STOR_EXPL (GB of all but last), _STOR_PLAN / _STOR_MOUNTS / _STOR_NEED (MB) / _NEED_TXT / _PLAN_STOR / _DONE_STOR.
-  _STOR_N=0; _STOR_EXPL=0; _STOR_PLAN=""; _STOR_MOUNTS=""; _STOR_NEED=0; _NEED_TXT=""; _PLAN_STOR=""; _DONE_STOR=""
-  if [ -n "$_PD_STOR" ]; then
-    _R="$_PD_STOR"; _STOR_OK=1
-    while [ -n "$_R" ]; do
-      _EL="${_R%%,*}"; case "$_R" in *,*) _R="${_R#*,}";; *) _R="";; esac
-      case "$_EL" in ''|*[!0-9]*) _STOR_OK=0; break;; esac
-      _STOR_N=$((_STOR_N+1))
-      if [ -n "$_R" ]; then [ "$_EL" -lt 1 ] && { _STOR_OK=0; break; }; _STOR_EXPL=$((_STOR_EXPL+_EL)); fi
-      if [ "$_STOR_N" -eq 1 ]; then _LBL="STORAGE"; else _LBL="STORAGE$_STOR_N"; fi
-      if [ -n "$_R" ]; then _STOR_PLAN="${_STOR_PLAN}${_LBL} ${_EL}G + "; else _STOR_PLAN="${_STOR_PLAN}${_LBL} (rest)"; fi
-      if [ -n "$_STOR_MOUNTS" ]; then _STOR_MOUNTS="${_STOR_MOUNTS}, /media/${_LBL}"; else _STOR_MOUNTS="/media/${_LBL}"; fi
-    done
-    [ "$_STOR_OK" != "1" ] || [ "$_STOR_N" -lt 1 ] || [ "$_STOR_N" -gt 4 ] && { echo "[PREPARE-FAIL] Bad storage spec '$_PD_STOR' - use comma sizes in GB (e.g. 100,0 = STORAGE 100G + STORAGE2 takes rest), 1-4 partitions."; printf "Press ENTER... "; read _b; return 1; }
-    _STOR_NEED=$(( _STOR_EXPL * 1024 + 1024 ))
-    _NEED_TXT=" + ${_STOR_EXPL}G storage + 1G (last storage takes rest)"
-    _PLAN_STOR=" + storage: $_STOR_PLAN"
-    _DONE_STOR=" + storage: $_STOR_PLAN (mounts as $_STOR_MOUNTS)"
-  fi
-
-  # V6.20 - RE-PARTITION: the disk may already be partitioned (e.g. 10 old slots).
-  # Show its CURRENT layout first, so the user sees what will be erased.
-  # sfdisk --wipe always below wipes it clean, so re-partitioning an already
-  # partitioned card is the same operation as partitioning an empty one.
-  echo "--- Current layout of /dev/$_PD_DISK (will ALL be erased) ---"
-  sfdisk -l "/dev/$_PD_DISK" 2>/dev/null | grep -E "^(Disk|/dev|Units|Sector)" || echo "  (no partition table / unreadable)"
-  _OLDLINUX=$(blkid 2>/dev/null | grep "/dev/${_PD_DISK}" | grep -o 'LABEL="linux[0-9]*"' | tr '\n' ' ')
-  if [ -n "$_OLDLINUX" ]; then echo "  [RE-PARTITION] This disk is ALREADY partitioned for multiboot: $_OLDLINUX"; echo "  Re-partitioning will erase all those old slots and create $_PD_SLOTS fresh ones."; else echo "  (no linuxN slot partitions found on this disk)"; fi
-  echo "--- end of current layout ---"
-  _NEED=$(( 512 + _PD_SLOTS * _PD_SIZE * 1024 + _STOR_NEED )); _HAVEMB=$(( $(cat "/sys/block/$_PD_DISK/size" 2>/dev/null || echo 0) * 512 / 1048576 ))
-  [ "$_HAVEMB" -lt "$_NEED" ] && { echo "[PREPARE-FAIL] Disk is ${_HAVEMB} MB - need at least ${_NEED} MB (512M BOOT + $_PD_SLOTS x ${_PD_SIZE}G slots${_NEED_TXT}). Pick fewer/smaller slots."; printf "Press ENTER... "; read _b; return 1; }
-  echo "PLAN: /dev/$_PD_DISK -> p1 FAT32 512M BOOT + p2 EXTENDED + $_PD_SLOTS x ${_PD_SIZE}G logical ext4 (linux5..linux$((_PD_SLOTS+4)), p5..p$((_PD_SLOTS+4))) - slots 1-4 stay reserved for the internal flash${_PLAN_STOR}"
+  _NEED=$(( 512 + _PD_SLOTS * _PD_SIZE * 1024 )); _HAVEMB=$(( $(cat "/sys/block/$_PD_DISK/size" 2>/dev/null || echo 0) * 512 / 1048576 ))
+  [ "$_HAVEMB" -lt "$_NEED" ] && { echo "[PREPARE-FAIL] Disk is ${_HAVEMB} MB - need at least ${_NEED} MB (512M BOOT + $_PD_SLOTS x ${_PD_SIZE}G slots). Pick fewer/smaller slots."; printf "Press ENTER... "; read _b; return 1; }
+  echo "PLAN: /dev/$_PD_DISK -> p1 FAT32 512M BOOT + $_PD_SLOTS x ${_PD_SIZE}G ext4 (linux1..linux$_PD_SLOTS)"
   echo "WARNING: ALL DATA ON /dev/$_PD_DISK WILL BE ERASED - backups, movies, everything."
-  printf "Type ERASE or e to confirm (anything else cancels): "; read _CONF; case "$_CONF" in ERASE|erase|e|E) ;; *) echo "Cancelled - nothing touched."; printf "Press ENTER... "; read _b; return 1;; esac
+  printf "Type ERASE to confirm (anything else cancels): "; read _CONF; [ "$_CONF" = "ERASE" ] || { echo "Cancelled - nothing touched."; printf "Press ENTER... "; read _b; return 1; }
   echo "[PREPARE] Unmounting /dev/$_PD_DISK partitions..."
   for _MP in $(grep "^/dev/${_PD_DISK}" /proc/mounts | awk '{print $2}'); do umount "$_MP" 2>/dev/null; done
   for _P in /dev/${_PD_DISK}* /dev/${_PD_DISK}p*; do [ -b "$_P" ] && umount "$_P" 2>/dev/null; done
-  echo "[PREPARE] Partitioning with sfdisk (DOS label, extended layout - see below)..."
-  # V6.20 - up to 20 slots: MBR allows only 4 PRIMARY partitions, so 15 slots + BOOT
-  # (16 partitions) cannot all be primary. Layout used:
-  #   p1 = BOOT FAT32 512M (primary, bootable)
-  #   p2 = EXTENDED (takes the rest of the disk)
-  #   p5..p(4+N) = the N slots as LOGICAL partitions inside the extended one (ext4 linux5..linux(4+N))
-  #   p(5+N)..p(4+N+M) = STORAGE partitions (ext4, last one takes the REST of the disk) - Slots disk management only
-  # V6.20 FIX (26 Nov): external slots are numbered 5..(4+N) - slots 1-4 are RESERVED
-  # for the internal flash (linuxrootfs1-4). The old code numbered them 1..N, so
-  # external slot 1 and internal slot 1 shared STARTUP_LINUX_1 and one of them
-  # always hid the other. Now they can never collide.
-  # Logical partitions (p5+) boot exactly like primary ones on Enigma2 - the kernel
-  # only cares about the partition device (e.g. /dev/sda5), which is what the
-  # STARTUP_LINUX_N files below point root= at.
-  { echo "label: dos"; echo ",512M,c,*"; echo ",+,E"; _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do echo ",${_PD_SIZE}G,83"; _I=$((_I+1)); done; if [ -n "$_PD_STOR" ]; then _R="$_PD_STOR"; while [ -n "$_R" ]; do _EL="${_R%%,*}"; case "$_R" in *,*) _R="${_R#*,}";; *) _R="";; esac; if [ -n "$_R" ]; then echo ",${_EL}G,83"; else echo ",+,83"; fi; done; fi; } | sfdisk --wipe always "/dev/$_PD_DISK" 2>&1 | tail -n 8
+  echo "[PREPARE] Partitioning with sfdisk (DOS label)..."
+  { echo "label: dos"; echo ",512M,c,*"; _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do echo ",${_PD_SIZE}G,83"; _I=$((_I+1)); done; } | sfdisk --wipe always "/dev/$_PD_DISK" 2>&1 | tail -n 5
   [ "${PIPESTATUS[0]:-0}" != "0" ] && sfdisk --wipe always "/dev/$_PD_DISK" >/dev/null 2>&1
   sleep 2; partprobe "/dev/$_PD_DISK" 2>/dev/null; sleep 1
   _SEP=""; case "$_PD_DISK" in mmcblk*|nvme*) _SEP="p";; esac
   _BOOTPART="/dev/${_PD_DISK}${_SEP}1"
   echo "[PREPARE] Formatting BOOT (FAT32) + slots (ext4)..."
   _MKVFAT=$(command -v mkfs.vfat || command -v mkfs.fat); "$_MKVFAT" -F 32 -n BOOT "$_BOOTPART" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.vfat failed on $_BOOTPART"; printf "Press ENTER... "; read _b; return 1; }
-  _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _SN=$((_I+4)); _PP="/dev/${_PD_DISK}${_SEP}$((_I+4))"; mkfs.ext4 -q -L "linux$_SN" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> linux$_SN (${_PD_SIZE}G)"; _I=$((_I+1)); done
-  if [ -n "$_PD_STOR" ]; then _J=1; _R="$_PD_STOR"; while [ -n "$_R" ]; do _EL="${_R%%,*}"; case "$_R" in *,*) _R="${_R#*,}";; *) _R="";; esac; _PP="/dev/${_PD_DISK}${_SEP}$((_PD_SLOTS+4+_J))"; if [ "$_J" -eq 1 ]; then _LBL="STORAGE"; else _LBL="STORAGE$_J"; fi; if [ -n "$_R" ]; then _SZ_TXT="(${_EL}G)"; else _SZ_TXT="(rest of disk)"; fi; mkfs.ext4 -q -L "$_LBL" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> $_LBL $_SZ_TXT"; _J=$((_J+1)); done; fi
-  echo "[PREPARE] No STARTUP files written for the empty slots - on purpose:"
-  echo "[PREPARE] an empty slot has NO STARTUP file, so Recovery shows ONLY slots"
-  echo "[PREPARE] that actually have an image. The Panel still lists every slot"
-  echo "[PREPARE] from its LABEL (linux5..linux$((_PD_SLOTS+4))). When you Flash an image"
-  echo "[PREPARE] into a slot, Flash creates its STARTUP file (rootsubdir=/) and"
-  echo "[PREPARE] the slot appears in Recovery."
-  sync
-  echo "[PREPARE] DONE - /dev/$_PD_DISK is now: BOOT 512M + $_PD_SLOTS slots x ${_PD_SIZE}G (linux5..linux$((_PD_SLOTS+4)), p5..p$((_PD_SLOTS+4)), Empty - slots 1-4 reserved for internal).${_DONE_STOR}"
+  _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _PP="/dev/${_PD_DISK}${_SEP}$((_I+1))"; mkfs.ext4 -q -L "linux$_I" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> linux$_I (${_PD_SIZE}G)"; _I=$((_I+1)); done
+  echo "[PREPARE] Writing STARTUP_LINUX_N files on BOOT partition..."
+  mkdir -p /tmp/upanel-prep-boot; mount "$_BOOTPART" /tmp/upanel-prep-boot 2>/dev/null || { echo "[PREPARE-FAIL] Cannot mount $_BOOTPART"; printf "Press ENTER... "; read _b; return 1; }
+  _TPL=""; for _T in /boot/STARTUP_LINUX_$(upanel_current) /boot/STARTUP; do [ -f "$_T" ] && { _TPL="$_T"; break; }; done
+  [ -z "$_TPL" ] && { umount /tmp/upanel-prep-boot 2>/dev/null; echo "[PREPARE-FAIL] No STARTUP template found in /boot - cannot create slot STARTUP files."; printf "Press ENTER... "; read _b; return 1; }
+  _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _PP="/dev/${_PD_DISK}${_SEP}$((_I+1))"
+    sed -E -e "s|root=[^ ]*|root=$_PP|" -e "s|rootsubdir=[^ ]*||g" "$_TPL" > "/tmp/upanel-prep-boot/STARTUP_LINUX_$_I"
+    echo "  [OK] STARTUP_LINUX_$_I -> root=$_PP (from $(basename "$_TPL"))"; _I=$((_I+1)); done
+  sync; umount /tmp/upanel-prep-boot 2>/dev/null; rmdir /tmp/upanel-prep-boot 2>/dev/null
+  echo "[PREPARE] DONE - /dev/$_PD_DISK is now: BOOT 512M + $_PD_SLOTS slots x ${_PD_SIZE}G (linux1..linux$_PD_SLOTS, Empty)."
   echo "[PREPARE] Next: reboot, then Multiboot > Diagnose Slots to confirm your box boots from this disk."
   echo "[PREPARE] Then Flash Image to Slot to install an image into a new slot."
   printf "Press ENTER... "; read _b; return 0
 }
-
-
-
-
-# V6.20 FIX (25 Nov): Prepare writes STARTUP_LINUX_N to the PREPARED DISK's own BOOT
-# partition (p1), but the Panel / Flash page read slots from the INTERNAL /boot.
-# So freshly prepared slots never appeared until this sync copies them into /boot.
-# Safe: only copies STARTUP_LINUX_N / STARTUP_N files, NEVER touches /boot/STARTUP
-# (the file the box is currently booting from). /boot is remounted rw, then ro again.
-multiboot_sync_startup() {
-  _SYNCED=0; _SKIPPED=0
-  # V6.20 FIX (25 Nov): the WebUI page stuck on "Starting multiboot-sync..."
-  # with ZERO log lines. Cause: the gather loop mounted + blkid'ed EVERY disk
-  # with NO progress output and NO timeout - one sleeping / glitching disk
-  # (e.g. the external HDD) stalled the whole sync silently. Now: print a line
-  # BEFORE touching any disk, bound every disk operation with `timeout`, and
-  # skip any disk that does not answer. The trailing "Press ENTER" reads are
-  # gone too - this function is WebUI-only (stdin is closed there), so the
-  # reads served nothing and were one more way to hang.
-  if command -v timeout >/dev/null 2>&1; then _TO="timeout 15"; else _TO=""; fi
-  mkdir -p /tmp/upanel-sync-boot /tmp/upanel-sync-merged
-  rm -f /tmp/upanel-sync-merged/STARTUP* 2>/dev/null
-  echo "[SYNC] Scanning disks for BOOT partitions (15s max per disk)..."
-  _ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
-  if [ "$_ROOTSRC" = "/dev/root" ] || [ -z "$_ROOTSRC" ]; then _ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
-  # V6.20 FIX: old code SKIPPED the root disk, so the internal flash slots'
-  # STARTUP_LINUX_1..4 were never merged into /boot - that is why internal
-  # flash slots did not show in Recovery / Multiboot selection.
-  # Now: GATHER from EVERY disk's BOOT partition (internal flash included), then
-  # DISTRIBUTE the merged set to EVERY BOOT partition - whichever one the
-  # bootloader reads at power-on now shows ALL slots.
-  _BOOTS=""
-  for _D in /sys/block/*; do
-    [ -e "$_D" ] || continue; _DN=$(basename "$_D")
-    case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
-    case "$_DN" in *boot*) continue;; esac
-    [ -e "$_D/partition" ] && continue
-    [ $(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )) -le 0 ] && continue
-    # V6.20 FIX (26 Nov): scan EVERY partition of the disk, not just p1 -
-    # on Novaler the internal BOOT is not always p1 (mmcblk0p1 here is an
-    # exfat data partition whose mount even hangs in the FUSE exfat probe),
-    # and checking only p1 missed the real internal BOOT partition entirely.
-    for _BP in /dev/${_DN}p* /dev/${_DN}[0-9]*; do
-      [ -b "$_BP" ] || continue
-      [ "$_BP" = "$_ROOTSRC" ] && continue
-      echo "[SYNC] Checking $_BP ..."
-      _LBL=$($_TO blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-      # Slot rootfs partitions (LABEL=linuxN) never hold STARTUP files -
-      # skip mounting all of them (15+ mounts saved on a prepared disk).
-      case "$_LBL" in linux*) echo "[SYNC] $_BP is a slot rootfs (LABEL=$_LBL) - skipping."; continue;; esac
-      # V6.20 FIX (26 Nov): raw bootloader/kernel partitions have NO filesystem
-      # (blkid TYPE empty) - mounting them only produced the FUSE exfat probe
-      # noise + a timeout each. Skip them without mounting; a real BOOT
-      # partition always has a filesystem (vfat).
-      _TYPE=$($_TO blkid "$_BP" 2>/dev/null | grep -o 'TYPE="[^"]*"' | cut -d'"' -f2)
-      if [ -z "$_TYPE" ] && [ "$_LBL" != "BOOT" ]; then echo "[SYNC] $_BP has no filesystem (raw partition) - skipping."; continue; fi
-      # V6.20 FIX (26 Nov): exfat/swap partitions are never BOOT partitions -
-      # and mounting exfat via FUSE hangs/fails (mmcblk1p2, the SD data
-      # partition) - so skip them before any mount attempt.
-      case "$_TYPE" in exfat|swap) echo "[SYNC] $_BP is $_TYPE (never a BOOT partition) - skipping."; continue;; esac
-      # Already mounted somewhere? Read from there - do not mount again.
-      _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-      _NEED_UMOUNT=0
-      if [ -n "$_MP" ]; then
-        _SCAN="$_MP"
-      else
-        $_TO umount /tmp/upanel-sync-boot 2>/dev/null
-        # V6.20 FIX (26 Nov): BOOT partitions are FAT - try vfat FIRST so
-        # mount does not waste the timeout probing FUSE exfat (that probe
-        # hung/failed on mmcblk0p1); plain mount is the fallback.
-        if $_TO mount -t vfat -o ro "$_BP" /tmp/upanel-sync-boot 2>/dev/null || $_TO mount -o ro "$_BP" /tmp/upanel-sync-boot 2>/dev/null; then
-          _SCAN="/tmp/upanel-sync-boot"; _NEED_UMOUNT=1
-        else
-          echo "[SYNC-SKIP] $_BP mount failed / timed out - disk may be asleep or busy, skipping it."; continue
-        fi
-      fi
-      # V6.20 FIX (26 Nov): BOOT detection by LABEL only broke boxes whose
-      # internal BOOT partition has NO label (Novaler mmcblk0p1: LABEL=?), so
-      # internal slots were never gathered and never got the merged STARTUPs.
-      # A partition IS a BOOT partition if LABEL=BOOT *or* it actually contains
-      # STARTUP files - the files are the reliable signal, the label is not.
-      _HAS_STARTUP=$(ls "$_SCAN"/STARTUP "$_SCAN"/STARTUP_LINUX_* "$_SCAN"/STARTUP_[0-9]* 2>/dev/null | head -1)
-      if [ "$_LBL" != "BOOT" ] && [ -z "$_HAS_STARTUP" ]; then echo "[SYNC] $_BP is not a BOOT partition (LABEL=${_LBL:-?}, no STARTUP files) - skipping."; [ "$_NEED_UMOUNT" = "1" ] && $_TO umount /tmp/upanel-sync-boot 2>/dev/null; continue; fi
-      [ -n "$_HAS_STARTUP" ] && [ "$_LBL" != "BOOT" ] && echo "[SYNC] $_BP has STARTUP files but LABEL=${_LBL:-?} - treating it as a BOOT partition anyway."
-      _BOOTS="$_BOOTS $_BP"
-      _FC=0
-      for _SF in "$_SCAN"/STARTUP_LINUX_* "$_SCAN"/STARTUP_[0-9]*; do
-        [ -f "$_SF" ] || continue
-        _BN=$(basename "$_SF")
-        if [ -f "/tmp/upanel-sync-merged/$_BN" ]; then cmp -s "$_SF" "/tmp/upanel-sync-merged/$_BN" || echo "  [SYNC-WARN] $_BN differs between BOOT partitions - keeping first copy"; continue; fi
-        cp "$_SF" "/tmp/upanel-sync-merged/$_BN" 2>/dev/null && _FC=$((_FC+1))
-      done
-      echo "[SYNC] $_BP: $_FC STARTUP file(s) collected."
-      [ "$_NEED_UMOUNT" = "1" ] && $_TO umount /tmp/upanel-sync-boot 2>/dev/null
-    done
-  done
-  # V6.20 FIX (26 Nov): also gather from the currently mounted /boot - its
-  # partition may have failed to mount again above (already mounted), yet it
-  # holds the slots of the disk the box booted from (internal flash slots).
-  for _SF in /boot/STARTUP_LINUX_* /boot/STARTUP_[0-9]*; do
-    [ -f "$_SF" ] || continue
-    _BN=$(basename "$_SF")
-    if [ -f "/tmp/upanel-sync-merged/$_BN" ]; then cmp -s "$_SF" "/tmp/upanel-sync-merged/$_BN" || echo "  [SYNC-WARN] $_BN differs between BOOT partitions - keeping first copy"; continue; fi
-    cp "$_SF" "/tmp/upanel-sync-merged/$_BN" 2>/dev/null && echo "[SYNC] /boot: $_BN collected."
-  done
-  if [ -z "$(ls /tmp/upanel-sync-merged/STARTUP* 2>/dev/null)" ]; then echo "[SYNC] No STARTUP_LINUX_N files found on any disk BOOT partition - run Slots disk management first, or re-insert the disk + reboot."; rmdir /tmp/upanel-sync-boot 2>/dev/null; return 0; fi
-  echo "[SYNC] Distributing $(ls /tmp/upanel-sync-merged/STARTUP* 2>/dev/null | wc -l) STARTUP file(s) to every BOOT partition + /boot ..."
-  for _BP in $_BOOTS; do
-    # V6.20 FIX (26 Nov): if the BOOT partition is already mounted somewhere,
-    # write into its mountpoint instead of failing on a 2nd mount.
-    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-    _NEED_UMOUNT=0
-    if [ -n "$_MP" ]; then
-      _DST="$_MP"
-      [ "$_MP" = "/boot" ] && $_TO mount -o remount,rw /boot 2>/dev/null
-    else
-      $_TO umount /tmp/upanel-sync-boot 2>/dev/null
-      if ! $_TO mount "$_BP" /tmp/upanel-sync-boot 2>/dev/null; then echo "[SYNC-SKIP] $_BP mount failed / timed out on distribute - skipping."; continue; fi
-      _DST="/tmp/upanel-sync-boot"; _NEED_UMOUNT=1
-    fi
-    for _SF in /tmp/upanel-sync-merged/STARTUP*; do
-      _BN=$(basename "$_SF")
-      if [ -f "$_DST/$_BN" ] && cmp -s "$_SF" "$_DST/$_BN"; then _SKIPPED=$((_SKIPPED+1)); continue; fi
-      if cp "$_SF" "$_DST/$_BN" 2>/dev/null; then echo "  [SYNC-OK] $_BN -> $_BP"; _SYNCED=$((_SYNCED+1)); else echo "  [SYNC-FAIL] $_BN -> $_BP"; fi
-    done
-    sync; [ "$_NEED_UMOUNT" = "1" ] && $_TO umount /tmp/upanel-sync-boot 2>/dev/null
-  done
-  $_TO mount -o remount,rw /boot 2>/dev/null
-  for _SF in /tmp/upanel-sync-merged/STARTUP*; do
-    _BN=$(basename "$_SF")
-    if [ -f "/boot/$_BN" ] && cmp -s "$_SF" "/boot/$_BN"; then continue; fi
-    cp "$_SF" "/boot/$_BN" 2>/dev/null && echo "  [SYNC-OK] $_BN -> /boot (mounted)" && _SYNCED=$((_SYNCED+1))
-  done
-  $_TO mount -o remount,ro /boot 2>/dev/null
-  rmdir /tmp/upanel-sync-boot 2>/dev/null
-  echo "[SYNC] Copied $_SYNCED new/changed STARTUP files, $_SKIPPED already up to date."
-  echo "[SYNC] /boot now has: $(ls /boot/STARTUP_LINUX_* /boot/STARTUP_[0-9]* 2>/dev/null | wc -l) slot files."
-  echo "[SYNC] DONE."
-  return 0
-}
-
-
-# V6.20 - Recovery slot names (25 Nov): the Bootmenu (oe-alliance) locates an image
-# via the STARTUP line's rootsubdir= - its documented extra-slot layout is a
-# shared rootfs partition + one subdir per image. U-Panel partition slots had
-# rootsubdir REMOVED (Prepare) or EMPTY (Flash), so the Bootmenu had no subdir
-# to follow to /etc/image-version and showed no name in Recovery.
-# Fix: rootsubdir=/ = "rootfs at partition root". The kernel boots it exactly
-# like a missing/empty rootsubdir, and a Bootmenu that follows the STARTUP line
-# now lands on <partition>/etc/image-version and can show the name.
-# Real subdirs (linuxrootfsN - internal shared slots) are NEVER touched.
-upanel_startup_fix_rootsubdir() { # $1 = STARTUP file
-  [ -f "$1" ] || return 1
-  _SUB=$(grep -oE "rootsubdir=[^ ']*" "$1" 2>/dev/null | head -1 | cut -d= -f2)
-  [ -n "$_SUB" ] && [ "$_SUB" != "/" ] && return 0
-  [ "$_SUB" = "/" ] && return 0
-  if grep -q "rootsubdir=" "$1"; then
-    sed -i -E "s|rootsubdir=[^ ']*|rootsubdir=/|g" "$1"
-  elif grep -q "^bootargs=" "$1"; then
-    sed -i -E "s|^(bootargs=.*)$|\1 rootsubdir=/|" "$1"
-  else
-    sed -i -E "s|'[[:space:]]*$| rootsubdir=/'|" "$1"
-  fi
-  grep -q "rootsubdir=/" "$1"
-}
-
-# Delete ONE STARTUP file, but ONLY when its root= resolves to this slot's
-# LABEL=linuxN partition - a STARTUP belonging to another layout (e.g. an
-# internal shared slot, root= = shared partition) is left alone.
-upanel_startup_delete_one() { # $1 = slot number, $2 = STARTUP file path
-  _DN="$1"; _F="$2"; _BKDIR="/media/hdd/U-Panel/STARTUP-backup"
-  # V6.20 FIX (26 Nov): ALWAYS print a number. The old code did bare `return 1`
-  # with no output when the file was missing / root unreadable / LABEL mismatch,
-  # so the caller's _X came back EMPTY and `case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))` broke - and a
-  # polluted capture made `[ "$_D" -gt 0 ]` print `[: ...: integer expected`.
-  [ -f "$_F" ] || { echo 0; return 1; }
-  _R=$(grep -oE 'root=/dev/[^ ]+' "$_F" 2>/dev/null | cut -d= -f2 | head -1)
-  [ -n "$_R" ] || { echo 0; return 1; }
-  _RL=$(blkid "$_R" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-  [ "$_RL" = "linux$_DN" ] || { echo 0; return 1; }
-  mkdir -p "$_BKDIR" 2>/dev/null
-  _BN=$(basename "$_F")
-  [ -f "$_BKDIR/$_BN.orig" ] || cp "$_F" "$_BKDIR/$_BN.orig" 2>/dev/null
-  rm -f "$_F" && echo 1 || echo 0
-}
-
-# Delete a slot's STARTUP file from /boot AND every BOOT partition (backup first).
-# Used when a slot becomes Empty (Wipe / Hide-empty): Recovery then hides it,
-# while the Panel still lists it from its LABEL=linuxN partition.
-upanel_startup_delete_for_slot() { # $1 = slot number
-  _DN="$1"; _DEL=0
-  _RP=$(blkid 2>/dev/null | grep "LABEL=\"linux$_DN\"" | cut -d: -f1 | head -1)
-  [ -n "$_RP" ] || { echo 0; return 1; }
-  mount -o remount,rw /boot 2>/dev/null
-  _X=$(upanel_startup_delete_one "$_DN" "/boot/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
-  for _BP in $(upanel_boot_partitions); do
-    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-    if [ -n "$_MP" ]; then
-      [ "$_MP" = "/boot" ] && continue
-      _X=$(upanel_startup_delete_one "$_DN" "$_MP/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
-    else
-      mkdir -p /tmp/upanel-push-boot
-      if mount "$_BP" /tmp/upanel-push-boot 2>/dev/null; then
-        _X=$(upanel_startup_delete_one "$_DN" "/tmp/upanel-push-boot/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
-        umount /tmp/upanel-push-boot 2>/dev/null
-      fi
-    fi
-  done
-  rmdir /tmp/upanel-push-boot 2>/dev/null
-  mount -o remount,ro /boot 2>/dev/null
-  echo "$_DEL"
-}
-
-# Copy one STARTUP file (from /boot) to EVERY BOOT partition on every disk,
-# so whichever BOOT partition the bootloader reads shows the same file.
-# V6.20 FIX (26 Nov): one shared BOOT-partition detector used by push, delete
-# and restore. The old helpers only checked p1 + LABEL==BOOT, so they missed
-# the internal BOOT (mmcblk0p4, no LABEL) - [12] Apply and Hide-empty never
-# reached it, which is why the Bootmenu still showed no image names.
-upanel_boot_partitions() {
-  if command -v timeout >/dev/null 2>&1; then _BTO="timeout 15"; else _BTO=""; fi
-  for _D in /sys/block/*; do
-    [ -e "$_D" ] || continue; _DN=$(basename "$_D")
-    case "$_DN" in loop*|ram*|dm-*|zram*) continue;; esac
-    case "$_DN" in *boot*) continue;; esac
-    [ -e "$_D/partition" ] && continue
-    [ $(( $(cat "$_D/size" 2>/dev/null || echo 0) * 512 / 1048576 )) -le 0 ] && continue
-    for _BP in /dev/${_DN}p* /dev/${_DN}[0-9]*; do
-      [ -b "$_BP" ] || continue
-      _LBL=$(blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-      case "$_LBL" in linux*) continue;; esac
-      _TYPE=$(blkid "$_BP" 2>/dev/null | grep -o 'TYPE="[^"]*"' | cut -d'"' -f2)
-      case "$_TYPE" in exfat|swap) continue;; esac
-      if [ "$_LBL" = "BOOT" ]; then echo "$_BP"; continue; fi
-      [ -n "$_TYPE" ] || continue
-      _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-      if [ -n "$_MP" ]; then
-        ls "$_MP"/STARTUP "$_MP"/STARTUP_LINUX_* "$_MP"/STARTUP_[0-9]* >/dev/null 2>&1 && echo "$_BP"
-      else
-        mkdir -p /tmp/upanel-bootprobe
-        if $_BTO mount -t vfat -o ro "$_BP" /tmp/upanel-bootprobe 2>/dev/null || $_BTO mount -o ro "$_BP" /tmp/upanel-bootprobe 2>/dev/null; then
-          ls /tmp/upanel-bootprobe/STARTUP /tmp/upanel-bootprobe/STARTUP_LINUX_* /tmp/upanel-bootprobe/STARTUP_[0-9]* >/dev/null 2>&1 && echo "$_BP"
-          umount /tmp/upanel-bootprobe 2>/dev/null
-        fi
-      fi
-    done
-  done
-  rmdir /tmp/upanel-bootprobe 2>/dev/null
-}
-
-upanel_startup_push_to_boots() { # $1 = STARTUP file in /boot
-  _SRC="$1"; [ -f "$_SRC" ] || { echo 0; return 1; }
-  _BN=$(basename "$_SRC"); _N=0
-  for _BP in $(upanel_boot_partitions); do
-    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-    if [ -n "$_MP" ]; then
-      [ "$_MP" = "/boot" ] && mount -o remount,rw /boot 2>/dev/null
-      if [ ! -f "$_MP/$_BN" ] || ! cmp -s "$_SRC" "$_MP/$_BN"; then cp "$_SRC" "$_MP/$_BN" 2>/dev/null && _N=$((_N+1)); fi
-      [ "$_MP" = "/boot" ] && mount -o remount,ro /boot 2>/dev/null
-    else
-      mkdir -p /tmp/upanel-push-boot
-      if mount "$_BP" /tmp/upanel-push-boot 2>/dev/null; then
-        if [ ! -f "/tmp/upanel-push-boot/$_BN" ] || ! cmp -s "$_SRC" "/tmp/upanel-push-boot/$_BN"; then cp "$_SRC" "/tmp/upanel-push-boot/$_BN" 2>/dev/null && _N=$((_N+1)); fi
-        sync; umount /tmp/upanel-push-boot 2>/dev/null
-      fi
-    fi
-  done
-  rmdir /tmp/upanel-push-boot 2>/dev/null
-  echo "$_N"
-}
-
-# V6.20 FIX (26 Nov): Hide-empty NEVER deletes a STARTUP it cannot prove empty.
-# The old code treated "name unreadable" (no debugfs / mount failed /
-# image-version not found) as "slot is empty" and deleted the STARTUP - so
-# slots WITH images vanished from Recovery and looked corrupted, while the
-# image data was still intact on the partition. Now: if the partition cannot
-# be read at all, the slot is KEPT - only a partition proven to have no image
-# files loses its STARTUP.
-upanel_slot_proven_empty() { # $1 = slot -> 0 if PROVEN empty, 1 otherwise
-  _SN="$1"
-  _RS=$(upanel_root "$_SN"); _RP="${_RS%%|*}"; _SUB="${_RS#*|}"
-  # No root device at all -> nothing can boot -> proven empty.
-  [ -n "$_RP" ] && [ -e "$_RP" ] || return 0
-  if command -v debugfs >/dev/null 2>&1; then
-    _DP="/etc/image-version"; [ -n "$_SUB" ] && _DP="/$_SUB/etc/image-version"
-    _IV=$(debugfs -R "cat $_DP" "$_RP" 2>/dev/null)
-    [ -n "$_IV" ] && return 1
-    _IP="/etc/issue"; [ -n "$_SUB" ] && _IP="/$_SUB/etc/issue"
-    _IS=$(debugfs -R "cat $_IP" "$_RP" 2>/dev/null)
-    [ -n "$_IS" ] && return 1
-    return 0
-  fi
-  _MP="/tmp/upanel_rd"; mkdir -p "$_MP"
-  if mount -o ro "$_RP" "$_MP" >/dev/null 2>&1; then
-    _IVF="$_MP/etc/image-version"; [ -n "$_SUB" ] && _IVF="$_MP/$_SUB/etc/image-version"
-    _ISF="$_MP/etc/issue"; [ -n "$_SUB" ] && _ISF="$_MP/$_SUB/etc/issue"
-    if [ -f "$_IVF" ] || [ -f "$_ISF" ]; then umount "$_MP" >/dev/null 2>&1; return 1; fi
-    umount "$_MP" >/dev/null 2>&1; return 0
-  fi
-  # Partition exists but CANNOT BE READ -> NOT proven -> keep it.
-  return 1
-}
-
-# Recovery Slot Names menu - TEST on one slot first, then apply to all, revert anytime.
-upanel_recovery_names() {
-  show_banner; line; info "Recovery Slot Names - make image names show in the Recovery / Bootmenu"
-  echo "Why names are missing: U-Panel partition slots had rootsubdir REMOVED or EMPTY"
-  echo "in their STARTUP files. The Bootmenu finds an image via rootsubdir= - with"
-  echo "nothing to follow, it cannot read /etc/image-version and shows no name."
-  echo "Fix: rootsubdir=/ (= rootfs at partition root). The kernel boots it exactly"
-  echo "like a missing rootsubdir. Internal shared slots (linuxrootfsN) are untouched."
-  echo ""
-  echo "  [1] TEST on ONE slot - fix one slot, reboot to Recovery, check its name"
-  echo "  [2] Apply to ALL external slots"
-  echo "  [3] Revert - restore the original STARTUP files from backup"
-  echo "  [4] Hide empty external slots in Recovery NOW - keep only slots with images"
-  echo "  [0] Back"
-  # V6.20 FIX (26 Nov): WebUI cannot answer interactive prompts - accept the
-  # mode as $1 (2 = Apply to ALL, 4 = Hide empty) so the WebUI buttons can
-  # run this without a prompt. Terminal use is unchanged (no $1 -> prompt).
-  if [ -n "$1" ]; then _RN="$1"; else printf "Your choice: "; read _RN || return 0; fi
-  _BKDIR="/media/hdd/U-Panel/STARTUP-backup"; mkdir -p "$_BKDIR" 2>/dev/null
-  upanel_boot_mount; mount -o remount,rw /boot 2>/dev/null
-  case "$_RN" in
-    1)
-      printf "Test on which SLOT number? (0 = cancel): "; read _TS; [ "$_TS" = "0" ] && return 0
-      _SF="/boot/STARTUP_LINUX_$_TS"
-      [ -f "$_SF" ] || { echo "[RECOVERY-NAME] No STARTUP file for SLOT $_TS."; printf "Press ENTER... "; read _b; return 0; }
-      [ -f "$_BKDIR/STARTUP_LINUX_$_TS.orig" ] || cp "$_SF" "$_BKDIR/STARTUP_LINUX_$_TS.orig" 2>/dev/null
-      echo "[RECOVERY-NAME] Backup: $_BKDIR/STARTUP_LINUX_$_TS.orig"
-      echo "[RECOVERY-NAME] Before: $(grep -oE 'root=[^ ]+|rootsubdir=[^ ]+' "$_SF" | tr '\n' ' ')"
-      upanel_startup_fix_rootsubdir "$_SF" && echo "[RECOVERY-NAME] rootsubdir=/ written." || echo "[RECOVERY-NAME] NOTE: rootsubdir=/ could NOT be written - file format unknown, left unchanged."
-      echo "[RECOVERY-NAME] After:  $(grep -oE 'root=[^ ]+|rootsubdir=[^ ]+' "$_SF" | tr '\n' ' ')"
-      _P=$(upanel_startup_push_to_boots "$_SF"); echo "[RECOVERY-NAME] Pushed to $_P BOOT partition(s)."
-      sync; mount -o remount,ro /boot 2>/dev/null
-      echo ""
-      echo "NOW: reboot to Recovery (hold OK / reset) and look at SLOT $_TS:"
-      echo "  - Name shows CORRECTLY -> come back here, run [2] Apply to ALL."
-      echo "  - Name shows WRONG, or no name, or slot will not boot -> boot any"
-      echo "    other slot, come back here, run [3] Revert."
-      printf "Press ENTER... "; read _b ;;
-    2)
-      _FIXED=0; _SKIP=0
-      for _SF in /boot/STARTUP_LINUX_*; do
-        [ -f "$_SF" ] || continue; _BN=$(basename "$_SF")
-        _SUB=$(grep -oE "rootsubdir=[^ ']*" "$_SF" 2>/dev/null | head -1 | cut -d= -f2)
-        if [ -n "$_SUB" ] && [ "$_SUB" != "/" ]; then _SKIP=$((_SKIP+1)); continue; fi
-        [ -f "$_BKDIR/$_BN.orig" ] || cp "$_SF" "$_BKDIR/$_BN.orig" 2>/dev/null
-        if upanel_startup_fix_rootsubdir "$_SF"; then _FIXED=$((_FIXED+1)); _P=$(upanel_startup_push_to_boots "$_SF"); fi
-      done
-      sync; mount -o remount,ro /boot 2>/dev/null
-      echo "[RECOVERY-NAME] Fixed $_FIXED slot file(s), skipped $_SKIP shared-slot file(s) (linuxrootfsN)."
-      echo "[RECOVERY-NAME] Originals in $_BKDIR - Revert [3] restores them anytime."
-      printf "Press ENTER... "; read _b ;;
-    4)
-      _HID=0; _KEPT=0; _MISS=0
-      for _N in $(upanel_slots); do
-        _RP=$(blkid 2>/dev/null | grep "LABEL=\"linux$_N\"" | cut -d: -f1 | head -1)
-        [ -n "$_RP" ] || continue
-        _NM=$(upanel_name "$_N")
-        if [ "$_NM" = "Empty / Unknown" ]; then
-          if upanel_slot_proven_empty "$_N"; then
-            _D=$(upanel_startup_delete_for_slot "$_N")
-            case "$_D" in ''|*[!0-9]*) _D=0;; esac
-            if [ "$_D" -gt 0 ]; then _HID=$((_HID+1)); echo "[RECOVERY-NAME] SLOT $_N is Empty - STARTUP removed from $_D place(s), hidden from Recovery."; else echo "[RECOVERY-NAME] SLOT $_N is Empty - no STARTUP file found (already hidden)."; fi
-          else
-            _KEPT=$((_KEPT+1)); echo "[RECOVERY-NAME] SLOT $_N: name unreadable - KEPT, STARTUP NOT deleted. Could not prove it is empty (image may still be there)."
-          fi
-        else
-          _KEPT=$((_KEPT+1))
-          if [ ! -f "/boot/STARTUP_LINUX_$_N" ]; then _MISS=$((_MISS+1)); echo "[RECOVERY-NAME] WARNING: SLOT $_N has image ($_NM) but NO STARTUP file - it will NOT show in Recovery. Flash it again to rebuild its STARTUP."; fi
-        fi
-      done
-      sync
-      echo "[RECOVERY-NAME] Done: $_HID empty slot(s) hidden, $_KEPT slot(s) with images kept, $_MISS slot(s) with image but missing STARTUP."
-      printf "Press ENTER... "; read _b ;;
-    3)
-      _R=0
-      for _BF in "$_BKDIR"/STARTUP_LINUX_*.orig; do
-        [ -f "$_BF" ] || continue; _BN=$(basename "$_BF" .orig)
-        cp "$_BF" "/boot/$_BN" 2>/dev/null && { _R=$((_R+1)); upanel_startup_push_to_boots "/boot/$_BN" >/dev/null; }
-      done
-      sync; mount -o remount,ro /boot 2>/dev/null
-      echo "[RECOVERY-NAME] Restored $_R original STARTUP file(s)."
-      printf "Press ENTER... "; read _b ;;
-  esac
-}
-
-# V6.20 FIX (26 Nov): internal shared slots (linuxrootfsN on ONE partition).
-# The box's built-in slots live as SUBDIRS linuxrootfs1..4 on a single shared
-# rootfs partition (e.g. /dev/mmcblk0p23) - NOT as own partitions. They share
-# STARTUP filenames (STARTUP_LINUX_1..4) with the SD partition slots, so one
-# STARTUP file can only point to one of them - the SD files won the Sync
-# merge and the internal slots went invisible in the Bootmenu.
-# V6.20 FIX (26 Nov): image-version's FIRST line is box_type= (e.g.
-# box_type=novaler4kpro) - not the distro. Read distro= + version= instead,
-# so internal slots show "openatv 7.5" rather than all looking identical.
-upanel_imageversion_name() { # $1 = image-version file
-  _D=$(grep '^distro=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
-  _V=$(grep '^version=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
-  _B=$(grep '^build=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
-  if [ -n "$_D" ]; then echo "$_D${_V:+ $_V}${_B:+ build $_B}" | sed 's/ *$//'; return 0; fi
-  head -1 "$1" 2>/dev/null | tr -d '\r' | sed 's/ *$//'
-}
-
-upanel_internal_shared_partition() {
-  for _BP in $(blkid 2>/dev/null | grep 'TYPE="ext' | cut -d: -f1); do
-    [ -b "$_BP" ] || continue
-    _LBL=$(blkid "$_BP" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-    case "$_LBL" in linux*) continue;; esac
-    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-    if [ -n "$_MP" ]; then
-      for _N in 1 2 3 4 5 6 7 8; do [ -d "$_MP/linuxrootfs$_N" ] && { echo "$_BP"; return 0; }; done
-    else
-      mkdir -p /tmp/upanel-int-check
-      if mount -o ro "$_BP" /tmp/upanel-int-check 2>/dev/null; then
-        _FOUND=""
-        for _N in 1 2 3 4 5 6 7 8; do [ -d "/tmp/upanel-int-check/linuxrootfs$_N" ] && _FOUND="$_BP" && break; done
-        umount /tmp/upanel-int-check 2>/dev/null
-        [ -n "$_FOUND" ] && { echo "$_FOUND"; return 0; }
-      fi
-    fi
-  done
-  rmdir /tmp/upanel-int-check 2>/dev/null
-  echo ""
-}
-
-# Read-only: list internal shared slots, their images, and whether the SD
-# slot with the same number shadows them.
-upanel_internal_slots() {
-  show_banner; line; info "Internal slots - the box's built-in slots (shared partition)"
-  _SH=$(upanel_internal_shared_partition)
-  if [ -z "$_SH" ]; then echo "[INTERNAL] No shared internal partition found (no linuxrootfsN subdirs on any disk) - this box may not have internal multiboot slots."; return 0; fi
-  echo "[INTERNAL] Shared internal partition: $_SH"
-  _MP=$(awk -v _dev="$_SH" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-  _NEED=0
-  if [ -n "$_MP" ]; then _SCAN="$_MP"; else mkdir -p /tmp/upanel-int-check; mount -o ro "$_SH" /tmp/upanel-int-check 2>/dev/null || { echo "[INTERNAL] Cannot mount $_SH."; return 0; }; _SCAN="/tmp/upanel-int-check"; _NEED=1; fi
-  for _N in 1 2 3 4 5 6 7 8; do
-    if [ -f "$_SCAN/linuxrootfs$_N/etc/image-version" ]; then
-      _NM=$(upanel_imageversion_name "$_SCAN/linuxrootfs$_N/etc/image-version")
-      echo "[INTERNAL] SLOT $_N: HAS IMAGE - $_NM (linuxrootfs$_N)"
-      if [ -f "/boot/STARTUP_LINUX_$_N" ]; then
-        _SUB=$(grep -oE "rootsubdir=[^ ']*" "/boot/STARTUP_LINUX_$_N" 2>/dev/null | head -1 | cut -d= -f2)
-        if [ "$_SUB" = "linuxrootfs$_N" ]; then echo "  -> STARTUP_LINUX_$_N already points to internal SLOT $_N - it shows in the Bootmenu."
-        else
-          _RP=$(blkid 2>/dev/null | grep "LABEL=\"linux$_N\"" | cut -d: -f1 | head -1)
-          _SDIMG=""
-          if [ -n "$_RP" ]; then
-            _SMP=$(awk -v _dev="$_RP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-            if [ -n "$_SMP" ]; then [ -f "$_SMP/etc/image-version" ] && _SDIMG=$(upanel_imageversion_name "$_SMP/etc/image-version")
-            else mkdir -p /tmp/upanel-int-check2; if mount -o ro "$_RP" /tmp/upanel-int-check2 2>/dev/null; then [ -f "/tmp/upanel-int-check2/etc/image-version" ] && _SDIMG=$(upanel_imageversion_name /tmp/upanel-int-check2/etc/image-version); umount /tmp/upanel-int-check2 2>/dev/null; fi; fi
-          fi
-          if [ -n "$_SDIMG" ]; then echo "  -> CONFLICT: STARTUP_LINUX_$_N points to the SD slot (image: $_SDIMG). Internal SLOT $_N is SHADOWED - one file cannot point to both."
-          else echo "  -> SHADOWED: STARTUP_LINUX_$_N points to the (empty) SD slot. Reflash the image to internal SLOT $_N (flashing writes its STARTUP file)."; fi
-        fi
-      else echo "  -> NO STARTUP_LINUX_$_N file at all - reflash the image to internal SLOT $_N to create it."; fi
-    else
-      echo "[INTERNAL] SLOT $_N: empty (no linuxrootfs$_N image)"
-    fi
-  done
-  [ "$_NEED" = "1" ] && umount /tmp/upanel-int-check 2>/dev/null
-  rmdir /tmp/upanel-int-check /tmp/upanel-int-check2 2>/dev/null
-  echo "[INTERNAL] Done."
-}
-
-# V6.20 FIX (26 Nov): kernel lookup across ALL BOOT partitions. The first
-# restore only checked the mounted /boot (= SD BOOT) - but the internal
-# slots' kernels (kernel2/3/4.bin) live on the INTERNAL BOOT (mmcblk0p4),
-# so every internal slot was skipped as "kernel missing". Now: search every
-# BOOT partition; if the kernel is found on another BOOT, copy it to /boot
-# and to every BOOT partition, so whichever BOOT the bootloader reads has it.
-# Prints: basename|source (source = mountpoint, or /dev/xxx when unmounted).
-upanel_kernel_for_slot() { # $1 = slot N, $2 = template slot, $3 = template kernel path
-  _KN="$1"; _KTCS="$2"; _KCK="$3"
-  _KCANDS=""
-  _KTK=$(echo "$_KCK" | sed "s/$_KTCS/$_KN/g")
-  [ "$_KTK" != "$_KCK" ] && _KCANDS="$_KCANDS $(basename "$_KTK")"
-  _KCANDS="$_KCANDS kernel$_KN.bin kernel_$_KN.bin uImage$_KN zImage$_KN Image$_KN kernel$_KN vmlinux$_KN"
-  for _CAND in $_KCANDS; do
-    for _BP in $(upanel_boot_partitions); do
-      _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-      if [ -n "$_MP" ]; then
-        [ -f "$_MP/$_CAND" ] && { echo "$_CAND|$_MP"; return 0; }
-      else
-        mkdir -p /tmp/upanel-kernprobe
-        if mount -o ro "$_BP" /tmp/upanel-kernprobe 2>/dev/null; then
-          if [ -f "/tmp/upanel-kernprobe/$_CAND" ]; then umount /tmp/upanel-kernprobe 2>/dev/null; echo "$_CAND|$_BP"; return 0; fi
-          umount /tmp/upanel-kernprobe 2>/dev/null
-        fi
-      fi
-    done
-  done
-  rmdir /tmp/upanel-kernprobe 2>/dev/null
-  echo ""
-}
-
-# Copy a kernel file (by basename) to /boot and every BOOT partition that
-# lacks it. $2 = source mountpoint or /dev/xxx. Prints: number of copies.
-upanel_distribute_kernel() { # $1 = basename, $2 = source
-  _KB="$1"; _KSRC="$2"; _COPIED=0; _SRCFILE=""
-  case "$_KSRC" in /dev/*) mkdir -p /tmp/upanel-kernsrc; mount -o ro "$_KSRC" /tmp/upanel-kernsrc 2>/dev/null && _SRCFILE="/tmp/upanel-kernsrc/$_KB";; *) _SRCFILE="$_KSRC/$_KB";; esac
-  if [ -z "$_SRCFILE" ] || [ ! -f "$_SRCFILE" ]; then case "$_KSRC" in /dev/*) umount /tmp/upanel-kernsrc 2>/dev/null;; esac; rmdir /tmp/upanel-kernsrc 2>/dev/null; echo 0; return 1; fi
-  for _BP in $(upanel_boot_partitions); do
-    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-    if [ -n "$_MP" ]; then
-      [ "$_MP" = "/boot" ] && mount -o remount,rw /boot 2>/dev/null
-      if [ ! -f "$_MP/$_KB" ]; then cp "$_SRCFILE" "$_MP/$_KB" 2>/dev/null && _COPIED=$((_COPIED+1)); fi
-      [ "$_MP" = "/boot" ] && mount -o remount,ro /boot 2>/dev/null
-    else
-      mkdir -p /tmp/upanel-kerndst
-      if mount "$_BP" /tmp/upanel-kerndst 2>/dev/null; then
-        [ ! -f "/tmp/upanel-kerndst/$_KB" ] && cp "$_SRCFILE" "/tmp/upanel-kerndst/$_KB" 2>/dev/null && _COPIED=$((_COPIED+1))
-        sync; umount /tmp/upanel-kerndst 2>/dev/null
-      fi
-    fi
-  done
-  case "$_KSRC" in /dev/*) umount /tmp/upanel-kernsrc 2>/dev/null;; esac
-  rmdir /tmp/upanel-kernsrc /tmp/upanel-kerndst 2>/dev/null
-  echo "$_COPIED"
-}
-
-# Rebuild STARTUP files for internal slots that have images, but ONLY where
-# the SD slot with the same number is empty - it NEVER overwrites an SD slot
-# that has an image, and it NEVER writes a slot whose kernel file is missing.
-
-# V6.20 FIX (26 Nov): ONE-CLICK Fix Bootmenu - the user should not have to
-# run Sync, then 12c, then 12d, then 12b by hand. One button runs the whole
-# chain: Sync STARTUPs -> restore internal slots -> hide empty -> apply names.
-# Safe: Hide-empty's delete_one refuses STARTUPs whose root= is not a
-# LABEL=linuxN partition, so the just-restored internal STARTUPs survive it.
-upanel_fix_bootmenu() {
-  show_banner; line; info "Fix Bootmenu - ONE CLICK: Sync + Hide empty + Names"
-  echo "No re-partition - nothing is erased. Your images stay."
-  echo "=== Step 1/3: Sync STARTUP files to every BOOT partition ==="
-  multiboot_sync_startup
-  echo ""; echo "=== Step 2/3: Hide empty slots in Recovery ==="
-  upanel_recovery_names 4
-  echo ""; echo "=== Step 3/3: Apply image names to all slots ==="
-  upanel_recovery_names 2
-  echo ""; echo "[FIX-BOOTMENU] Done. Reboot to Recovery - all slots with images show, with names."
-}
-
-# V6.20 (26 Nov): Slots disk management - ONE BUTTON that does all 4 things:
-# 1) partition the disk (slots + optional storage - ERASES the disk),
-# 2) Sync STARTUP files, 3) hide empty slots,
-# 4) apply image names - then REBOOT.
-# Restore internal was REMOVED (26 Nov) - nothing in this flow writes internal STARTUPs.
-# Telnet: prompts interactively (disk, slots, size, ERASE).
-# WebUI: disk/slots/size come from the form; ERASE already confirmed there,
-# so web_formatting_slots pipes ERASE in (same pattern as web_multiboot_prepare).
-# If step 1 is cancelled/failed, NOTHING else runs and there is NO reboot.
-upanel_formatting_slots() { # $1=disk $2=slots $3=size (all optional)
-  show_banner; line; info "Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot"
-  echo "WARNING: Step 1 ERASES the WHOLE chosen disk - backups, movies, everything."
-  echo "=== Step 1/4: Partition disk (slots + storage) ==="
-  multiboot_prepare_disk "$1" "$2" "$3" "$4"
-  _FSRC=$?
-  if [ $_FSRC -ne 0 ]; then echo "[SLOTS-DISK-MANAGEMENT] Partition cancelled/failed - STOPPING. Nothing else ran, NO reboot."; return $_FSRC; fi
-  echo ""; echo "=== Step 2/4: Sync STARTUP files to every BOOT partition ==="
-  multiboot_sync_startup
-  echo ""; echo "=== Step 3/4: Hide empty slots in Recovery ==="
-  upanel_recovery_names 4
-  echo ""; echo "=== Step 4/4: Apply image names to all slots ==="
-  upanel_recovery_names 2
-  echo ""; echo "[SLOTS-DISK-MANAGEMENT] All 4 steps done. Rebooting in 5 seconds..."
-  (sleep 5; sync; reboot) >/dev/null 2>&1 &
-  return 0
-}
-web_formatting_slots() { printf "ERASE\n\n" | upanel_formatting_slots "$1" "$2" "$3" "$4"; }
 
 boot_slot_manager() {
   echo "[BUILD V23.4 - all 14 slots + clean screen]"
@@ -11213,32 +10249,28 @@ boot_slot_manager() {
       if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE"; else echo "  [$_N] SLOT $_N - $_NM"; fi
     done
     line
-    echo "  [2] Show Slots"
-    echo "  [3] Switch Slot + Reboot"
-    echo "  [4] Backup Current Slot"
-    echo "  [5] Restore to Slot"
-    echo "  [6] Diagnose Slots"
-    echo "  [7] Test Switch"
-    echo "  [8] Flash Image to Slot"
-    echo "  [9] Download Image from Internet"
-    echo "  [10] Rollback guard (auto-return if new slot fails to boot)"
-    echo "  [11] Wipe Slot - erase the image on a slot completely"
-    echo "  [12] Recovery Slot Names - make image names show in Recovery (TEST)"
-    echo "  [13] Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot"
-    echo "  [14] Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)"
+    echo "  [1] Show Slots"
+    echo "  [2] Switch Slot + Reboot"
+    echo "  [3] Backup Current Slot"
+    echo "  [4] Restore to Slot"
+    echo "  [5] Diagnose Slots"
+    echo "  [6] Test Switch"
+    echo "  [7] Flash Image to Slot"
+    echo "  [8] Download Image from Internet"
+    echo "  [9] Rollback guard (auto-return if new slot fails to boot)"
+    echo "  [10] Wipe Slot - erase the image on a slot completely"
+    echo "  [11] Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)"
     echo "  [R] Rename a slot"
     echo "  [0] Back"
     printf "Your choice: "; read _BC || return 0
     case "$_BC" in
       0) return 0 ;;
-      2) rm -f /tmp/upanel_slot_img_* /tmp/upanel_e2fs_tried 2>/dev/null; continue ;;
-      10) rollback_guard_status ;;
-      11) upanel_wipe ;;
-      12) upanel_recovery_names ;;
-      13) upanel_formatting_slots ;;
-      14) upanel_fix_bootmenu ;;
+      1) rm -f /tmp/upanel_slot_img_* /tmp/upanel_e2fs_tried 2>/dev/null; continue ;;
+      9) rollback_guard_status ;;
+      10) upanel_wipe ;;
+      11) multiboot_prepare_disk ;;
       R|r) upanel_rename_menu ;;
-      3)
+      2)
         printf "Switch to which SLOT number? (0 = cancel): "; read _TS
         [ "$_TS" = "0" ] && continue
         case " $_SL " in *" $_TS "*) ;; *) echo "SLOT $_TS not found. Available: $_SL";
@@ -11249,7 +10281,6 @@ boot_slot_manager() {
           echo "  MMC devices: $(ls /dev/mmcblk* 2>/dev/null | tr '\n' ' ' || echo none)";
           [ -e /dev/mmcblk1 ] || echo "  >> SD card (mmcblk1) NOT detected - slots on SD (6,7,...) can NOT appear until the card is reinserted + reboot.";
           printf "Press ENTER... "; read _b; continue;; esac
-        if [ "$(upanel_name "$_TS")" = "Empty / Unknown" ]; then echo "SLOT $_TS is Empty - flash an image into it first, there is nothing to boot."; printf "Press ENTER... "; read _b; continue; fi
         if [ "$_TS" = "$_CS" ]; then echo "You are already on SLOT $_TS."; printf "Press ENTER... "; read _b; continue; fi
         echo "WARNING: device will REBOOT into SLOT $_TS - $(upanel_name "$_TS")"
         printf "Type YES / y to switch + reboot: "; read _CF; if is_yes "$_CF"; then :; else echo "Cancelled."; printf "Press ENTER... "; read _b; continue; fi
@@ -11271,18 +10302,18 @@ boot_slot_manager() {
         echo "[SLOT-FAIL] ALL reboot methods failed - the box refused to reboot."
         echo "[SLOT-FAIL] Reboot it manually from the remote / power button - it WILL boot into SLOT $_TS (STARTUP already switched)."
         printf "Press ENTER to return... "; read _b; continue ;;
-      4)
+      3)
         echo "Backup Current Slot: SLOT $_CS - $IMAGE"
         printf "Press ENTER to start Backup Ur Data for SLOT $_CS - or 0 to cancel: "; read _go; [ "$_go" = "0" ] && continue
         backup_plugins_then_files
         _NB=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null | head -1)
         if [ -n "$_NB" ]; then case "$_NB" in *"SLOT"*) echo "[SLOT] Backup already tagged: $_NB";; *) mv "$_NB" "${_NB}_SLOT$_CS" 2>/dev/null && echo "[SLOT] Backup tagged: ${_NB}_SLOT$_CS";; esac; fi
         printf "Press ENTER to return... "; read _b ;;
-      6) upanel_diagnose ;;
-      7) upanel_probe ;;
-      8) upanel_flash ;;
-      9) download_image_menu ;;
-      5)
+      5) upanel_diagnose ;;
+      6) upanel_probe ;;
+      7) upanel_flash ;;
+      8) download_image_menu ;;
+      4)
         echo "Restore to Slot - restores to the slot you are CURRENTLY booted from (SLOT $_CS)."
         echo "To restore to ANOTHER slot: Switch to it + reboot FIRST, then come back here and Restore."
         _BL=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null)
@@ -11663,6 +10694,7 @@ cross_installer_url() {
     furyskin) echo "https://raw.githubusercontent.com/islam-2412/IPKS/refs/heads/main/fury/installer.sh" ;;
     lukaatv-skin) echo "https://raw.githubusercontent.com/popking159/skins/refs/heads/main/lukaatv/installer.sh" ;;
     enigmaplay-repo) echo "https://raw.githubusercontent.com/Ahmadarjan1/EnigmaPlay-Repo/main/install.sh" ;;
+    mohamedstore) echo "https://raw.githubusercontent.com/wwwgoper77-wq/MohamedStore/main/install.sh" ;;
     servercoloring-fury) echo "https://raw.githubusercontent.com/islam-2412/ServerColoring/main/fury/installer.sh" ;;
     sherlockmod) echo "https://raw.githubusercontent.com/emil237/sherlockmod/main/installer.sh" ;;
     bouquetmakerxtream) echo "http://dreambox4u.com/emilnabil237/plugins/BouquetMakerXtream/installer.sh" ;;
@@ -11835,6 +10867,7 @@ cross_installer_label() {
     furyskin) echo "installer.sh" ;;
     lukaatv-skin) echo "installer.sh" ;;
     enigmaplay-repo) echo "install.sh" ;;
+    mohamedstore) echo "install.sh" ;;
     servercoloring-fury) echo "installer.sh" ;;
     sherlockmod) echo "installer.sh" ;;
     bouquetmakerxtream) echo "installer.sh" ;;
@@ -12369,15 +11402,16 @@ web_plugin_update() { force_reinstall_plugin_by_num "$1"; }
 web_plugin_update_custom() { force_reinstall_custom_by_num "$1"; }
 web_plugin_uninstall() { uninstall_plugin_by_num "$1"; }
 web_multiboot_show() { upanel_boot_mount; _CS=$(upanel_current); _SL=$(upanel_slots); echo "Current Slot: SLOT $_CS - $IMAGE"; echo "Slots:"; for _N in $_SL; do _NM=$(upanel_name "$_N"); if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE"; else echo "  [$_N] SLOT $_N - $_NM"; fi; done; }
-web_multiboot_switch() { echo "[WEB-SWITCH] target SLOT $1"; printf "\n3\n%s\nYES\n" "$1" | boot_slot_manager; }
-web_multiboot_backup() { printf "\n4\n\n\n" | boot_slot_manager; }
-web_multiboot_diagnose() { printf "\n6\n\n" | boot_slot_manager; }
-web_multiboot_probe() { printf "\n7\n\n" | boot_slot_manager; }
-web_multiboot_rollback() { printf "\n10\nn\n\n" | boot_slot_manager; }
-web_multiboot_wipe() { printf "\n11\n%s\nWIPE\nWIPE\n\n" "$1" | boot_slot_manager; }
+web_multiboot_switch() { echo "[WEB-SWITCH] target SLOT $1"; printf "\n2\n%s\nYES\n" "$1" | boot_slot_manager; }
+web_multiboot_backup() { printf "\n3\n\n\n" | boot_slot_manager; }
+web_multiboot_diagnose() { printf "\n5\n\n" | boot_slot_manager; }
+web_multiboot_probe() { printf "\n6\n\n" | boot_slot_manager; }
+web_multiboot_rollback() { printf "\n9\nn\n\n" | boot_slot_manager; }
+web_multiboot_wipe() { printf "\n10\n%s\nWIPE\nWIPE\n\n" "$1" | boot_slot_manager; }
 web_multiboot_rename() { printf "\nR\n%s\n%s\n\n" "$1" "$2" | boot_slot_manager; }
+web_multiboot_prepare() { printf "ERASE\n\n" | multiboot_prepare_disk "$1" "$2" "$3"; }
 web_multiboot_restore() { boot_slot_manager; }
-web_multiboot_restore_pick() { _BL=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null); [ -z "$_BL" ] && { echo "No backups found."; return 1; }; _SEL=$(echo "$_BL" | sed -n "${1}p"); [ -z "$_SEL" ] && { echo "Bad number."; return 1; }; _CS=$(upanel_current); { printf "\n5\n%s\n%s\n" "$1" "$_CS"; case "$(basename "$_SEL")" in *"SLOT$_CS"*|*"${IMAGE}"*) ;; *) printf "YES\n";; esac; printf "YES\nYES\n%s\n\n\n" "$2"; } | boot_slot_manager; }
+web_multiboot_restore_pick() { _BL=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null); [ -z "$_BL" ] && { echo "No backups found."; return 1; }; _SEL=$(echo "$_BL" | sed -n "${1}p"); [ -z "$_SEL" ] && { echo "Bad number."; return 1; }; _CS=$(upanel_current); { printf "\n4\n%s\n%s\n" "$1" "$_CS"; case "$(basename "$_SEL")" in *"SLOT$_CS"*|*"${IMAGE}"*) ;; *) printf "YES\n";; esac; printf "YES\nYES\n%s\n\n\n" "$2"; } | boot_slot_manager; }
 web_smart_restore_part() { smart_restore_pick_latest_backup || return 1; smart_restore_detect_mode; echo "MODE: $SMART_MODE - $SMART_MODE_WHY"; case "$1" in packages) if [ "$SMART_MODE" = "FULL" ]; then FULL_AUTO=1; RESTORE_BATCH=1; install_packages; restore_plugins_with_extras; _RC=$?; FULL_AUTO=0; RESTORE_BATCH=0; echo "Smart Packages+Plugins done (rc=$_RC)"; else CROSS_ENIGMA_STOPPED=0; cross_image_restore_plugins; echo "Smart SAFE Packages+Plugins done"; fi;; files) if [ "$SMART_MODE" = "FULL" ]; then FULL_AUTO=1; restore_files_setup; _RC=$?; verify_files_restore; FULL_AUTO=0; echo "Smart Files done (rc=$_RC)"; else CROSS_ENIGMA_STOPPED=0; cross_image_restore_files; echo "Smart SAFE Files done"; fi;; esac; }
 web_custom_restore_part() { case "$1" in plugins) FULL_AUTO=1; RESTORE_BATCH=1; restore_plugins_with_extras; _RC=$?; FULL_AUTO=0; RESTORE_BATCH=0; echo "Custom Plugins done (rc=$_RC)";; files) FULL_AUTO=1; restore_files_setup; _RC=$?; verify_files_restore; FULL_AUTO=0; echo "Custom Files done (rc=$_RC)";; all) FULL_AUTO=1; RESTORE_BATCH=1; restore_plugins_then_files; _RC=$?; if [ "$_RC" = "0" ]; then install_bootlogo_auto; if check_net 2>/dev/null; then tools_abertis_astra auto; fi; write_unified_report; show_summary; fi; FULL_AUTO=0; RESTORE_BATCH=0; echo "Custom All done (rc=$_RC)";; esac; }
 web_backup_manager_rollback_plugins() { _PL=$(ls -dt "$(get_plugins_backup_dir)"/BeforeRestore-* 2>/dev/null | head -n 1); [ -n "$_PL" ] && echo "Plugins rollback: cp -a $_PL/Extensions/. /usr/lib/enigma2/python/Plugins/Extensions/ - then init 3" && cp -a "$_PL"/Extensions/. /usr/lib/enigma2/python/Plugins/Extensions/ 2>/dev/null; [ -z "$_PL" ] && echo "No plugins BeforeRestore found"; }
@@ -12625,12 +11659,7 @@ case "$1" in
   --web-multiboot-rollback) lock_startup_check; web_multiboot_rollback; exit $?;;
   --web-multiboot-wipe) lock_startup_check; web_multiboot_wipe "$2"; exit $?;;
   --web-multiboot-rename) lock_startup_check; web_multiboot_rename "$2" "$3"; exit $?;;
-    --web-formatting-slots) lock_startup_check; web_formatting_slots "$2" "$3" "$4" "$5"; exit $?;;
-    --web-multiboot-sync) lock_startup_check; multiboot_sync_startup; exit $?;;
-    --web-recovery-names-hide) lock_startup_check; upanel_recovery_names 4; exit $?;;
-    --web-recovery-names-apply) lock_startup_check; upanel_recovery_names 2; exit $?;;
-    --web-internal-check) lock_startup_check; upanel_internal_slots; exit $?;;
-    --web-fix-bootmenu) lock_startup_check; upanel_fix_bootmenu; exit $?;;
+    --web-multiboot-prepare) lock_startup_check; web_multiboot_prepare "$2" "$3" "$4"; exit $?;;
   --web-multiboot-restore) lock_startup_check; web_multiboot_restore; exit $?;;
   --web-smart-restore-part) lock_startup_check; web_smart_restore_part "$2"; exit $?;;
   --web-custom-restore-part) lock_startup_check; web_custom_restore_part "$2"; exit $?;;
