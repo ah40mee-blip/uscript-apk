@@ -2317,7 +2317,7 @@ class H(BaseHTTPRequestHandler):
         return ("upanel_pin=" + get_pin()) in ck
     def send_html(self, body, code=200, cookie=None, refresh=None):
         _ref = ("<meta http-equiv='refresh' content='%d'>" % int(refresh)) if refresh else ""
-        data = ("<!DOCTYPE html><html lang='%s' dir='%s'>" % (_panel_lang_current(), PANEL_LANGS[_panel_lang_current()][1]) + "<head><meta name='viewport' content='width=device-width,initial-scale=1'><meta charset='utf-8'><meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate'><meta http-equiv='Pragma' content='no-cache'><meta http-equiv='Expires' content='0'>" + PWA_HEAD + _ref + "<title>U-Panel</title>" + PAGE_CSS + GOOGLE_FONTS_LINK + PREMIUM_CSS + _web_theme_css() + _panel_shape_css() + _panel_font_css() + _panel_layout_css() + _button_size_css() + "<script>try{if(location.href.indexOf(\'@\')>-1){history.replaceState(null,\'\',location.protocol+\'//\'+location.host+location.pathname+location.search+location.hash);}}catch(e){}(function(){var _f=window.fetch;window.fetch=function(u,o){if(typeof u===\'string\'&&u.charAt(0)===\'/\'){u=location.protocol+\'//\'+location.host+u;}return _f.call(this,u,o);};})();</script></head><body>" + _app_shell_top(self.path) + body + _app_shell_bottom(self.path) + "</body></html>").encode()
+        data = ("<!DOCTYPE html><html lang='%s' dir='%s'>" % (_panel_lang_current(), PANEL_LANGS[_panel_lang_current()][1]) + "<head><meta name='viewport' content='width=device-width,initial-scale=1'><meta charset='utf-8'><meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate'><meta http-equiv='Pragma' content='no-cache'><meta http-equiv='Expires' content='0'>" + PWA_HEAD + _ref + "<title>U-Panel</title>" + PAGE_CSS + GOOGLE_FONTS_LINK + PREMIUM_CSS + _web_theme_css() + _panel_shape_css() + _panel_font_css() + _panel_layout_css() + _button_size_css() + "<script>try{if(location.href.indexOf(\'@\')>-1){history.replaceState(null,\'\',location.protocol+\'//\'+location.host+location.pathname+location.search+location.hash);}}catch(e){}(function(){var _f=window.fetch;window.fetch=function(u,o){if(typeof u===\'string\'&&u.charAt(0)===\'/\'){u=location.protocol+\'//\'+location.host+u;}return _f.call(this,u,o);};})();document.addEventListener(\'click\',function(e){var a=e.target.closest?e.target.closest(\'a\'):null;if(!a)return;var t=(a.textContent||\'\').trim();if(t.indexOf(\'Back\')===0||t.indexOf(\'\\u0631\\u062c\\u0648\\u0639\')===0||t.indexOf(\'Retour\')===0){if(window.history.length>1){e.preventDefault();history.back();}}});</script></head><body>" + _app_shell_top(self.path) + body + _app_shell_bottom(self.path) + "</body></html>").encode()
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -2744,7 +2744,7 @@ class H(BaseHTTPRequestHandler):
                 _first5 = b""; _dl5 = time.time() + 12
                 while time.time() < _dl5 and not _first5:
                     _r5, _, _ = _sel5.select([_proc5.stdout], [], [], max(0, _dl5 - time.time()))
-                    if _r5: _first5 = _proc5.stdout.read(16384)
+                    if _r5: _first5 = _proc5.stdout.read(65536)
                     elif _proc5.poll() is not None: break
                 if not _first5:
                     try:
@@ -2759,7 +2759,7 @@ class H(BaseHTTPRequestHandler):
                         _first5 = b""; _dl5 = time.time() + 12
                         while _proc5 is not None and time.time() < _dl5 and not _first5:
                             _r5, _, _ = _sel5.select([_proc5.stdout], [], [], max(0, _dl5 - time.time()))
-                            if _r5: _first5 = _proc5.stdout.read(16384)
+                            if _r5: _first5 = _proc5.stdout.read(65536)
                             elif _proc5.poll() is not None: break
                 if not _first5:
                     try:
@@ -2776,7 +2776,7 @@ class H(BaseHTTPRequestHandler):
                         if _proc5.poll() is not None: break
                         if time.time() - _last5 > 20: break
                         continue
-                    _c5 = _proc5.stdout.read(16384)
+                    _c5 = _proc5.stdout.read(65536)
                     if not _c5: break
                     if not _vd_write5(_c5): break
                     _last5 = time.time()
@@ -2933,7 +2933,7 @@ class H(BaseHTTPRequestHandler):
                 while len(_pre) < 131072 and time.time() < _dl2:
                     _r, _, _ = _sel4.select([_s4], [], [], max(0, _dl2 - time.time()))
                     if not _r: break
-                    _c = _s4.recv(16384)
+                    _c = _s4.recv(65536)
                     if not _c: break
                     _pre += _c
                 _det4 = _pes_detect(bytes(_pre))
@@ -2958,17 +2958,18 @@ class H(BaseHTTPRequestHandler):
                     if not _r:
                         if time.time() - _last > 6: break
                         continue
-                    _c = _s4.recv(16384)
+                    _c = _s4.recv(65536)
                     if not _c: break
                     _in4 += _c
-                    _send4 = bytearray()
-                    while len(_in4) >= 188:
-                        _send4 += bytes(_in4[:188]); del _in4[:188]
+                    _send4 = bytearray(); _off4 = 0
+                    while len(_in4) - _off4 >= 188:
+                        _send4 += bytes(_in4[_off4:_off4+188]); _off4 += 188
                         _pkt4 += 1
                         if _pkt4 % 200 == 0:
                             _patcc4 = (_patcc4 + 1) & 0x0F; _pmtcc4 = (_pmtcc4 + 1) & 0x0F
                             _a4, _b4 = _ts_pat_pmt(_vpid4, _apid4, _vtype4, _atype4, _patcc4, _pmtcc4)
                             _send4 += _a4 + _b4
+                    if _off4: del _in4[:_off4]
                     if _send4:
                         if not _vd_write(bytes(_send4)): break
                         _last = time.time()
@@ -3379,7 +3380,7 @@ class H(BaseHTTPRequestHandler):
                      "if(!LVREF){st.textContent='مفيش قناة شغالة دلوقتي - اختار قناة من القايمة.';return;}"
                      "stopPlayerOnly();var url=lvUrl();st.textContent='بيشغّل: '+url;if(window._lvWatch)clearTimeout(window._lvWatch);window._lvWatch=setTimeout(function(){var vv=document.getElementById('lv');if(vv&&vv.videoWidth===0&&vv.buffered&&vv.buffered.length>0&&vv.buffered.end(0)>2){fetch('/live/transcode?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&probe=1').then(function(r){return r.json();}).then(function(p){if(p.ok){stopPlayerOnly();var v2=document.getElementById('lv');document.getElementById('lvplayer').textContent='المشغّل: تحويل (ffmpeg) - الفيديو ماتفكّش بالـ TS، بيحوّل لـ H.264...';document.getElementById('lvstat').textContent='الفيديو ماتفكّش بالـ TS - بيحوّل بـ ffmpeg ('+p.encoder+')...';if(window._lvWatch)clearTimeout(window._lvWatch);window._lvWatch=setTimeout(function(){var v3=document.getElementById('lv');if(v3&&v3.videoWidth===0){document.getElementById('lvstat').textContent='عدّى 12 ثانية ومفيش صورة - التحويل ممكن يكون تقيل على الرسيفر، أو جرّب تشغيل تاني.';}},12000+vidDly()*1000);v2.src='/live/transcode?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&vdly='+vidDly()+'&q='+(window.LVQ||'auto');v2.load();safePlay();startUnstick();}else if(p.vp8){stopPlayerOnly();var v2=document.getElementById('lv');document.getElementById('lvplayer').textContent='المشغّل: تحويل (ffmpeg VP8/WebM) - الفيديو ماتفكّش بالـ TS، بيحوّل لـ VP8...';document.getElementById('lvstat').textContent='الفيديو ماتفكّش بالـ TS - بيحوّل لـ VP8/WebM...';if(window._lvWatch)clearTimeout(window._lvWatch);window._lvWatch=setTimeout(function(){var v3=document.getElementById('lv');if(v3&&v3.videoWidth===0){document.getElementById('lvstat').textContent='عدّى 12 ثانية ومفيش صورة - التحويل ممكن يكون تقيل على الرسيفر، أو جرّب تشغيل تاني.';}},12000+vidDly()*1000);v2.src='/live/transcode?fmt=vp8&ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&q='+(window.LVQ||'auto');v2.load();safePlay();startUnstick();}else if(p.gst){stopPlayerOnly();var v2=document.getElementById('lv');document.getElementById('lvplayer').textContent='المشغّل: تحويل (gstreamer) - بيحوّل لـ '+(p.gst==='gst-h264'?'H.264':'VP8 (480p خفيف)')+'...';document.getElementById('lvstat').textContent='الفيديو ماتفكّش بالـ TS - بيحوّل بـ gstreamer (صورة بس)...';if(window._lvWatch)clearTimeout(window._lvWatch);window._lvWatch=setTimeout(function(){var v3=document.getElementById('lv');if(v3&&v3.videoWidth===0){document.getElementById('lvstat').textContent='عدّى 20 ثانية ومفيش صورة - التحويل ممكن يكون تقيل على الرسيفر، أو جرّب تشغيل تاني.';}},20000+vidDly()*1000);v2.src='/live/transcode?fmt='+p.gst+'&ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&q='+(window.LVQ||'auto');v2.load();safePlay();startUnstick();}else{document.getElementById('lvstat').textContent='عدّى 8 ثواني ومفيش صورة - دوس فحص البث تحت، أو جرّب تشغيل تاني.';}}).catch(function(){document.getElementById('lvstat').textContent='عدّى 8 ثواني ومفيش صورة - دوس فحص البث تحت، أو جرّب تشغيل تاني.';});}else if(vv&&vv.videoWidth===0){document.getElementById('lvstat').textContent='عدّى 8 ثواني ومفيش صورة - دوس فحص البث تحت، أو جرّب تشغيل تاني.';}},8000);""function checkStream(){var st=document.getElementById('lvdiag')||document.getElementById('lvstat');st.textContent='بيفحص البث من الرسيفر...';fetch('/live/check?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT).then(function(r){return r.json();}).then(function(j){if(j.reason==='standby'){st.textContent='الرسيفر في وضع الاستعداد (Standby) - صحّيه من الريموت الأول وبعدين جرّب تاني.';}else if(j.reason==='wrong-channel'){if(j.current_ref&&j.current_ref!==LVREF){LVREF=j.current_ref;st.textContent='الرسيفر قلب فعلا على قناة تانية - بحدّث البث عليها...';checkStream();}else{st.textContent='الرسيفر مش واقف على القناة دي - دوس على القناة من القايمة تحت عشان يقلب عليها.';}}else if(j.reason==='hevc'){st.textContent='القناة دي H.265 - المتصفح مش بيفكّها، المشغّل هيحوّلها بـ ffmpeg (لو متاح) أو دوس تشغيل تاني.';}else if(j.reason==='not-ts'){st.textContent='البيانات اللي واصلة مش MPEG-TS - سيرفر البث بيبعت حاجة غريبة، جرّب البورت التاني أو دوس تشغيل تاني.';}else if(j.reason==='stream-ok'){st.textContent='الرسيفر بيبعت بث ('+Math.round(j.bytes/1024)+' KB'+(j.codec?' - فيديو '+j.codec:'')+') - PAT:'+(j.pat?'موجود':'مش موجود')+' PMT:'+(j.pmt_pid>=0?j.pmt_pid:'-')+' أنواع:'+JSON.stringify(j.pmt_types||[])+' PIDs:'+JSON.stringify(j.pids||[]) +(j.remux?' - البث من غير PAT/PMT، السيرفر هيولّدها (remux).':'')+((j.codec==='MPEG-2'||j.codec==='H.265')?' - المتصفح مش بيفكّ '+j.codec+'، المشغّل هيحوّلها بـ ffmpeg.':' - المشكلة في مشغّل المتصفح: دوس تشغيل تاني.');}else if(j.reason==='no-data'){st.textContent='البورت بيرد بس من غير بيانات - التيونر مشغول أو القناة مش شغالة على التيونر.';}else{st.textContent='الرسيفر مش بيبعت بث على بورت 8001 - '+(j.error||'مش معروف')+' - جرّب تاني أو دوس تشغيل تاني.';}}).catch(function(e){st.textContent='الفحص فشل: '+e;});fetch('/version').then(function(r){return r.json();}).then(function(j){var e=document.getElementById('srvver');if(e)e.textContent='إصدار السيرفر: '+j.version;}).catch(function(){setTimeout(function(){fetch('/version').then(function(r){return r.json();}).then(function(j){var e=document.getElementById('srvver');if(e)e.textContent='إصدار السيرفر: '+j.version;}).catch(function(){var e=document.getElementById('srvver');if(e)e.textContent='إصدار السيرفر: مش معروف - أعد تشغيل السيرفر من Panel Control'; });},2000);});}"
                      "setTimeout(function(){var e=document.getElementById('srvver');if(e&&e.textContent.indexOf('بيتأكد')>-1){e.textContent='⚠️ السيرفر مش بيرد - اتأكد إن الرسيفر شغال وإنك على نفس الواي فاي، وبعدين حدّث الصفحة.';e.style.color='#ff5252';}},5000);setTimeout(checkStream,1500);"
-                     "if(window.mpegts&&mpegts.getFeatureList().mseLivePlayback){try{lvPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:url});lvPlayer.attachMediaElement(v);document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS (MSE) - بيحاول يشغّل...';lvPlayer.load();startUnstick();try{if(mpegts.Events&&mpegts.Events.ERROR){lvPlayer.on(mpegts.Events.ERROR,function(d){st.textContent='البث انقطع - الرسيفر مش بيبعت بيانات، شوف نتيجة الفحص تحت.';document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - حصل خطأ في التشغيل.';});try{if(mpegts.Events&&mpegts.Events.MEDIA_INFO){lvPlayer.on(mpegts.Events.MEDIA_INFO,function(mi){var m=mi||{};document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - لقى الفيديو: '+(m.videoCodec||'?')+(m.width?' '+m.width+'x'+m.height:'')+(m.audioCodec?' - صوت '+m.audioCodec:'');});}}catch(e){}try{if(mpegts.Events&&mpegts.Events.STATISTICS_INFO){lvPlayer.on(mpegts.Events.STATISTICS_INFO,function(s){if(s&&s.decodedFrames>0){document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - شغال، اتفك '+s.decodedFrames+' فريم';}});}}catch(e){}}}catch(e){}safePlay();return;}catch(e){st.textContent='MPEG-TS failed, trying native: '+e;}}"
+                     "if(window.mpegts&&mpegts.getFeatureList().mseLivePlayback){try{lvPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:url},{enableWorker:true,lazyLoad:true,lazyLoadMaxDuration:120,lazyLoadRecoverDuration:20,liveSync:true,liveBufferLatencyChasing:true,liveBufferLatencyChasingTolerance:3,liveBufferLatencyMinRemain:1.5,enableStashBuffer:true,stashInitialSize:786432});lvPlayer.attachMediaElement(v);document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS (MSE) - بيحاول يشغّل...';lvPlayer.load();startUnstick();try{if(mpegts.Events&&mpegts.Events.ERROR){lvPlayer.on(mpegts.Events.ERROR,function(d){st.textContent='البث انقطع - الرسيفر مش بيبعت بيانات، شوف نتيجة الفحص تحت.';document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - حصل خطأ في التشغيل.';});try{if(mpegts.Events&&mpegts.Events.MEDIA_INFO){lvPlayer.on(mpegts.Events.MEDIA_INFO,function(mi){var m=mi||{};document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - لقى الفيديو: '+(m.videoCodec||'?')+(m.width?' '+m.width+'x'+m.height:'')+(m.audioCodec?' - صوت '+m.audioCodec:'');});}}catch(e){}try{if(mpegts.Events&&mpegts.Events.STATISTICS_INFO){lvPlayer.on(mpegts.Events.STATISTICS_INFO,function(s){if(s&&s.decodedFrames>0){document.getElementById('lvplayer').textContent='المشغّل: MPEG-TS - شغال، اتفك '+s.decodedFrames+' فريم';}});}}catch(e){}}}catch(e){}safePlay();return;}catch(e){st.textContent='MPEG-TS failed, trying native: '+e;}}"
                      "st.textContent='مشغّل MPEG-TS متحملش (الموبايل مش واصل للإنترنت) - بيحوّل لـ H.264 بدل ما تفضل الشاشة سودا...';document.getElementById('lvplayer').textContent='المشغّل: تحويل (ffmpeg) - بديل MPEG-TS...';fetch('/live/transcode?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&probe=1').then(function(r){return r.json();}).then(function(p){if(p.ok){v.src='/live/transcode?ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&vdly='+vidDly()+'&q='+(window.LVQ||'auto');}else if(p.vp8){v.src='/live/transcode?fmt=vp8&ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&vdly='+vidDly()+'&q='+(window.LVQ||'auto');}else if(p.gst){v.src='/live/transcode?fmt='+p.gst+'&ref='+encodeURIComponent(LVREF)+'&port='+LVPORT+'&vdly='+vidDly()+'&q='+(window.LVQ||'auto');}else{st.textContent='المشغّل متحملش ومفيش محوّل على الرسيفر - ثبّت ffmpeg من صفحة Live TV أو وصّل الموبايل للإنترنت.';return;}v.load();safePlay();startUnstick();}).catch(function(){st.textContent='فحص التحويل فشل - السيرفر مش بيرد.';});}"
                      "var subsOn=false,subsTimer=null,subsQueue=[],subsBase=0,subsFetching=false;"
                      "function parseVTT(t){var out=[],blocks=t.split(/\\n\\s*\\n/);for(var i=0;i<blocks.length;i++){var lines=blocks[i].split('\\n');for(var j=0;j<lines.length;j++){var m=lines[j].match(/(\\d+):(\\d+):(\\d+)\\.(\\d+)\\s*-->\\s*(\\d+):(\\d+):(\\d+)\\.(\\d+)/);if(m){var st=(+m[1])*3600+(+m[2])*60+(+m[3])+(+m[4])/1000;var en=(+m[5])*3600+(+m[6])*60+(+m[7])+(+m[8])/1000;var txt=lines.slice(j+1).join('\\n').trim();if(txt&&txt.indexOf('NOTE')!==0)out.push({st:st,en:en,txt:txt});break;}}}return out;}"
@@ -11194,6 +11195,11 @@ upanel_fix_bootmenu() {
 # WebUI: disk/slots/size come from the form; ERASE already confirmed there,
 # so web_formatting_slots pipes ERASE in (same pattern as web_multiboot_prepare).
 # If step 1 is cancelled/failed, NOTHING else runs and there is NO reboot.
+upanel_force_reboot_bg() { # $1=delay seconds (default 3) - FORCED reboot that survives the web job ending: reboot -f -> /sbin/reboot -f -> init 6 -> shutdown -> sysrq
+  _RD="${1:-3}"
+  _RC="sleep $_RD; sync; reboot -f; sleep 3; /sbin/reboot -f; sleep 3; init 6; sleep 3; shutdown -r now; sleep 3; echo 1 > /proc/sys/kernel/sysrq 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null"
+  if command -v setsid >/dev/null 2>&1; then setsid nohup sh -c "$_RC" >/dev/null 2>&1 < /dev/null & else nohup sh -c "$_RC" >/dev/null 2>&1 < /dev/null & fi
+}
 upanel_formatting_slots() { # $1=disk $2=slots $3=size (all optional)
   show_banner; line; info "Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot"
   echo "WARNING: Step 1 ERASES the WHOLE chosen disk - backups, movies, everything."
@@ -11207,8 +11213,8 @@ upanel_formatting_slots() { # $1=disk $2=slots $3=size (all optional)
   upanel_recovery_names 4
   echo ""; echo "=== Step 4/4: Apply image names to all slots ==="
   upanel_recovery_names 2
-  echo ""; echo "[SLOTS-DISK-MANAGEMENT] All 4 steps done. Rebooting in 5 seconds..."
-  (sleep 5; sync; reboot) >/dev/null 2>&1 &
+  echo ""; echo "[SLOTS-DISK-MANAGEMENT] All 4 steps done. FORCED reboot in 3 seconds (reboot -f + fallbacks)..."
+  upanel_force_reboot_bg 3
   return 0
 }
 web_formatting_slots() { printf "ERASE\n\n" | upanel_formatting_slots "$1" "$2" "$3" "$4"; }
