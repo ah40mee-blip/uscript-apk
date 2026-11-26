@@ -8927,6 +8927,15 @@ upanel_boot_mount() {
   if [ -b "$_BROOTBP" ]; then case " $_CANDS " in *" $_BROOTBP "*) ;; *) _CANDS="$_BROOTBP $_CANDS";; esac; fi
   _FALLBACK=""
   for _CAND in $_CANDS; do
+    # V6.20 FIX (26 Nov): only vfat can be a BOOT partition. The old code tried
+    # EVERY partition (ext4 slots, exfat storage) - the fallback `mount -o ro`
+    # mounted exfat via FUSE, whose daemon printed "FUSE exfat 1.4.0 (libfuse2)"
+    # into the log, and briefly mounted a storage partition onto /boot. Skip
+    # slot partitions (LABEL=linuxN) and any known non-vfat filesystem.
+    _CT=$(blkid "$_CAND" 2>/dev/null | grep -o 'TYPE="[^"]*"' | cut -d'"' -f2)
+    _CL=$(blkid "$_CAND" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
+    case "$_CL" in linux*) continue;; esac
+    case "$_CT" in vfat|fat12|fat16|fat32|msdos|"") ;; *) continue;; esac
     _MERR=$(mount -t vfat -o ro "$_CAND" /boot 2>&1) || _MERR=$(mount -o ro "$_CAND" /boot 2>&1) || { echo "[BOOT-MOUNT] $_CAND: mount failed: $_MERR"; continue; }
     if grep -qs " /boot " /proc/mounts; then
       _OK=0
@@ -10838,11 +10847,15 @@ upanel_startup_fix_rootsubdir() { # $1 = STARTUP file
 # internal shared slot, root= = shared partition) is left alone.
 upanel_startup_delete_one() { # $1 = slot number, $2 = STARTUP file path
   _DN="$1"; _F="$2"; _BKDIR="/media/hdd/U-Panel/STARTUP-backup"
-  [ -f "$_F" ] || return 1
+  # V6.20 FIX (26 Nov): ALWAYS print a number. The old code did bare `return 1`
+  # with no output when the file was missing / root unreadable / LABEL mismatch,
+  # so the caller's _X came back EMPTY and `case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))` broke - and a
+  # polluted capture made `[ "$_D" -gt 0 ]` print `[: ...: integer expected`.
+  [ -f "$_F" ] || { echo 0; return 1; }
   _R=$(grep -oE 'root=/dev/[^ ]+' "$_F" 2>/dev/null | cut -d= -f2 | head -1)
-  [ -n "$_R" ] || return 1
+  [ -n "$_R" ] || { echo 0; return 1; }
   _RL=$(blkid "$_R" 2>/dev/null | grep -o 'LABEL="[^"]*"' | cut -d'"' -f2)
-  [ "$_RL" = "linux$_DN" ] || return 1
+  [ "$_RL" = "linux$_DN" ] || { echo 0; return 1; }
   mkdir -p "$_BKDIR" 2>/dev/null
   _BN=$(basename "$_F")
   [ -f "$_BKDIR/$_BN.orig" ] || cp "$_F" "$_BKDIR/$_BN.orig" 2>/dev/null
@@ -10857,16 +10870,16 @@ upanel_startup_delete_for_slot() { # $1 = slot number
   _RP=$(blkid 2>/dev/null | grep "LABEL=\"linux$_DN\"" | cut -d: -f1 | head -1)
   [ -n "$_RP" ] || { echo 0; return 1; }
   mount -o remount,rw /boot 2>/dev/null
-  _X=$(upanel_startup_delete_one "$_DN" "/boot/STARTUP_LINUX_$_DN"); _DEL=$((_DEL+_X))
+  _X=$(upanel_startup_delete_one "$_DN" "/boot/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
   for _BP in $(upanel_boot_partitions); do
     _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
     if [ -n "$_MP" ]; then
       [ "$_MP" = "/boot" ] && continue
-      _X=$(upanel_startup_delete_one "$_DN" "$_MP/STARTUP_LINUX_$_DN"); _DEL=$((_DEL+_X))
+      _X=$(upanel_startup_delete_one "$_DN" "$_MP/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
     else
       mkdir -p /tmp/upanel-push-boot
       if mount "$_BP" /tmp/upanel-push-boot 2>/dev/null; then
-        _X=$(upanel_startup_delete_one "$_DN" "/tmp/upanel-push-boot/STARTUP_LINUX_$_DN"); _DEL=$((_DEL+_X))
+        _X=$(upanel_startup_delete_one "$_DN" "/tmp/upanel-push-boot/STARTUP_LINUX_$_DN"); case "$_X" in ''|*[!0-9]*) _X=0;; esac; _DEL=$((_DEL+_X))
         umount /tmp/upanel-push-boot 2>/dev/null
       fi
     fi
@@ -10993,6 +11006,7 @@ upanel_recovery_names() {
         _NM=$(upanel_name "$_N")
         if [ "$_NM" = "Empty / Unknown" ]; then
           _D=$(upanel_startup_delete_for_slot "$_N")
+          case "$_D" in ''|*[!0-9]*) _D=0;; esac
           if [ "$_D" -gt 0 ]; then _HID=$((_HID+1)); echo "[RECOVERY-NAME] SLOT $_N is Empty - STARTUP removed from $_D place(s), hidden from Recovery."; else echo "[RECOVERY-NAME] SLOT $_N is Empty - no STARTUP file found (already hidden)."; fi
         else
           _KEPT=$((_KEPT+1))
@@ -11186,6 +11200,7 @@ upanel_restore_internal_slots() {
     _KB="${_KF%%|*}"; _KSRC="${_KF#*|}"
     _TK="/boot/$_KB"
     _DC=$(upanel_distribute_kernel "$_KB" "$_KSRC")
+    case "$_DC" in ''|*[!0-9]*) _DC=0;; esac
     [ "$_DC" -gt 0 ] && echo "[INTERNAL-RESTORE] SLOT $_N: kernel $_KB copied to $_DC BOOT partition(s) (was only on $_KSRC).";
     [ -f "/boot/STARTUP_LINUX_$_N" ] && [ ! -f "$_BKDIR/STARTUP_LINUX_$_N.sd" ] && cp "/boot/STARTUP_LINUX_$_N" "$_BKDIR/STARTUP_LINUX_$_N.sd" 2>/dev/null
     sed -e "s/$_TCS/$_N/g" "$_TPL" > "/boot/STARTUP_LINUX_$_N" && sed -i -e "s|root=[^ ]*|root=$_SH|" -e "s|rootsubdir=[^ ]*|rootsubdir=linuxrootfs$_N|" -e "s|kernel=[^ ]*|kernel=$_TK|" "/boot/STARTUP_LINUX_$_N"
