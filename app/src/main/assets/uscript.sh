@@ -3865,7 +3865,7 @@ class H(BaseHTTPRequestHandler):
                 _img = _names.get(_n, "Empty / Unknown")
                 body += "<div%s><b>%s - %s%s</b><br><a href='/multiboot/switch?slot=%d'>Switch to this slot + Reboot</a><a href='/multiboot/wipe?slot=%d'>Wipe this slot</a><a href='/multiboot/rename?slot=%d'>Rename this slot</a></div>" % (_cls, html.escape(_lbl), html.escape(_img), _here, _n, _n, _n)
             body += "<div class='sec'>SUB-ACTIONS - same as Terminal Boot Slot Manager</div>"
-            body += "<a href='/multiboot/prepare'>Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)</a><a href='/multiboot/sync'>Sync Slots to /boot - if prepared slots do NOT show in the Panel / Flash page (no format, safe)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
+            body += "<a href='/multiboot/formatting-slots'>Formatting Slots - ONE BUTTON: Partition + Sync + Restore internal + Hide empty + Names + Reboot</a><a href='/multiboot/fix-bootmenu'>Fix Bootmenu - 4 steps WITHOUT re-partition (Sync + Internal + Hide empty + Names)</a><a href='/multiboot/prepare'>Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)</a><a href='/multiboot/sync'>Sync Slots to /boot - if prepared slots do NOT show in the Panel / Flash page (no format, safe)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
             body += "<a href='/multiboot'>Back to Multiboot Manager</a><a href='/'>Back to Panel</a>"
             self.send_html(body); return
         if u.path in ("/tools", "/servers", "/iptv", "/streaming", "/picons", "/skin", "/setting", "/channellist", "/bouquet", "/transponder", "/image-update", "/backup-manager", "/backup-image", "/multiboot", "/epg-download", "/factory-reset"):
@@ -3885,7 +3885,7 @@ class H(BaseHTTPRequestHandler):
               "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control (mobile browser)", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
               "/backup-manager": ("Backup Manager - List / Cleanup / Rollback", "Exact items from Terminal Backup Manager.", [("1) List All Backups", "/run?action=backup-manager-list", ""), ("List / Download / Delete backups", "/backups", ""), ("2) Cleanup - Keep Last 3 Per Group", "/run?action=backup-manager-cleanup", ""), ("3) Rollback Files (Latest BeforeRestore)", "/run?action=backup-manager-rollback", ""), ("4) Rollback Plugins (Latest BeforeRestore)", "/run?action=backup-manager-rollback-plugins", ""), ("5) Change Backup Location - HDD", "/run?action=backup-location-hdd", ""), ("5) Change Backup Location - USB", "/run?action=backup-location-usb", "")]),
               "/backup-image": ("Backup Image", "Full Image backup - same as Terminal Backup Image.", [("Backup Image now", "/run?action=backup-image", ""), ("Download / Flash Image", "/images", "")]),
-              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("1) Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)", "/multiboot/prepare", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", ""), ("12d) Restore internal slots (rebuild STARTUP for internal slots)", "/multiboot/internal-restore", ""), ("R) Rename a slot", "/multiboot/rename", "")]),
+              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("Formatting Slots - ONE BUTTON: Partition + Sync + Restore internal + Hide empty + Names + Reboot", "/multiboot/formatting-slots", ""), ("Fix Bootmenu - 4 steps WITHOUT re-partition (Sync + Internal + Hide empty + Names)", "/multiboot/fix-bootmenu", ""), ("1) Prepare Disk for Multiboot - partition USB/HDD/SD into slots (ERASES the disk)", "/multiboot/prepare", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", ""), ("12d) Restore internal slots (rebuild STARTUP for internal slots)", "/multiboot/internal-restore", ""), ("R) Rename a slot", "/multiboot/rename", "")]),
             }
             _title, _desc, _items = _PAGES[u.path]
             body = "<h1>%s</h1><p class='small'>%s</p>" % (html.escape(_tr(_title) if _title in UI_TEXT else _title), html.escape(_desc))
@@ -4293,7 +4293,10 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/multiboot/internal-restore":
             ACTIONS["internal-restore"] = ("Multiboot - Restore internal slots", True, ["--web-internal-restore"])
             self.send_response(302); self.send_header("Location", "/run?action=internal-restore"); self.end_headers(); return
-        if u.path in ("/multiboot/switch", "/multiboot/wipe", "/multiboot/rename", "/multiboot/prepare", "/download-image/pin"):
+        if u.path == "/multiboot/fix-bootmenu":
+            ACTIONS["fix-bootmenu"] = ("Multiboot - Fix Bootmenu (one click)", True, ["--web-fix-bootmenu"])
+            self.send_response(302); self.send_header("Location", "/run?action=fix-bootmenu"); self.end_headers(); return
+        if u.path in ("/multiboot/switch", "/multiboot/wipe", "/multiboot/rename", "/multiboot/prepare", "/multiboot/formatting-slots", "/download-image/pin"):
             if u.path == "/multiboot/switch":
                 _slot=(q.get("slot") or [""])[0]
                 _cf=(q.get("confirm") or [""])[0]
@@ -4429,6 +4432,114 @@ class H(BaseHTTPRequestHandler):
                     "<label>Size per slot (GB):</label><select name='size'><option value='2'>2 GB</option><option value='3'>3 GB</option><option value='4' selected>4 GB</option><option value='6'>6 GB</option><option value='8'>8 GB</option></select>"
                     "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
                     "<button class='danger'>ERASE DISK + Create Slots</button></form><a href='/multiboot'>Back to Multiboot</a>")
+            elif u.path == "/multiboot/formatting-slots":
+                # V6.20 - DEVICE-AWARE: same entry, different option per family.
+                # Vu+ / Dreambox never get the partitioner form - they get their own option.
+                self._dbg("FORMATTING-SLOTS: entered handler")
+                _fam="hisilicon"
+                try:
+                    import re as _reF
+                    _mdl=open("/proc/stb/info/model").read().strip().lower() if True else ""
+                    _imgv=open("/etc/image-version").read().lower() if True else ""
+                    _hay=_mdl+" "+_imgv
+                    if "vu" in _hay or "vuplus" in _hay: _fam="vuplus"
+                    elif "dream" in _hay or "dm9" in _hay or "dm8" in _hay or "dm7" in _hay or "dm5" in _hay: _fam="dreambox"
+                    import os as _osF
+                    if _osF.path.exists("/etc/dreambox-version"): _fam="dreambox"
+                except Exception: pass
+                if _fam=="vuplus":
+                    body=("<h1>Multiboot on Vu+</h1><div class='card'><b>Vu+ does NOT use this partitioner</b> - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots, so partitioning a disk this way would only create slots it can never boot from. No disk will be touched.</div>"
+                    "<div class='card'><b>Option A - Vu+ 4K (Uno / Solo / Ultimo / Duo 4K, Zero 4K):</b><br>Hardware multiboot is already built in. The internal flash already has 4 slots (Duo 4K Lite: 8). Use: Menu &gt; Setup &gt; Flash image, pick a free slot, flash there. No disk partitioning needed.</div>"
+                    "<div class='card'><b>Option B - Vu+ NOT 4K (Solo2 / Duo2 / Solo SE / Zero / Solo / Duo / Ultimo):</b><br>No hardware multiboot. Use the <b>OpenMultiBoot</b> plugin: install it on the running image, let IT format the USB / HDD (folders, not slot partitions), then install images from inside the plugin.</div>"
+                    "<a href='/multiboot'>Back to Multiboot</a>")
+                    self.send_html(body); return
+                if _fam=="dreambox":
+                    body=("<h1>Multiboot on Dreambox</h1><div class='card'><b>Dreambox does NOT use this partitioner</b> - its bootloader cannot boot STARTUP_LINUX_N / linuxN slots, so partitioning a disk this way would only create slots it can never boot from. No disk will be touched.</div>"
+                    "<div class='card'><b>Option A - Dream One / Dream Two (DreamOS):</b><br>Use the DreamOS Recovery / Flash menu - multiboot via SD / USB is handled by the DreamOS image itself (Allan Turing / recovery multiboot). Do NOT partition the disk with this tool.</div>"
+                    "<div class='card'><b>Option B - DM800 / DM8000 / DM820 / DM7080 / DM520 / DM525:</b><br>Use the <b>MeoBoot</b> plugin (or Barry Allen on supported models): install it on the running image, let IT prepare the USB / CF / SD card, then install images from inside the plugin.</div>"
+                    "<a href='/multiboot'>Back to Multiboot</a>")
+                    self.send_html(body); return
+                self._dbg("FORMATTING-SLOTS: fam=%s" % _fam)
+                _disk=(q.get("disk") or [""])[0]; _slots=(q.get("slots") or [""])[0]; _size=(q.get("size") or [""])[0]; _cf=(q.get("confirm") or [""])[0]
+                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _cf not in ("ERASE", "erase", "e", "E"):
+                    # V6.20 - RE-PARTITION preview: disk chosen, ERASE not typed yet.
+                    # Show the disk's CURRENT layout (old slots, if any) so the user sees
+                    # exactly what will be erased, then ask for ERASE on the same page.
+                    _lay=""
+                    try:
+                        import subprocess as _sp2
+                        _out=_sp2.run(["blkid"], capture_output=True, text=True, timeout=10).stdout
+                        for _bl in _out.splitlines():
+                            if ("/dev/%s" % _disk) in _bl: _lay+=html.escape(_bl)+"<br>"
+                        if not _lay: _lay="(no partitions found - disk looks empty)"
+                    except Exception: _lay="(could not read current layout)"
+                    # V6.20 FIX: was "%" formatting with a literal width:100% in the
+                    # template -> TypeError -> empty reply (curl 52). Concatenation only.
+                    body=("<h1>Formatting Slots - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
+                    "<div class='card'><b>NEW layout:</b> p1 FAT32 512M BOOT + " + _slots + " slots x " + _size + "G ext4 (linux1..linux" + _slots + ")</div>" | " <div class='card'><b>Then, automatically:</b> Sync STARTUP files + Restore internal slots + Hide empty slots + Apply image names - then <b>REBOOT</b>.</div>"
+                    "<form method='get' action='/multiboot/formatting-slots'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'>"
+                    "<label>Type ERASE or e to erase /dev/" + _disk + " and format the slots + fix Bootmenu + reboot:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<button class='danger'>ERASE DISK + Format Slots + Fix Bootmenu + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
+                    self.send_html(body); return
+                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _cf in ("ERASE", "erase", "e", "E"):
+                    ACTIONS["formatting-slots-%s" % _disk] = ("Formatting Slots - /dev/%s (%s slots x %sG - ERASES DISK + Fix Bootmenu + Reboot)" % (_disk, _slots, _size), True, ["--web-formatting-slots", _disk, _slots, _size])
+                    self.send_response(302); self.send_header("Location", "/run?action=formatting-slots-%s" % _disk); self.end_headers(); return
+                _opts=""
+                try:
+                    import os as _os2
+                    _rootdev=open("/proc/mounts").read().splitlines()
+                    _rootdisk=""
+                    for _ml in _rootdev:
+                        _mp=_ml.split()
+                        if len(_mp)>=2 and _mp[1]=="/":
+                            import re as _re2
+                            _rs=_mp[0]
+                            if _rs=="/dev/root":
+                                try:
+                                    _cmd=open("/proc/cmdline").read()
+                                    _m2=_re2.search(r"root=/dev/([^ ]+)", _cmd); _rs="/dev/"+(_m2.group(1) if _m2 else "")
+                                except Exception: pass
+                            # same stripping as shell, via match (no sed/sub chains):
+                            # mmcblk0p23 -> mmcblk0, nvme0n1p2 -> nvme0n1, sda1 -> sda
+                            _mm=_re2.match(r"^/dev/(mmcblk[0-9]+|nvme[0-9]+n[0-9]+)", _rs)
+                            if _mm: _rootdisk=_mm.group(1)
+                            else:
+                                _mm2=_re2.match(r"^/dev/([a-z]+)", _rs); _rootdisk=_mm2.group(1) if _mm2 else ""
+                            break
+                    _di=0
+                    for _d in sorted(_os2.listdir("/sys/block")):
+                        try:
+                            # ANY external disk: USB HDD / USB flash / SD / memory card -
+                            # every block device except the root (internal flash) disk,
+                            # loop/ram/dm devices, and zero-size devices. No name filter.
+                            if _d.startswith("loop") or _d.startswith("ram") or _d.startswith("dm-") or _d.startswith("zram"): continue
+                            if "boot" in _d: continue  # eMMC boot areas (mmcblk0boot0/1) are not disks
+                            import os as _os3
+                            if _os3.path.exists("/sys/block/%s/partition" % _d): continue  # a partition, not a whole disk
+                            if _d==_rootdisk: continue
+                            try: _sz=int(open("/sys/block/%s/size"%_d).read().strip())*512//1048576
+                            except Exception: _sz=0
+                            if _sz<=0: continue
+                            _kind="External disk"
+                            try:
+                                if open("/sys/block/%s/removable"%_d).read().strip()=="1": _kind="Removable (USB flash / SD / memory card)"
+                            except Exception: pass
+                            if _d.startswith("mmcblk"): _kind="Memory card (SD / MMC)"
+                            elif _d.startswith("nvme"): _kind="NVMe / external SSD"
+                            _di+=1
+                            _opts+="<option value='%s'>%d - /dev/%s - %d MB - %s</option>" % (_d, _di, _d, _sz, _kind)
+                        except Exception: pass  # one bad disk must never kill the page/server
+                except Exception: pass
+                self._dbg("FORMATTING-SLOTS: disk scan done, opts=%d chars" % len(_opts))
+                if not _opts:
+                    body="<h1>Formatting Slots - ONE BUTTON</h1><div class='card'>No external disk found - plug a USB HDD / USB flash / SD / memory card first. The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
+                else:
+                    body=("<h1>Formatting Slots - ONE BUTTON</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + p2 EXTENDED + one ext4 logical partition per slot (linux1..linuxN, p5+). Up to 20 slots. After partitioning, the panel automatically runs: Sync + Restore internal + Hide empty + Apply names - then REBOOTS.</span></div>"
+                    "<form method='get' action='/multiboot/formatting-slots'><label>Disk (whole disk will be ERASED):</label><select name='disk'>" + _opts + "</select>"
+                    "<label>Slots (2-20):</label><select name='slots'>" + "".join("<option value='%d'%s>%d slots</option>" % (_n, " selected" if _n==4 else "", _n) for _n in range(2,21)) + "</select>"
+                    "<label>Size per slot (GB):</label><select name='size'><option value='2'>2 GB</option><option value='3'>3 GB</option><option value='4' selected>4 GB</option><option value='6'>6 GB</option><option value='8'>8 GB</option></select>"
+                    "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<button class='danger'>ERASE DISK + Format Slots + Fix Bootmenu + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
             elif u.path == "/download-image/pin":
                 _f=(q.get("file") or [""])[0]
                 if _f and "/" not in _f:
@@ -11089,6 +11200,54 @@ upanel_restore_internal_slots() {
   echo "[INTERNAL-RESTORE] Reboot to Recovery to see the restored internal slots. SD versions backed up in $_BKDIR (*.sd)."
 }
 
+# V6.20 FIX (26 Nov): ONE-CLICK Fix Bootmenu - the user should not have to
+# run Sync, then 12c, then 12d, then 12b by hand. One button runs the whole
+# chain: Sync STARTUPs -> restore internal slots -> hide empty -> apply names.
+# Safe: Hide-empty's delete_one refuses STARTUPs whose root= is not a
+# LABEL=linuxN partition, so the just-restored internal STARTUPs survive it.
+upanel_fix_bootmenu() {
+  show_banner; line; info "Fix Bootmenu - ONE CLICK: Sync + Restore internal + Hide empty + Names"
+  echo "No re-partition - nothing is erased. Your images stay."
+  echo "=== Step 1/4: Sync STARTUP files to every BOOT partition ==="
+  multiboot_sync_startup
+  echo ""; echo "=== Step 2/4: Restore internal slots ==="
+  upanel_restore_internal_slots
+  echo ""; echo "=== Step 3/4: Hide empty slots in Recovery ==="
+  upanel_recovery_names 4
+  echo ""; echo "=== Step 4/4: Apply image names to all slots ==="
+  upanel_recovery_names 2
+  echo ""; echo "[FIX-BOOTMENU] Done. Reboot to Recovery - all slots with images show, with names."
+}
+
+# V6.20 (26 Nov): Formatting Slots - ONE BUTTON that does all 5 things:
+# 1) partition the memory (Prepare Disk - ERASES the disk),
+# 2) Sync STARTUP files, 3) restore internal slots,
+# 4) hide empty slots, 5) apply image names - then REBOOT.
+# Telnet: prompts interactively (disk, slots, size, ERASE).
+# WebUI: disk/slots/size come from the form; ERASE already confirmed there,
+# so web_formatting_slots pipes ERASE in (same pattern as web_multiboot_prepare).
+# If step 1 is cancelled/failed, NOTHING else runs and there is NO reboot.
+upanel_formatting_slots() { # $1=disk $2=slots $3=size (all optional)
+  show_banner; line; info "Formatting Slots - ONE BUTTON: Partition + Sync + Restore internal + Hide empty + Names + Reboot"
+  echo "WARNING: Step 1 ERASES the WHOLE chosen disk - backups, movies, everything."
+  echo "=== Step 1/5: Partition memory (Prepare Disk) ==="
+  multiboot_prepare_disk "$1" "$2" "$3"
+  _FSRC=$?
+  if [ $_FSRC -ne 0 ]; then echo "[FORMATTING-SLOTS] Partition cancelled/failed - STOPPING. Nothing else ran, NO reboot."; return $_FSRC; fi
+  echo ""; echo "=== Step 2/5: Sync STARTUP files to every BOOT partition ==="
+  multiboot_sync_startup
+  echo ""; echo "=== Step 3/5: Restore internal slots ==="
+  upanel_restore_internal_slots
+  echo ""; echo "=== Step 4/5: Hide empty slots in Recovery ==="
+  upanel_recovery_names 4
+  echo ""; echo "=== Step 5/5: Apply image names to all slots ==="
+  upanel_recovery_names 2
+  echo ""; echo "[FORMATTING-SLOTS] All 5 steps done. Rebooting in 5 seconds..."
+  (sleep 5; sync; reboot) >/dev/null 2>&1 &
+  return 0
+}
+web_formatting_slots() { printf "ERASE\n\n" | upanel_formatting_slots "$1" "$2" "$3"; }
+
 boot_slot_manager() {
   echo "[BUILD V23.4 - all 14 slots + clean screen]"
   upanel_boot_mount
@@ -11117,6 +11276,8 @@ boot_slot_manager() {
     echo "  [10] Rollback guard (auto-return if new slot fails to boot)"
     echo "  [11] Wipe Slot - erase the image on a slot completely"
     echo "  [12] Recovery Slot Names - make image names show in Recovery (TEST)"
+    echo "  [13] Formatting Slots - ONE BUTTON: Partition + Sync + Restore internal + Hide empty + Names + Reboot"
+    echo "  [14] Fix Bootmenu - 4 steps WITHOUT re-partition (Sync + Internal + Hide empty + Names)"
     echo "  [R] Rename a slot"
     echo "  [0] Back"
     printf "Your choice: "; read _BC || return 0
@@ -11127,6 +11288,8 @@ boot_slot_manager() {
       11) upanel_wipe ;;
       12) upanel_recovery_names ;;
       1) multiboot_prepare_disk ;;
+      13) upanel_formatting_slots ;;
+      14) upanel_fix_bootmenu ;;
       R|r) upanel_rename_menu ;;
       3)
         printf "Switch to which SLOT number? (0 = cancel): "; read _TS
@@ -12517,11 +12680,13 @@ case "$1" in
   --web-multiboot-wipe) lock_startup_check; web_multiboot_wipe "$2"; exit $?;;
   --web-multiboot-rename) lock_startup_check; web_multiboot_rename "$2" "$3"; exit $?;;
     --web-multiboot-prepare) lock_startup_check; web_multiboot_prepare "$2" "$3" "$4"; exit $?;;
+    --web-formatting-slots) lock_startup_check; web_formatting_slots "$2" "$3" "$4"; exit $?;;
     --web-multiboot-sync) lock_startup_check; multiboot_sync_startup; exit $?;;
     --web-recovery-names-hide) lock_startup_check; upanel_recovery_names 4; exit $?;;
     --web-recovery-names-apply) lock_startup_check; upanel_recovery_names 2; exit $?;;
     --web-internal-check) lock_startup_check; upanel_internal_slots; exit $?;;
     --web-internal-restore) lock_startup_check; upanel_restore_internal_slots; exit $?;;
+    --web-fix-bootmenu) lock_startup_check; upanel_fix_bootmenu; exit $?;;
   --web-multiboot-restore) lock_startup_check; web_multiboot_restore; exit $?;;
   --web-smart-restore-part) lock_startup_check; web_smart_restore_part "$2"; exit $?;;
   --web-custom-restore-part) lock_startup_check; web_custom_restore_part "$2"; exit $?;;
