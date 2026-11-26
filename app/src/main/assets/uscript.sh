@@ -10909,6 +10909,17 @@ upanel_recovery_names() {
 # STARTUP filenames (STARTUP_LINUX_1..4) with the SD partition slots, so one
 # STARTUP file can only point to one of them - the SD files won the Sync
 # merge and the internal slots went invisible in the Bootmenu.
+# V6.20 FIX (26 Nov): image-version's FIRST line is box_type= (e.g.
+# box_type=novaler4kpro) - not the distro. Read distro= + version= instead,
+# so internal slots show "openatv 7.5" rather than all looking identical.
+upanel_imageversion_name() { # $1 = image-version file
+  _D=$(grep '^distro=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
+  _V=$(grep '^version=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
+  _B=$(grep '^build=' "$1" 2>/dev/null | cut -d= -f2 | tr -d '\r')
+  if [ -n "$_D" ]; then echo "$_D${_V:+ $_V}${_B:+ build $_B}" | sed 's/ *$//'; return 0; fi
+  head -1 "$1" 2>/dev/null | tr -d '\r' | sed 's/ *$//'
+}
+
 upanel_internal_shared_partition() {
   for _BP in $(blkid 2>/dev/null | grep 'TYPE="ext' | cut -d: -f1); do
     [ -b "$_BP" ] || continue
@@ -10943,7 +10954,7 @@ upanel_internal_slots() {
   if [ -n "$_MP" ]; then _SCAN="$_MP"; else mkdir -p /tmp/upanel-int-check; mount -o ro "$_SH" /tmp/upanel-int-check 2>/dev/null || { echo "[INTERNAL] Cannot mount $_SH."; return 0; }; _SCAN="/tmp/upanel-int-check"; _NEED=1; fi
   for _N in 1 2 3 4 5 6 7 8; do
     if [ -f "$_SCAN/linuxrootfs$_N/etc/image-version" ]; then
-      _NM=$(head -1 "$_SCAN/linuxrootfs$_N/etc/image-version" 2>/dev/null | tr -d '\r' | sed 's/ *$//')
+      _NM=$(upanel_imageversion_name "$_SCAN/linuxrootfs$_N/etc/image-version")
       echo "[INTERNAL] SLOT $_N: HAS IMAGE - $_NM (linuxrootfs$_N)"
       if [ -f "/boot/STARTUP_LINUX_$_N" ]; then
         _SUB=$(grep -oE "rootsubdir=[^ ']*" "/boot/STARTUP_LINUX_$_N" 2>/dev/null | head -1 | cut -d= -f2)
@@ -10953,8 +10964,8 @@ upanel_internal_slots() {
           _SDIMG=""
           if [ -n "$_RP" ]; then
             _SMP=$(awk -v _dev="$_RP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
-            if [ -n "$_SMP" ]; then [ -f "$_SMP/etc/image-version" ] && _SDIMG=$(head -1 "$_SMP/etc/image-version" | tr -d '\r')
-            else mkdir -p /tmp/upanel-int-check2; if mount -o ro "$_RP" /tmp/upanel-int-check2 2>/dev/null; then [ -f "/tmp/upanel-int-check2/etc/image-version" ] && _SDIMG=$(head -1 /tmp/upanel-int-check2/etc/image-version | tr -d '\r'); umount /tmp/upanel-int-check2 2>/dev/null; fi; fi
+            if [ -n "$_SMP" ]; then [ -f "$_SMP/etc/image-version" ] && _SDIMG=$(upanel_imageversion_name "$_SMP/etc/image-version")
+            else mkdir -p /tmp/upanel-int-check2; if mount -o ro "$_RP" /tmp/upanel-int-check2 2>/dev/null; then [ -f "/tmp/upanel-int-check2/etc/image-version" ] && _SDIMG=$(upanel_imageversion_name /tmp/upanel-int-check2/etc/image-version); umount /tmp/upanel-int-check2 2>/dev/null; fi; fi
           fi
           if [ -n "$_SDIMG" ]; then echo "  -> CONFLICT: STARTUP_LINUX_$_N points to the SD slot (image: $_SDIMG). Internal SLOT $_N is SHADOWED - one file cannot point to both."
           else echo "  -> SHADOWED: STARTUP_LINUX_$_N points to the (empty) SD slot. Run Restore internal slots to make internal SLOT $_N show."; fi
@@ -10967,6 +10978,62 @@ upanel_internal_slots() {
   [ "$_NEED" = "1" ] && umount /tmp/upanel-int-check 2>/dev/null
   rmdir /tmp/upanel-int-check /tmp/upanel-int-check2 2>/dev/null
   echo "[INTERNAL] Done."
+}
+
+# V6.20 FIX (26 Nov): kernel lookup across ALL BOOT partitions. The first
+# restore only checked the mounted /boot (= SD BOOT) - but the internal
+# slots' kernels (kernel2/3/4.bin) live on the INTERNAL BOOT (mmcblk0p4),
+# so every internal slot was skipped as "kernel missing". Now: search every
+# BOOT partition; if the kernel is found on another BOOT, copy it to /boot
+# and to every BOOT partition, so whichever BOOT the bootloader reads has it.
+# Prints: basename|source (source = mountpoint, or /dev/xxx when unmounted).
+upanel_kernel_for_slot() { # $1 = slot N, $2 = template slot, $3 = template kernel path
+  _KN="$1"; _KTCS="$2"; _KCK="$3"
+  _KCANDS=""
+  _KTK=$(echo "$_KCK" | sed "s/$_KTCS/$_KN/g")
+  [ "$_KTK" != "$_KCK" ] && _KCANDS="$_KCANDS $(basename "$_KTK")"
+  _KCANDS="$_KCANDS kernel$_KN.bin kernel_$_KN.bin uImage$_KN zImage$_KN Image$_KN kernel$_KN vmlinux$_KN"
+  for _CAND in $_KCANDS; do
+    for _BP in $(upanel_boot_partitions); do
+      _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
+      if [ -n "$_MP" ]; then
+        [ -f "$_MP/$_CAND" ] && { echo "$_CAND|$_MP"; return 0; }
+      else
+        mkdir -p /tmp/upanel-kernprobe
+        if mount -o ro "$_BP" /tmp/upanel-kernprobe 2>/dev/null; then
+          if [ -f "/tmp/upanel-kernprobe/$_CAND" ]; then umount /tmp/upanel-kernprobe 2>/dev/null; echo "$_CAND|$_BP"; return 0; fi
+          umount /tmp/upanel-kernprobe 2>/dev/null
+        fi
+      fi
+    done
+  done
+  rmdir /tmp/upanel-kernprobe 2>/dev/null
+  echo ""
+}
+
+# Copy a kernel file (by basename) to /boot and every BOOT partition that
+# lacks it. $2 = source mountpoint or /dev/xxx. Prints: number of copies.
+upanel_distribute_kernel() { # $1 = basename, $2 = source
+  _KB="$1"; _KSRC="$2"; _COPIED=0; _SRCFILE=""
+  case "$_KSRC" in /dev/*) mkdir -p /tmp/upanel-kernsrc; mount -o ro "$_KSRC" /tmp/upanel-kernsrc 2>/dev/null && _SRCFILE="/tmp/upanel-kernsrc/$_KB";; *) _SRCFILE="$_KSRC/$_KB";; esac
+  if [ -z "$_SRCFILE" ] || [ ! -f "$_SRCFILE" ]; then case "$_KSRC" in /dev/*) umount /tmp/upanel-kernsrc 2>/dev/null;; esac; rmdir /tmp/upanel-kernsrc 2>/dev/null; echo 0; return 1; fi
+  for _BP in $(upanel_boot_partitions); do
+    _MP=$(awk -v _dev="$_BP" '$1 == _dev {print $2; exit}' /proc/mounts 2>/dev/null)
+    if [ -n "$_MP" ]; then
+      [ "$_MP" = "/boot" ] && mount -o remount,rw /boot 2>/dev/null
+      if [ ! -f "$_MP/$_KB" ]; then cp "$_SRCFILE" "$_MP/$_KB" 2>/dev/null && _COPIED=$((_COPIED+1)); fi
+      [ "$_MP" = "/boot" ] && mount -o remount,ro /boot 2>/dev/null
+    else
+      mkdir -p /tmp/upanel-kerndst
+      if mount "$_BP" /tmp/upanel-kerndst 2>/dev/null; then
+        [ ! -f "/tmp/upanel-kerndst/$_KB" ] && cp "$_SRCFILE" "/tmp/upanel-kerndst/$_KB" 2>/dev/null && _COPIED=$((_COPIED+1))
+        sync; umount /tmp/upanel-kerndst 2>/dev/null
+      fi
+    fi
+  done
+  case "$_KSRC" in /dev/*) umount /tmp/upanel-kernsrc 2>/dev/null;; esac
+  rmdir /tmp/upanel-kernsrc /tmp/upanel-kerndst 2>/dev/null
+  echo "$_COPIED"
 }
 
 # Rebuild STARTUP files for internal slots that have images, but ONLY where
@@ -10989,7 +11056,7 @@ upanel_restore_internal_slots() {
   _RESTORED=0; _CONFLICT=0; _SKIP=0
   for _N in 1 2 3 4 5 6 7 8; do
     [ -f "$_SCAN/linuxrootfs$_N/etc/image-version" ] || continue
-    _NM=$(head -1 "$_SCAN/linuxrootfs$_N/etc/image-version" 2>/dev/null | tr -d '\r' | sed 's/ *$//')
+    _NM=$(upanel_imageversion_name "$_SCAN/linuxrootfs$_N/etc/image-version")
     if [ -f "/boot/STARTUP_LINUX_$_N" ]; then
       _SUB=$(grep -oE "rootsubdir=[^ ']*" "/boot/STARTUP_LINUX_$_N" 2>/dev/null | head -1 | cut -d= -f2)
       if [ "$_SUB" = "linuxrootfs$_N" ]; then echo "[INTERNAL-RESTORE] SLOT $_N already internal ($_NM) - skipping."; _SKIP=$((_SKIP+1)); continue; fi
@@ -11003,8 +11070,12 @@ upanel_restore_internal_slots() {
     fi
     if [ -n "$_SDIMG" ]; then echo "[INTERNAL-RESTORE] SLOT $_N CONFLICT: SD slot also has an image - NOT overwriting (one STARTUP file cannot point to both). Internal SLOT $_N stays hidden."; _CONFLICT=$((_CONFLICT+1)); continue; fi
     _CK=$(grep -oE 'kernel=[^ ]+' "$_TPL" 2>/dev/null | head -1 | sed 's/kernel=//')
-    _TK=$(echo "$_CK" | sed "s/$_TCS/$_N/g"); [ "$_TK" = "$_CK" ] && _TK="${_CK%.*}$_N.${_CK##*.}"
-    if [ -z "$_CK" ] || [ ! -e "$_TK" ]; then echo "[INTERNAL-RESTORE] SLOT $_N ($_NM): kernel file missing ($_TK) - cannot restore, the slot would not boot. Flash the internal slot instead."; _SKIP=$((_SKIP+1)); continue; fi
+    _KF=$(upanel_kernel_for_slot "$_N" "$_TCS" "$_CK")
+    if [ -z "$_KF" ]; then echo "[INTERNAL-RESTORE] SLOT $_N ($_NM): kernel file missing - no kernel$_N.bin / uImage$_N / zImage$_N on ANY BOOT partition. Cannot restore, the slot would not boot."; _SKIP=$((_SKIP+1)); continue; fi
+    _KB="${_KF%%|*}"; _KSRC="${_KF#*|}"
+    _TK="/boot/$_KB"
+    _DC=$(upanel_distribute_kernel "$_KB" "$_KSRC")
+    [ "$_DC" -gt 0 ] && echo "[INTERNAL-RESTORE] SLOT $_N: kernel $_KB copied to $_DC BOOT partition(s) (was only on $_KSRC).";
     [ -f "/boot/STARTUP_LINUX_$_N" ] && [ ! -f "$_BKDIR/STARTUP_LINUX_$_N.sd" ] && cp "/boot/STARTUP_LINUX_$_N" "$_BKDIR/STARTUP_LINUX_$_N.sd" 2>/dev/null
     sed -e "s/$_TCS/$_N/g" "$_TPL" > "/boot/STARTUP_LINUX_$_N" && sed -i -e "s|root=[^ ]*|root=$_SH|" -e "s|rootsubdir=[^ ]*|rootsubdir=linuxrootfs$_N|" -e "s|kernel=[^ ]*|kernel=$_TK|" "/boot/STARTUP_LINUX_$_N"
     _P=$(upanel_startup_push_to_boots "/boot/STARTUP_LINUX_$_N")
