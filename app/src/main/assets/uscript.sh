@@ -15,7 +15,16 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.26 - U-PANEL" | # V6.26 (26 Nov): MULTIBOOT - Sync/Push refuse 0-byte STARTUP files; Fix Bootmenu rebuilds missing/0-byte STARTUP_LINUX_N from real slot content + re-aligns active STARTUP with current slot on all BOOTs; Rollback restores to all BOOTs + refuses 0-byte backup. V6.21-V6.25 (Live TV, Arabic, flash unmount fix) kept intact.
+_SCRIPT_VERSION="V 6.40 - U-PANEL" | # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
+# V6.40 (27 Nov): Slots renumbered - NO overlap: SD 6..20 (15 slots, partition = slot-5), HDD/SSD 21..50 (30 slots, partition = slot-20). Slot 5 stays the hidden internal switcher. Cosmetic Khaled Ali / Novaler MultiBoot names removed from slot-function comments only - functional plugin folder / engine / conf names kept, slot functions unchanged.
+# V6.39 (27 Nov): WebUI /multiboot page gains the 5 missing buttons - Fix Bootmenu, Sync Slots to /boot, Recovery Slot Names Hide empty, Recovery Slot Names Apply to ALL, Check internal slots. Inject Plugin intentionally NOT added (per user).
+# V6.38 (27 Nov): Boot Slot Manager rebuilt - ONE main choice [1] Disk Slots Formatting with TWO sub-choices (SD / HDD-SSD). Numbering started at 6 on BOTH disks (SD 6..21, HDD/SSD 6..35, partition = slot-5) - superseded by V6.40. SD format = slots ONLY (no storage partition). HDD format = slots + storage split. Flash (in format flow AND standalone Install) now injects the plugin into the flashed slot, then forced reboot. Slot 5 stays protected.
+# V6.31 (26 Nov): MENUS TRIMMED: Inject Plugin to All Installed Slots, Fix Bootmenu and Sync removed from ALL menus (Telnet + WebUI) - they are redundant in the V6.30 fresh-format flow (Install/Switch already push STARTUP to all BOOTs, Format already writes plugin-format STARTUPs + conf). The functions stay in the file, just unlisted. "Partition & Format Disk" renamed to "Disk Slots Formatting" everywhere.
+# V6.30 (26 Nov): MULTIBOOT - PLUGIN LOGIC ON ANY DISK: the plugin engine now targets ANY disk (SD / HDD / SSD / NVMe-USB), not just mmcblk1. Slot size is an OPTION (2-8GB, default = plugin rule 3000MB if disk > 30GB else 1600MB). Storage can be SPLIT into several partitions (first one stays the plugin storage: LABEL MMC_STORAGE, /media/mmc). Disk is stored as DISK= in /etc/novaler_slots.conf, all plugin steps (format/install/wipe/inject/STARTUP) read it. Root-disk guard: the disk you booted from can NEVER be formatted.
+# V6.29 (26 Nov): MULTIBOOT - PLUGIN-EXACT: multiboot now follows the slot plugin engine step-for-step (format_sd / install_image / wipe_slot / reboot_slot / inject_all), menus renamed to the plugin menu, slots 6..25 (20 slots). SD layout is the PLUGIN layout (GPT, Slot 6 -> mmcblk1p1, storage last, no BOOT partition on SD). Slot 5 stays the hidden internal Enigma/Android switcher.
+# V6.28 (26 Nov): MULTIBOOT - SLOT NUMBERING FIX: external slots are now 6..25 (internal 1-4 images + hidden 5 = Enigma/Android switcher, NEVER an image slot). Panel Slot N (N>=6) -> partition p(N-1), LABEL linuxN. Slot 6 = first SD slot = old Slot 5 (mmcblk1p5, your openATV 8.1.0) - migration in Fix Bootmenu shifts old 5..24 -> 6..25 (STARTUP files + LABELs), root= unchanged because old Slot N root=pN == new Slot N+1 root=pN. Slot 5 is REFUSED in Switch/Flash/Wipe (Telnet + Web). Partitioner now creates linux6..linux(5+N).
+# V6.27 (26 Nov): MULTIBOOT - SD STARTUP files now written in the slot plugin format (bootcmd mmc read 0x3D5000 + kernel=/dev/mmcblk0p22) instead of the oe-alliance format (kernel=p19 -> always booted EGAMI). Fix Bootmenu converts existing SD STARTUPs to plugin format. Panel slot numbering KEPT (Panel Slot 5 = mmcblk1p5 = plugin Slot 10).
+# V6.26 (26 Nov): MULTIBOOT - Sync/Push refuse 0-byte STARTUP files; Fix Bootmenu rebuilds missing/0-byte STARTUP_LINUX_N from real slot content + re-aligns active STARTUP with current slot on all BOOTs; Rollback restores to all BOOTs + refuses 0-byte backup. V6.21-V6.25 (Live TV, Arabic, flash unmount fix) kept intact.
 # V6.24 (26 Nov): MULTIBOOT flash+switch: push STARTUP + kernel to EVERY BOOT partition (bootloader may read a different BOOT than mounted /boot) - flashed slot now shows in bootloader Multiboot + switch actually reaches it instead of Recovery | V6.23: LIVE TV TS watchdog auto-fallback | # V6.23 (26 Nov): LIVE TV - TS watchdog: drop buffered>2s gate, no-picture after 8s now ALWAYS falls back to transcode (ffmpeg H.264 -> VP8 -> gstreamer) instead of printing "press play again" | V4.99 behaviour: gstreamer VP8 used when ffmpeg has no H.264 | # V6.22 (26 Nov): ARABIC - bottom tabs + Panel Menu page + Settings "Panel Control" now go through _tr() | Panel Menu banner/section/item labels translated | "Back to U-Panel Setting" added to UI_TEXT | # V6.21 (26 Nov): FLASH/WIPE unmount fix - unmount ALL mountpoints + lazy fallback + verify before mkfs, no more "is mounted" mkfs failure | Live TV badge shows REAL version (was hardcoded V6.09) | Slots disk management FORCED reboot (reboot -f chain) | Back = previous page | Live TV player: worker + live-sync chase, 64KB pumps.
 # V6.20: THEME GROUPS RE-ORGANIZED + NEW Black & Navy themes, premium grouped cards.
 # V6.20: FONTS PER LANGUAGE - EN/AR/FR font lists filtered by current PANEL_LANG in Panel UI Font page + Theme setting.
@@ -1104,6 +1113,9 @@ PANEL_LANGS = {
 UI_TEXT = {
   "Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot": ("Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot", "إدارة ديسك السلوتس - زرار واحد: تقسيم + تخزين + مزامنة + إخفاء الفاضي + أسماء + ريبوت", "Gestion disque des slots - UN BOUTON : partition + stockage + synchro + masquer les vides + noms + redémarrage"),
   "Disk Setup": ("Disk Setup", "تجهيز الديسك", "Configuration du disque"),
+  "Disk Slots Formatting": ("Disk Slots Formatting", "تنسيق سلوتات القرص", "Formatage des slots du disque"),
+  "SD / Memory Card": ("SD / Memory Card", "كارت الميموري SD", "Carte SD / mémoire"),
+  "HDD / SSD": ("HDD / SSD", "هارد HDD / SSD", "HDD / SSD"),
   "Slots": ("Slots", "السلوتس", "Slots"),
   "Images": ("Images", "الصور", "Images"),
   "Protection": ("Protection", "الحماية", "Protection"),
@@ -4092,7 +4104,7 @@ class H(BaseHTTPRequestHandler):
                 _img = _names.get(_n, "Empty / Unknown")
                 body += "<div%s><b>%s - %s%s</b><br><a href='/multiboot/switch?slot=%d'>Switch to this slot + Reboot</a><a href='/multiboot/wipe?slot=%d'>Wipe this slot</a><a href='/multiboot/rename?slot=%d'>Rename this slot</a></div>" % (_cls, html.escape(_lbl), html.escape(_img), _here, _n, _n, _n)
             body += "<div class='sec'>SUB-ACTIONS - same as Terminal Boot Slot Manager</div>"
-            body += "<a href='/multiboot/slots-disk-management'>Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot</a><a href='/multiboot/fix-bootmenu'>Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)</a><a href='/multiboot/sync'>Sync Slots to /boot - if prepared slots do NOT show in the Panel / Flash page (no format, safe)</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Switch Slot + Reboot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Flash Image to Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe'>Wipe Slot</a><a href='/multiboot/rename'>Rename a slot</a>"
+            body += "<a href='/multiboot/slots-disk-management'>Disk Slots Formatting</a><a href='/multiboot/slots'>Show Slots (refresh)</a><a href='/multiboot/switch'>Reboot to Selected Slot</a><a href='/run?action=multiboot-backup'>Backup Current Slot</a><a href='/run?action=multiboot-restore'>Restore to Slot (LATEST backup to CURRENT slot)</a><a href='/run?action=multiboot-diagnose'>Diagnose Slots</a><a href='/run?action=multiboot-probe'>Test Switch (no reboot)</a><a href='/images'>Install Image to Selected Slot</a><a href='/download-image'>Download Image from Internet</a><a href='/run?action=multiboot-rollback'>Rollback guard (status / disarm)</a><a href='/multiboot/wipe-slots'>Wipe Slots</a><a href='/multiboot/rename'>Rename a slot</a><a href='/run?action=fix-bootmenu'>Fix Bootmenu (one click)</a><a href='/run?action=multiboot-sync'>Sync Slots to /boot</a><a href='/multiboot/recovery-hide'>Recovery Slot Names - Hide empty slots</a><a href='/multiboot/recovery-apply'>Recovery Slot Names - Apply names to ALL slots</a><a href='/multiboot/internal-check'>Check internal slots</a>"
             body += "<a href='/multiboot'>Back to Multiboot Manager</a><a href='/'>Back to Panel</a>"
             self.send_html(body); return
         if u.path in ("/tools", "/servers", "/iptv", "/streaming", "/picons", "/skin", "/setting", "/channellist", "/bouquet", "/transponder", "/image-update", "/backup-manager", "/backup-image", "/multiboot", "/epg-download", "/factory-reset"):
@@ -4112,7 +4124,7 @@ class H(BaseHTTPRequestHandler):
               "/setting": ("U-Panel Setting", "Same items as Terminal U-Panel Setting.", [("1) Device Setting", "/setting/device", ""), ("2) Lock By Mac", "/setting/mac", ""), ("3) Owner PIN", "/setting/pin-note", ""), ("4) Self-Test", "/run?action=self-test", ""), ("5) Panel Control", "/setting/web", ""), ("6) Theme setting", "/setting/theme-setting", ""), ("7) Language setting", "/setting/language", "")]),
               "/backup-manager": ("Backup Manager - List / Cleanup / Rollback", "Exact items from Terminal Backup Manager.", [("1) List All Backups", "/run?action=backup-manager-list", ""), ("List / Download / Delete backups", "/backups", ""), ("2) Cleanup - Keep Last 3 Per Group", "/run?action=backup-manager-cleanup", ""), ("3) Rollback Files (Latest BeforeRestore)", "/run?action=backup-manager-rollback", ""), ("4) Rollback Plugins (Latest BeforeRestore)", "/run?action=backup-manager-rollback-plugins", ""), ("5) Change Backup Location - HDD", "/run?action=backup-location-hdd", ""), ("5) Change Backup Location - USB", "/run?action=backup-location-usb", "")]),
               "/backup-image": ("Backup Image", "Full Image backup - same as Terminal Backup Image.", [("Backup Image now", "/run?action=backup-image", ""), ("Download / Flash Image", "/images", "")]),
-              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("## Disk Setup", "", ""), ("Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot", "/multiboot/slots-disk-management", ""), ("Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)", "/multiboot/fix-bootmenu", ""), ("1b) Sync Slots to /boot - prepared slots not showing (no format, safe)", "/multiboot/sync", ""), ("## Slots", "", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Switch Slot + Reboot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("R) Rename a slot", "/multiboot/rename", ""), ("## Images", "", ""), ("8) Flash Image to Slot", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("## Protection", "", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("11) Wipe Slot", "/multiboot/wipe", ""), ("## Recovery", "", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", "")]),
+              "/multiboot": ("Boot Slot Manager", "Exact items from Terminal Boot Slot Manager. Show Slots opens the Panel UI slots list (current slot + image per slot) - NOT Receiver Status, NOT shell.", [("Disk Slots Formatting", "/multiboot/slots-disk-management", ""), ("## Slots", "", ""), ("2) Show Slots", "/multiboot/slots", ""), ("3) Reboot to Selected Slot", "/multiboot/switch", ""), ("4) Backup Current Slot", "/run?action=multiboot-backup", ""), ("5) Restore to Slot (LATEST backup to CURRENT slot)", "/multiboot/restore", ""), ("6) Diagnose Slots", "/run?action=multiboot-diagnose", ""), ("7) Test Switch (no reboot)", "/run?action=multiboot-probe", ""), ("R) Rename a slot", "/multiboot/rename", ""), ("Wipe Slots", "/multiboot/wipe-slots", ""), ("10) Rollback guard (status / disarm)", "/run?action=multiboot-rollback", ""), ("## Images", "", ""), ("8) Install Image to Selected Slot (plugin install_image)", "/images", ""), ("9) Download Image from Internet", "/download-image", ""), ("## Recovery", "", ""), ("12a) Recovery Slot Names - Hide empty slots in Recovery", "/multiboot/recovery-hide", ""), ("12b) Recovery Slot Names - Apply names to ALL slots", "/multiboot/recovery-apply", ""), ("12c) Check internal slots (shared partition)", "/multiboot/internal-check", "")]),
             }
             _title, _desc, _items = _PAGES[u.path]
             body = "<h1>%s</h1><p class='small'>%s</p>" % (html.escape(_tr(_title) if _title in UI_TEXT else _title), html.escape(_desc))
@@ -4521,6 +4533,9 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/multiboot/internal-check":
             ACTIONS["internal-check"] = ("Multiboot - Check internal slots", True, ["--web-internal-check"])
             self.send_response(302); self.send_header("Location", "/run?action=internal-check"); self.end_headers(); return
+        if u.path == "/multiboot/inject-all":
+            ACTIONS["inject-all"] = ("Multiboot - Inject Plugin to All Installed Slots (plugin inject_all)", True, ["--web-inject-all"])
+            self.send_response(302); self.send_header("Location", "/run?action=inject-all"); self.end_headers(); return
         if u.path == "/multiboot/fix-bootmenu":
             ACTIONS["fix-bootmenu"] = ("Multiboot - Fix Bootmenu (one click)", True, ["--web-fix-bootmenu"])
             self.send_response(302); self.send_header("Location", "/run?action=fix-bootmenu"); self.end_headers(); return
@@ -4528,6 +4543,8 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/multiboot/switch":
                 _slot=(q.get("slot") or [""])[0]
                 _cf=(q.get("confirm") or [""])[0]
+                if _slot == "5":
+                    self.send_html("<h1>Slot 5 is protected</h1><div class='card'>SLOT 5 is the hidden internal Enigma/Android switcher, not an image slot. External slots start at 6 - your old Slot 5 image is now Slot 6. Reformat with Disk Slots Formatting if the card still uses the old layout.</div><a href='/multiboot/slots'>Back to slots</a>", code=400); return
                 if _slot.isdigit() and _cf == "1":
                     if int(_slot) not in multiboot_slots() or str(_slot) == current_slot():
                         self.send_html("<h1>Bad slot</h1><div class='card'>Pick a real slot - not the one you are running on.</div><a href='/multiboot/slots'>Back to slots</a>", code=400); return
@@ -4546,6 +4563,12 @@ class H(BaseHTTPRequestHandler):
                     ACTIONS["multiboot-wipe-%s" % _slot] = ("Multiboot - Wipe SLOT %s" % _slot, True, ["--web-multiboot-wipe", _slot])
                     self.send_response(302); self.send_header("Location", "/run?action=multiboot-wipe-%s" % _slot); self.end_headers(); return
                 body = "<h1>Wipe Slot</h1><p class='small'>Erase the image on a slot completely - the slot stays Empty. Current slot can NEVER be wiped.</p><form method='get' action='/multiboot/wipe'><input name='slot' placeholder='Slot number' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>Wipe Slot</button></form><a href='/multiboot'>Back to Multiboot</a>"
+            elif u.path == "/multiboot/wipe-slots":
+                _slots=(q.get("slots") or [""])[0]
+                if _slots:
+                    ACTIONS["multiboot-wipe-slots"] = ("Multiboot - Wipe Slots %s" % _slots, True, ["--web-multiboot-wipe-slots", _slots])
+                    self.send_response(302); self.send_header("Location", "/run?action=multiboot-wipe-slots"); self.end_headers(); return
+                body = "<h1>Wipe Slots</h1><p class='small'>Erase images from one or more slots - every slot stays Empty. Current slot and Slot 5 can NEVER be wiped.</p><form method='get' action='/multiboot/wipe-slots'><input name='slots' placeholder='e.g. 7 8 9 or ALL' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button class='danger'>Wipe Slots</button></form><a href='/multiboot'>Back to Multiboot</a>"
             elif u.path == "/multiboot/rename":
                 _slot=(q.get("slot") or [""])[0]; _label=(q.get("label") or [""])[0]
                 if _slot.isdigit() and _label:
@@ -4581,22 +4604,35 @@ class H(BaseHTTPRequestHandler):
                     self.send_html(body); return
                 self._dbg("FORMATTING-SLOTS: fam=%s" % _fam)
                 _disk=(q.get("disk") or [""])[0]; _slots=(q.get("slots") or [""])[0]; _size=(q.get("size") or [""])[0]; _cf=(q.get("confirm") or [""])[0]
-                _sc=(q.get("storage") or ["0"])[0]; _ss=[(q.get("s%d"%_k) or ["0"])[0] for _k in range(1,5)]
+                _flash_img=(q.get("flash_img") or [""])[0]; _flash_slot=(q.get("flash_slot") or [""])[0]
+                _fkind=(q.get("kind") or [""])[0]
+                if _fkind not in ("sd","hdd"):
+                    body=("<h1>Disk Slots Formatting</h1><div class='card'><b>Choose what to format:</b><br><span class='small'>SD follows the memory plugin logic - slots ONLY, no storage partition. HDD/SSD follows the HDD plugin logic - slots 21..50 + storage split.</span></div>"
+                    "<a href='/multiboot/slots-disk-management?kind=sd'>SD / Memory Card - slots only (Slot 6..20)</a>"
+                    "<a href='/multiboot/slots-disk-management?kind=hdd'>HDD / SSD - slots + storage split (Slot 21..50)</a>"
+                    "<a href='/multiboot'>Back to Multiboot</a>")
+                    self.send_html(body); return
+                _flash_ok=(not _flash_img) or (_flash_slot.isdigit() and ((6 <= int(_flash_slot) <= 20) if _fkind=="sd" else (21 <= int(_flash_slot) <= 50)))
                 _spec=""; _stor_ok=True; _stor_txt=""
-                if not _sc.isdigit() or not 0 <= int(_sc) <= 4: _stor_ok=False
-                else:
-                    _sc=int(_sc)
-                    if _sc>0:
+                if _fkind=="hdd":
+                    _sc=(q.get("storage") or ["1"])[0]; _ss=[(q.get("s%d"%_k) or ["0"])[0] for _k in range(1,5)]
+                    if not _sc.isdigit() or not 1 <= int(_sc) <= 4: _stor_ok=False
+                    else:
+                        _sc=int(_sc)
                         for _k in range(1,_sc):
                             if not _ss[_k-1].isdigit() or int(_ss[_k-1])<1: _stor_ok=False
                         _spec=",".join(_ss[:_sc-1]+["0"]) if _sc>1 else "0"
                         _parts=[]
                         for _k in range(1,_sc+1):
-                            _lbl2="STORAGE" if _k==1 else "STORAGE%d"%_k
+                            _lbl2="HDD_STORAGE" if _k==1 else "HDD_STORAGE%d"%_k
                             if _k<_sc: _parts.append("%s %sG"%(_lbl2,_ss[_k-1]))
                             else: _parts.append("%s (rest)"%_lbl2)
                         _stor_txt=" + "+" + ".join(_parts)
-                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf not in ("ERASE", "erase", "e", "E"):
+                if _fkind=="sd":
+                    _new_layout="GPT - " + _slots + " slots x " + _size + "G ext4 (Slot 6 = partition 1 ... Slot " + str(int(_slots) + 5) + " = partition " + _slots + ") - SLOTS ONLY, no storage partition"
+                else:
+                    _new_layout="GPT - " + _slots + " slots x " + _size + "G ext4 (Slot 21 = partition 1 ... Slot " + str(int(_slots) + 20) + " = partition " + _slots + ")" + _stor_txt
+                if _disk and _slots.isdigit() and (2 <= int(_slots) <= (15 if _fkind=="sd" else 30)) and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf not in ("ERASE", "erase", "e", "E"):
                     # V6.20 - RE-PARTITION preview: disk chosen, ERASE not typed yet.
                     # Show the disk's CURRENT layout (old slots, if any) so the user sees
                     # exactly what will be erased, then ask for ERASE on the same page.
@@ -4610,14 +4646,14 @@ class H(BaseHTTPRequestHandler):
                     except Exception: _lay="(could not read current layout)"
                     # V6.20 FIX: was "%" formatting with a literal width:100% in the
                     # template -> TypeError -> empty reply (curl 52). Concatenation only.
-                    body=("<h1>Slots disk management - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
-                    "<div class='card'><b>NEW layout:</b> p1 FAT32 512M BOOT + " + _slots + " slots x " + _size + "G ext4 (linux5..linux" + str(_slots + 4) + ")" + _stor_txt + "</div>" | " <div class='card'><b>Then, automatically:</b> Sync STARTUP files + Hide empty slots + Apply image names - then <b>REBOOT</b>.</div>"
-                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'><input type='hidden' name='storage' value='" + str(_sc) + "'><input type='hidden' name='s1' value='" + _ss[0] + "'><input type='hidden' name='s2' value='" + _ss[1] + "'><input type='hidden' name='s3' value='" + _ss[2] + "'><input type='hidden' name='s4' value='" + _ss[3] + "'>"
-                    "<label>Type ERASE or e to erase /dev/" + _disk + " and run Slots disk management + reboot:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Slots disk management + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
+                    body=("<h1>Disk Slots Formatting - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
+                    "<div class='card'><b>NEW layout:</b> " + _new_layout + "</div>" + ("<div class='card'><b>After format:</b> flash " + _flash_img + " to SLOT " + _flash_slot + ", then <b>FORCED reboot (reboot -f)</b>.</div>" if _flash_img and _flash_ok else "<div class='card'><b>After format:</b> no flash - <b>REBOOT</b> in 5 seconds (plugin format_sd).</div>") +
+                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='kind' value='" + _fkind + "'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'><input type='hidden' name='storage' value='" + str(_sc) + "'><input type='hidden' name='s1' value='" + _ss[0] + "'><input type='hidden' name='s2' value='" + _ss[1] + "'><input type='hidden' name='s3' value='" + _ss[2] + "'><input type='hidden' name='s4' value='" + _ss[3] + "'><input type='hidden' name='flash_img' value='" + _flash_img + "'><input type='hidden' name='flash_slot' value='" + _flash_slot + "'>"
+                    "<label>Type ERASE or e to erase /dev/" + _disk + " and run Disk Slots Formatting + reboot:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<button class='danger'>ERASE DISK + Disk Slots Formatting + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
-                if _disk and _slots.isdigit() and 2 <= int(_slots) <= 20 and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf in ("ERASE", "erase", "e", "E"):
-                    ACTIONS["formatting-slots-%s" % _disk] = ("Slots disk management - /dev/%s (%s slots x %sG%s - ERASES DISK + Fix Bootmenu + Reboot)" % (_disk, _slots, _size, _stor_txt), True, ["--web-formatting-slots", _disk, _slots, _size, _spec])
+                if _disk and _slots.isdigit() and (2 <= int(_slots) <= (15 if _fkind=="sd" else 30)) and _size in ("2","3","4","5","6","7","8") and _stor_ok and _flash_ok and _cf in ("ERASE", "erase", "e", "E"):
+                    ACTIONS["formatting-slots-%s" % _disk] = ("Disk Slots Formatting - %s - /dev/%s (%s slots x %sG%s - ERASES DISK + Reboot%s)" % ("SD" if _fkind=="sd" else "HDD/SSD", _disk, _slots, _size, _stor_txt, (" + Flash " + _flash_img + " to SLOT " + _flash_slot + " + FORCED Reboot") if _flash_img else ""), True, ["--web-formatting-slots", _disk, _slots, _size, _spec, _flash_img, _flash_slot, _fkind])
                     self.send_response(302); self.send_header("Location", "/run?action=formatting-slots-%s" % _disk); self.end_headers(); return
                 _opts=""
                 try:
@@ -4652,6 +4688,8 @@ class H(BaseHTTPRequestHandler):
                             import os as _os3
                             if _os3.path.exists("/sys/block/%s/partition" % _d): continue  # a partition, not a whole disk
                             if _d==_rootdisk: continue
+                            if _fkind=="sd" and not _d.startswith("mmcblk"): continue
+                            if _fkind=="hdd" and _d.startswith("mmcblk"): continue
                             try: _sz=int(open("/sys/block/%s/size"%_d).read().strip())*512//1048576
                             except Exception: _sz=0
                             if _sz<=0: continue
@@ -4666,21 +4704,30 @@ class H(BaseHTTPRequestHandler):
                         except Exception: pass  # one bad disk must never kill the page/server
                 except Exception: pass
                 self._dbg("SLOTS-DISK-MANAGEMENT: disk scan done, opts=%d chars" % len(_opts))
+                _zip_opts=""
+                try:
+                    import glob as _glob2
+                    for _zp in sorted(_glob2.glob("/media/hdd/*.zip") + _glob2.glob("/media/usb/*.zip") + _glob2.glob("/media/mmc/*.zip")):
+                        _zip_opts += "<option value='%s'>%s</option>" % (_zp, _zp)
+                except Exception: pass
                 if not _opts:
-                    body="<h1>Slots disk management - ONE BUTTON</h1><div class='card'>No external disk found - plug a USB HDD / USB flash / SD / memory card first. The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
+                    body="<h1>Disk Slots Formatting</h1><div class='card'>" + ("No SD / memory card found - plug a memory card first." if _fkind=="sd" else "No HDD / SSD found - plug a USB / SATA HDD or SSD first.") + " The disk the receiver booted from is never offered.</div><a href='/multiboot'>Back to Multiboot</a>"
                 else:
-                    body=("<h1>Slots disk management - ONE BUTTON</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. Layout: p1 FAT32 512M BOOT (STARTUP files) + p2 EXTENDED + one ext4 logical partition per slot (linux5..linux(4+N), p5+) + optional STORAGE partitions from the remaining space (last one takes the rest). Up to 20 slots (numbered 5..24 - 1-4 reserved for the internal flash). After partitioning, the panel automatically runs: Sync + Hide empty + Apply names - then REBOOTS.</span></div>"
-                    "<form method='get' action='/multiboot/slots-disk-management'><label>Disk (whole disk will be ERASED):</label><select name='disk'>" + _opts + "</select>"
-                    "<label>Slots (2-20):</label><select name='slots'>" + "".join("<option value='%d'%s>%d slots</option>" % (_n, " selected" if _n==4 else "", _n) for _n in range(2,21)) + "</select>"
+                    body=("<h1>" + ("Disk Slots Formatting - SD / Memory Card" if _fkind=="sd" else "Disk Slots Formatting - HDD / SSD") + "</h1><div class='card'><b>WARNING - ALL DATA ON THE CHOSEN DISK WILL BE ERASED.</b><br><span class='small'>The receiver's own flash disk is never listed here. " + ("SD layout: GPT - Slot 6 = partition 1, Slot 7 = partition 2, ... Slot 20 = partition 15. SLOTS ONLY - no storage partition, the rest of the card stays unpartitioned." if _fkind=="sd" else "HDD layout: GPT - Slot 21 = partition 1, Slot 22 = partition 2, ... Slot 50 = partition 30. Slots + storage split (HDD_STORAGE on /media/hdd2).") + "</span></div>"
+                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='kind' value='" + _fkind + "'><label>Disk (whole disk will be ERASED):</label><select name='disk'>" + _opts + "</select>"
+                    "<label>Slots (" + ("2-15" if _fkind=="sd" else "2-30") + "):</label><select name='slots'>" + "".join("<option value='%d'%s>%d slots</option>" % (_n, " selected" if _n==4 else "", _n) for _n in (range(2,16) if _fkind=="sd" else range(2,31))) + "</select>"
                     "<label>Size per slot (GB):</label><select name='size'><option value='2'>2 GB</option><option value='3'>3 GB</option><option value='4' selected>4 GB</option><option value='6'>6 GB</option><option value='8'>8 GB</option></select>"
-                    "<label>Storage partitions after slots (0 = no storage):</label><select name='storage'><option value='0' selected>0 - No storage</option><option value='1'>1 storage partition</option><option value='2'>2 storage partitions</option><option value='3'>3 storage partitions</option><option value='4'>4 storage partitions</option></select>"
-                    "<label>Size of STORAGE partition (GB, min 1):</label><input name='s1' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE2 partition (GB, min 1):</label><input name='s2' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE3 partition (GB, min 1):</label><input name='s3' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<label>Size of STORAGE4 partition (GB, min 1):</label><input name='s4' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<div class='card'><b>Storage rule:</b> enter a size for every storage partition EXCEPT the last one - the last one always takes the rest of the disk. Each size min 1 GB.</div>"
+                    + ("<div class='card'><b>SD = SLOTS ONLY:</b> no storage partition is created - the rest of the card stays unpartitioned.</div>" if _fkind=="sd" else ("<label>Storage partitions after slots:</label><select name='storage'><option value='1' selected>1 storage partition</option><option value='2'>2 storage partitions</option><option value='3'>3 storage partitions</option><option value='4'>4 storage partitions</option></select>"
+                    "<label>Size of HDD_STORAGE partition (GB, min 1):</label><input name='s1' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<label>Size of HDD_STORAGE2 partition (GB, min 1):</label><input name='s2' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<label>Size of HDD_STORAGE3 partition (GB, min 1):</label><input name='s3' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<label>Size of HDD_STORAGE4 partition (GB, min 1):</label><input name='s4' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<div class='card'><b>Storage rule:</b> enter a size for every storage partition EXCEPT the last one - the last one always takes the rest of the disk. Each size min 1 GB.</div>")) +
+                    "<label>Flash an image AFTER format (optional) - pick from the list:</label><select name='flash_img'><option value='' selected>No flash - reboot after format</option>" + _zip_opts + "</select>"
+                    "<label>Flash to SLOT (" + ("6-20" if _fkind=="sd" else "21-50") + ", only if an image is picked above):</label><input name='flash_slot' placeholder='" + ("e.g. 6" if _fkind=="sd" else "e.g. 21") + "' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
+                    "<div class='card'><b>After format + flash:</b> the receiver does a <b>FORCED reboot (reboot -f)</b> into the flashed slot. Without flash: normal reboot in 5 seconds.</div>"
                     "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<button class='danger'>ERASE DISK + Slots disk management + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
+                    "<button class='danger'>ERASE DISK + Disk Slots Formatting + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
             elif u.path == "/download-image/pin":
                 _f=(q.get("file") or [""])[0]
                 if _f and "/" not in _f:
@@ -9335,14 +9382,18 @@ upanel_wipe() {
     _NM=$(upanel_name "$_N")
     if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE (PROTECTED)"; else echo "  [$_N] SLOT $_N - $_NM"; fi
   done
-  printf "Wipe which SLOT (1-14, 0 = cancel)? "; read _WS
+  printf "Wipe which SLOT (1-4 internal, 6-50 external: SD 6-20 / HDD 21-50, 0 = cancel)? "; read _WS
   [ "$_WS" = "0" ] && return 0
   case "$_WS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 14 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_WS" = "5" ]; then echo "REFUSED: SLOT 5 is the hidden internal Enigma/Android switcher - it can NEVER be wiped."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 50 ]; then echo "Slot must be 1-4 (internal) or 6-50 (external: SD 6-20 / HDD 21-50)."; printf "Press ENTER... "; read _b; return 0; fi
   case " $_SL " in *" $_WS "*) ;; *) echo "SLOT $_WS not found. Available: $_SL"; printf "Press ENTER... "; read _b; return 0;; esac
   if [ "$_WS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS - you cannot wipe the running slot. Switch to another slot first."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_WS")
   if [ "$_OLD" = "Empty / Unknown" ]; then echo "SLOT $_WS is already Empty - nothing to wipe."; printf "Press ENTER... "; read _b; return 0; fi
+  # V6.29: SD slots (6..20) wipe EXACTLY like the plugin (wipe_slot:
+  # format + conf Empty + remove STARTUP). Internal slots keep the Panel wipe.
+  if [ "$_WS" -ge 6 ] 2>/dev/null; then upanel_plugin_wipe_slot "$_WS"; rm -f "$(upanel_label_file "$_WS")"; printf "Press ENTER to return... "; read _b; return 0; fi
   _RS=$(upanel_root "$_WS"); _RP="${_RS%%|*}"; _SUB="${_RS#*|}"
   [ -z "$_RP" ] && { echo "[WIPE-FAIL] No root device found for SLOT $_WS - NOTHING was changed."; printf "Press ENTER... "; read _b; return 0; }
   # NEVER touch the running root partition as a whole partition - only its subdir may be deleted
@@ -9452,16 +9503,37 @@ upanel_flash() {
   _KERN=$(find "$_IMGDIR" -maxdepth 3 \( -name 'kernel*.bin' -o -name 'uImage*' -o -name 'vmlinux*' -o -name 'zImage*' -o -name 'Image*' \) 2>/dev/null | grep -v -i 'rootfs' | head -1)
   if [ -z "$_ROOTFS" ] && [ -z "$_ROOTDIR" ]; then echo "No rootfs found in this image (need rootfs.tar.* or a rootfs/ folder)."; printf "Press ENTER... "; read _b; return 0; fi
   echo "Image: $(basename "$_IP") | rootfs: ${_ROOTFS:-$_ROOTDIR} | kernel: $(basename "$_KERN" 2>/dev/null || echo none)"
-  printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS
-  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-20, 0 = cancel)? "; read _TS || return 0; done
+  printf "Flash to which SLOT (1-4 internal, 6-50 external: SD 6-20 / HDD 21-50, 5 = hidden switcher - NOT usable, 0 = cancel)? "; read _TS
+  while [ -z "$_TS" ]; do printf "Flash to which SLOT (1-4, 6-50, 0 = cancel)? "; read _TS || return 0; done
   [ "$_TS" = "0" ] && return 0
   case "$_TS" in *[!0-9]*|"") echo "Bad slot number."; printf "Press ENTER... "; read _b; return 0;; esac
-  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 20 ]; then echo "Slot must be 1-20."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_TS" = "5" ]; then echo "REFUSED: SLOT 5 is the hidden internal Enigma/Android switcher - you cannot flash an image into it. External slots start at 6."; printf "Press ENTER... "; read _b; return 0; fi
+  if [ "$_TS" -lt 1 ] || [ "$_TS" -gt 50 ]; then echo "Slot must be 1-4 (internal) or 6-50 (external: SD 6-20 / HDD 21-50)."; printf "Press ENTER... "; read _b; return 0; fi
   if [ "$_TS" = "$_CS" ]; then echo "REFUSED: you are RUNNING on SLOT $_CS. Switch to another slot first, then flash this one."; printf "Press ENTER... "; read _b; return 0; fi
   _OLD=$(upanel_name "$_TS")
   echo "TARGET: SLOT $_TS (now: $_OLD) <- $(basename "$_IP")"
   echo "WARNING: SLOT $_TS will be ERASED completely."
   printf "Type FLASH (flash also works) to confirm: "; read _CF; if confirm_word "$_CF" "flash"; then :; else echo "Cancelled."; printf "Press ENTER... "; read _b; return 0; fi
+  # V6.29: SD slots (6..20) install EXACTLY like the plugin (install_image:
+  # format + unzip rootfs.tar.bz2 + plugin STARTUP + inject plugin). The
+  # Panel's kernel-copy / transfer steps do NOT run here - the plugin has
+  # none (kernel comes from the fixed eMMC offset 0x3D5000 via bootcmd).
+  if [ "$_TS" -ge 6 ] 2>/dev/null; then
+    if [ "$_IT" != "ZIP" ]; then echo "[FLASH] Plugin install needs a .zip image (with rootfs.tar.bz2 inside) - pick the ZIP file, not a folder."; printf "Press ENTER... "; read _b; return 0; fi
+    rm -f "$(upanel_label_file "$_TS")"
+    if upanel_plugin_install_image "$_TS" "$_IP"; then
+      upanel_push_boot_file "/boot/STARTUP_LINUX_$_TS" >/dev/null 2>&1
+      sync; rm -rf "$_WK" /tmp/upanel_flash_mnt
+      if ! upanel_verify_after_flash "$_TS"; then echo "[FLASH-FAIL] SLOT $_TS did NOT verify - do NOT boot it. Flash it again or pick another slot."; printf "Press ENTER to return... "; read _b; return 0; fi
+      _MP2=/tmp/upanel_flash_mnt2; mkdir -p "$_MP2"
+      _FB_DK=$(upanel_plugin_disk); _FB_SP=$(upanel_plugin_sep "$_FB_DK"); if mount "/dev/${_FB_DK}${_FB_SP}$((_TS-5))" "$_MP2" 2>/dev/null; then upanel_install_rollback_checker "$_MP2"; umount "$_MP2" 2>/dev/null; fi
+      _NM=$(upanel_name "$_TS")
+      if [ "$_NM" = "Empty / Unknown" ]; then _LBL2=$(basename "$_IP" | sed -e 's/\.zip$//' -e 's/[-_]/ /g' | cut -c1-40); echo "$_LBL2" > "$(upanel_label_file "$_TS")" 2>/dev/null && echo "[SLOT] Named SLOT $_TS: $_LBL2"; fi
+      echo "[FLASH] DONE - SLOT $_TS now has: $(upanel_name "$_TS")"
+      echo "Use [3] Reboot to Selected Slot to boot into SLOT $_TS (rollback guard will arm on switch)."
+    fi
+    printf "Press ENTER to return... "; read _b; return 0
+  fi
   # V 3.4: drop any stale custom label for this slot (it is being erased)
   rm -f "$(upanel_label_file "$_TS")"
   _RS=$(upanel_root "$_TS"); _RP="${_RS%%|*}"; _SUB="${_RS#*|}"
@@ -10668,7 +10740,7 @@ download_image_external_link() {
 # are listed, and the disk is wiped completely (all its data is lost).
 # Layout (DOS label, sfdisk): p1 = FAT32 512M BOOT (holds STARTUP_LINUX_N files,
 # cloned from the running slot's STARTUP, root= pointed at each new partition),
-# p2..p(N+1) = ext4, one per slot, labelled linux5..linux(4+N) - 1-4 reserved for internal.
+# p5..p(4+N) = ext4, one per slot, labelled linux6..linux(5+N) - V6.28: 1-4 internal images + 5 hidden Enigma/Android switcher. Slot N (6..) -> partition p(N-1).
 # HONEST LIMIT: whether the bootloader actually boots these external slots depends
 # on the box - Novaler / boxes with USB-multiboot support do; boxes whose bootloader
 # only scans the internal eMMC will show the slots in U-Panel Diagnose but will not
@@ -10776,8 +10848,8 @@ multiboot_prepare_disk() {
   # Device name -> used as-is, so old scripts / copy-paste still work.
   case "$_PD_DISK" in ''|*[!0-9]*) _PD_DISK=$(basename "$_PD_DISK");; *) _PD_DISK=$(echo "$_CAND" | tr ' ' '\n' | grep -v '^$' | sed -n "${_PD_DISK}p");; esac
   _PD_DISK=$(basename "$_PD_DISK"); case " $_CAND " in *" $_PD_DISK "*) ;; *) echo "[PREPARE-FAIL] '$_PD_DISK' is not an offered external disk (maybe it is the root disk, or not plugged in). Refused."; printf "Press ENTER... "; read _b; return 1;; esac
-  [ -z "$_PD_SLOTS" ] && { printf "How many slots? (2-20, numbered 5..24): "; read _PD_SLOTS; }
-  case "$_PD_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20) ;; *) echo "[PREPARE-FAIL] Slots must be 2-20 (numbered 5..24 - slots 1-4 are reserved for the internal flash)."; printf "Press ENTER... "; read _b; return 1;; esac
+  [ -z "$_PD_SLOTS" ] && { printf "How many slots? (2-15, numbered 6..20): "; read _PD_SLOTS; }
+  case "$_PD_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) ;; *) echo "[PREPARE-FAIL] Slots must be 2-15 (numbered 6..20 - slots 1-4 are internal images, 5 is the hidden Enigma/Android switcher)."; printf "Press ENTER... "; read _b; return 1;; esac
   [ -z "$_PD_SIZE" ] && { printf "Size per slot in GB? (2-8, recommended 4): "; read _PD_SIZE; }
   case "$_PD_SIZE" in 2|3|4|5|6|7|8) ;; *) echo "[PREPARE-FAIL] Slot size must be 2-8 GB."; printf "Press ENTER... "; read _b; return 1;; esac
   # V6.20 - STORAGE partitions (Slots disk management): $4 = comma sizes in GB,
@@ -10831,7 +10903,7 @@ multiboot_prepare_disk() {
   echo "--- end of current layout ---"
   _NEED=$(( 512 + _PD_SLOTS * _PD_SIZE * 1024 + _STOR_NEED )); _HAVEMB=$(( $(cat "/sys/block/$_PD_DISK/size" 2>/dev/null || echo 0) * 512 / 1048576 ))
   [ "$_HAVEMB" -lt "$_NEED" ] && { echo "[PREPARE-FAIL] Disk is ${_HAVEMB} MB - need at least ${_NEED} MB (512M BOOT + $_PD_SLOTS x ${_PD_SIZE}G slots${_NEED_TXT}). Pick fewer/smaller slots."; printf "Press ENTER... "; read _b; return 1; }
-  echo "PLAN: /dev/$_PD_DISK -> p1 FAT32 512M BOOT + p2 EXTENDED + $_PD_SLOTS x ${_PD_SIZE}G logical ext4 (linux5..linux$((_PD_SLOTS+4)), p5..p$((_PD_SLOTS+4))) - slots 1-4 stay reserved for the internal flash${_PLAN_STOR}"
+  echo "PLAN: /dev/$_PD_DISK -> p1 FAT32 512M BOOT + p2 EXTENDED + $_PD_SLOTS x ${_PD_SIZE}G logical ext4 (linux6..linux$((_PD_SLOTS+5)), p5..p$((_PD_SLOTS+4))) - Slot 6 = p5, Slot 7 = p6, ... - slots 1-4 are internal images, 5 is the hidden Enigma/Android switcher${_PLAN_STOR}"
   echo "WARNING: ALL DATA ON /dev/$_PD_DISK WILL BE ERASED - backups, movies, everything."
   printf "Type ERASE or e to confirm (anything else cancels): "; read _CONF; case "$_CONF" in ERASE|erase|e|E) ;; *) echo "Cancelled - nothing touched."; printf "Press ENTER... "; read _b; return 1;; esac
   echo "[PREPARE] Unmounting /dev/$_PD_DISK partitions..."
@@ -10842,12 +10914,13 @@ multiboot_prepare_disk() {
   # (16 partitions) cannot all be primary. Layout used:
   #   p1 = BOOT FAT32 512M (primary, bootable)
   #   p2 = EXTENDED (takes the rest of the disk)
-  #   p5..p(4+N) = the N slots as LOGICAL partitions inside the extended one (ext4 linux5..linux(4+N))
+  #   p5..p(4+N) = the N slots as LOGICAL partitions inside the extended one (ext4 linux6..linux(5+N))
   #   p(5+N)..p(4+N+M) = STORAGE partitions (ext4, last one takes the REST of the disk) - Slots disk management only
-  # V6.20 FIX (26 Nov): external slots are numbered 5..(4+N) - slots 1-4 are RESERVED
-  # for the internal flash (linuxrootfs1-4). The old code numbered them 1..N, so
-  # external slot 1 and internal slot 1 shared STARTUP_LINUX_1 and one of them
-  # always hid the other. Now they can never collide.
+  # V6.28 FIX (26 Nov): external slots are numbered 6..(5+N) - slots 1-4 are
+  # internal images (linuxrootfs1-4) and 5 is the HIDDEN internal Enigma/Android
+  # switcher. The old code numbered external slots 5..(4+N), so external Slot 5
+  # overwrote the hidden switcher's STARTUP_LINUX_5 - that is why Slot 5 never
+  # behaved. Slot N maps to partition p(N-1): Slot 6 -> p5 (LABEL linux6).
   # Logical partitions (p5+) boot exactly like primary ones on Enigma2 - the kernel
   # only cares about the partition device (e.g. /dev/sda5), which is what the
   # STARTUP_LINUX_N files below point root= at.
@@ -10858,16 +10931,16 @@ multiboot_prepare_disk() {
   _BOOTPART="/dev/${_PD_DISK}${_SEP}1"
   echo "[PREPARE] Formatting BOOT (FAT32) + slots (ext4)..."
   _MKVFAT=$(command -v mkfs.vfat || command -v mkfs.fat); "$_MKVFAT" -F 32 -n BOOT "$_BOOTPART" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.vfat failed on $_BOOTPART"; printf "Press ENTER... "; read _b; return 1; }
-  _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _SN=$((_I+4)); _PP="/dev/${_PD_DISK}${_SEP}$((_I+4))"; mkfs.ext4 -q -L "linux$_SN" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> linux$_SN (${_PD_SIZE}G)"; _I=$((_I+1)); done
+  _I=1; while [ "$_I" -le "$_PD_SLOTS" ]; do _SN=$((_I+5)); _PP="/dev/${_PD_DISK}${_SEP}$((_I+4))"; mkfs.ext4 -q -L "linux$_SN" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> linux$_SN (${_PD_SIZE}G)"; _I=$((_I+1)); done
   if [ -n "$_PD_STOR" ]; then _J=1; _R="$_PD_STOR"; while [ -n "$_R" ]; do _EL="${_R%%,*}"; case "$_R" in *,*) _R="${_R#*,}";; *) _R="";; esac; _PP="/dev/${_PD_DISK}${_SEP}$((_PD_SLOTS+4+_J))"; if [ "$_J" -eq 1 ]; then _LBL="STORAGE"; else _LBL="STORAGE$_J"; fi; if [ -n "$_R" ]; then _SZ_TXT="(${_EL}G)"; else _SZ_TXT="(rest of disk)"; fi; mkfs.ext4 -q -L "$_LBL" "$_PP" >/dev/null 2>&1 || { echo "[PREPARE-FAIL] mkfs.ext4 failed on $_PP"; printf "Press ENTER... "; read _b; return 1; }; echo "  [OK] $_PP -> $_LBL $_SZ_TXT"; _J=$((_J+1)); done; fi
   echo "[PREPARE] No STARTUP files written for the empty slots - on purpose:"
   echo "[PREPARE] an empty slot has NO STARTUP file, so Recovery shows ONLY slots"
   echo "[PREPARE] that actually have an image. The Panel still lists every slot"
-  echo "[PREPARE] from its LABEL (linux5..linux$((_PD_SLOTS+4))). When you Flash an image"
+  echo "[PREPARE] from its LABEL (linux6..linux$((_PD_SLOTS+5))). When you Flash an image"
   echo "[PREPARE] into a slot, Flash creates its STARTUP file (rootsubdir=/) and"
   echo "[PREPARE] the slot appears in Recovery."
   sync
-  echo "[PREPARE] DONE - /dev/$_PD_DISK is now: BOOT 512M + $_PD_SLOTS slots x ${_PD_SIZE}G (linux5..linux$((_PD_SLOTS+4)), p5..p$((_PD_SLOTS+4)), Empty - slots 1-4 reserved for internal).${_DONE_STOR}"
+  echo "[PREPARE] DONE - /dev/$_PD_DISK is now: BOOT 512M + $_PD_SLOTS slots x ${_PD_SIZE}G (linux6..linux$((_PD_SLOTS+5)), p5..p$((_PD_SLOTS+4)), Empty - Slot 6 = p5, slots 1-4 internal images, 5 hidden Enigma/Android switcher).${_DONE_STOR}"
   echo "[PREPARE] Next: reboot, then Multiboot > Diagnose Slots to confirm your box boots from this disk."
   echo "[PREPARE] Then Flash Image to Slot to install an image into a new slot."
   printf "Press ENTER... "; read _b; return 0
@@ -11457,16 +11530,484 @@ upanel_distribute_kernel() { # $1 = basename, $2 = source
 # Safe: Hide-empty's delete_one refuses STARTUPs whose root= is not a
 # LABEL=linuxN partition, so the just-restored internal STARTUPs survive it.
 
+
+# V6.27 - THE PLUGIN IS THE TRUTH (compared against the slot plugin):
+# The plugin's engine (/usr/bin/e2multiboot_engine.sh) writes SD-slot STARTUP files in
+# a DIFFERENT format than the Panel's oe-alliance format, and THAT format is what
+# this box's bootloader actually honours:
+#   bootcmd=setenv bootargs $(bootargs) $(bootargs_common); mmc read 0 0x1000000 0x3D5000 0x8000; bootm 0x1000000; run bootcmd_fallback
+#   bootargs=root=/dev/mmcblk1p<PART> rootfstype=ext4 rw rootwait console=ttyAMA0,115200 kernel=/dev/mmcblk0p22
+# Why the Panel's old SD STARTUPs never worked:
+#  (a) Panel wrote kernel=/dev/mmcblk0p19 (Slot 1's kernel). Its initramfs mounts
+#      linuxrootfs1 (EGAMI) no matter what root= says - so "Slot 5" always came
+#      back as EGAMI, and with kernel p21 as openATV 8.0.1 (Slot 3).
+#  (b) Panel's bootcmd loaded the kernel from the WRONG eMMC offset (Slot 1's).
+#      The plugin's bootcmd loads the SD-slot kernel from fixed offset 0x3D5000
+#      and uses kernel=/dev/mmcblk0p22 (linuxkernel4) for EVERY SD slot.
+#  (c) The plugin extracts NO kernel from the ZIP on install - the kernel is NOT
+#      a file on BOOT, it comes from that fixed eMMC offset. So "missing kernel
+#      file on BOOT" was a red herring; the fix is the STARTUP FORMAT, not a file.
+# NUMBERING WARNING (do NOT "fix" this): the plugin UI numbers SD slots as
+# Slot 6,7,8... with PART_INDEX = slot-5 (Slot 6 -> mmcblk1p1). The Panel's
+# SD layout is different (BOOT p1 + slots p5+), and the user's data already
+# lives on mmcblk1p5 as Panel Slot 5. So Panel keeps ITS numbering:
+# Panel Slot N (N>=5) -> root=/dev/mmcblk1pN. Plugin Slot (N+5) == Panel Slot N.
+# NEVER use the plugin UI's Slot 6-9 on a Panel-partitioned card: they point
+# at mmcblk1p1-p4 (BOOT / data partitions), not at images.
+# $1 = Panel slot number (>=5). Writes /boot/STARTUP_LINUX_N in plugin format.
+
+# =====================================================================
+# V6.29 - PORT OF THE SLOT PLUGIN ENGINE.
+# Every step below mirrors the plugin 1:1 - same commands, same order,
+# same mkfs options, same STARTUP format, same conf file. The Panel
+# only adds: safety prompts (ERASE), push of STARTUP to all BOOTs
+# (V6.24), rollback-checker install after install, and verify.
+# Layout (plugin): GPT on the SD card, Slot 6 -> mmcblk1p1, Slot 7 ->
+# mmcblk1p2, ... Slot 20 -> mmcblk1p15, storage = last partition
+# (mmcblk1p21, LABEL MMC_STORAGE, mounted at /media/mmc). There is NO
+# BOOT partition on the SD - /boot is the internal one.
+# Slot size (plugin rule): 3000MB when the card is > 30000MB, else 1600MB.
+# =====================================================================
+_PLUGIN_ENGINE="/usr/bin/e2multiboot_engine.sh"
+_PLUGIN_CONF="/etc/novaler_slots.conf"
+# V6.30: the plugin hardcoded /dev/mmcblk1. The Panel port reads the disk
+# from DISK= in the conf (written by format) - mmcblk1 = SD, sda/sdb = HDD
+# or SSD on SATA/USB, nvme0n1 = NVMe. Separator: mmcblk/nvme need "p"
+# (mmcblk1p1), plain sd/nvme... sda does NOT (sda1).
+upanel_plugin_disk() { _UPD=$(grep -E '^DISK=' "$_PLUGIN_CONF" 2>/dev/null | cut -d= -f2 | head -1); [ -n "$_UPD" ] && echo "$_UPD" || echo "mmcblk1"; }
+upanel_plugin_sep() { case "$1" in mmcblk*|nvme*) echo "p";; *) echo "";; esac; }
+
+# V6.35: TWO plugin layouts - SD (memory plugin) vs HDD/SSD (HDD plugin).
+# SD: slots 6..20, partition = slot-5, conf /etc/novaler_slots.conf,
+#   slot plugin, engine e2multiboot_engine.sh, mount /mnt/sdcardN.
+# HDD: slots 21..50, partition = slot-20, conf /etc/novaler_hdd_slots.conf,
+#   slot plugin (HDD), engine e2hdd_engine.sh, mount /mnt/hddN.
+# BOTH start at 6 - only the MAX differs (SD 21, HDD 35).
+# SD format = SLOTS ONLY (no storage partition). HDD format = slots +
+# storage split (HDD_STORAGE on /media/hdd2, extras HDD_STORAGE2...).
+_PLUGIN_HDD_CONF="/etc/novaler_hdd_slots.conf"
+_PLUGIN_HDD_ENGINE="/usr/bin/e2hdd_engine.sh"
+upanel_mode_offset() { case "$1" in hdd) echo 20;; *) echo 5;; esac; }
+upanel_mode_base() { case "$1" in hdd) echo 21;; *) echo 6;; esac; }
+upanel_mode_max() { case "$1" in hdd) echo 50;; *) echo 20;; esac; }
+upanel_mode_conf() { case "$1" in hdd) echo "$_PLUGIN_HDD_CONF";; *) echo "$_PLUGIN_CONF";; esac; }
+upanel_mode_plugin_dir() { case "$1" in hdd) echo "NovalerMultiBootHDD";; *) echo "NovalerMultiBoot";; esac; }
+upanel_mode_engine_name() { case "$1" in hdd) echo "e2hdd_engine.sh";; *) echo "e2multiboot_engine.sh";; esac; }
+upanel_mode_engine_path() { case "$1" in hdd) echo "$_PLUGIN_HDD_ENGINE";; *) echo "$_PLUGIN_ENGINE";; esac; }
+upanel_mode_conf_name() { case "$1" in hdd) echo "novaler_hdd_slots.conf";; *) echo "novaler_slots.conf";; esac; }
+upanel_mode_disk() { _MD_CF=$(upanel_mode_conf "$1"); _MD=$(grep -E '^DISK=' "$_MD_CF" 2>/dev/null | cut -d= -f2 | head -1); if [ -n "$_MD" ]; then echo "$_MD"; else case "$1" in hdd) echo "sda";; *) echo "mmcblk1";; esac; fi; }
+upanel_mode_mount() { case "$1" in hdd) echo "/mnt/hdd$2";; *) echo "/mnt/sdcard$2";; esac; }
+upanel_mode_tmp() { case "$1" in hdd) echo "/media/hdd/tmp_e2hdd_install";; *) echo "/media/hdd/tmp_e2install";; esac; }
+upanel_slot_mode() { if grep -q "^Slot_$1=" "$_PLUGIN_HDD_CONF" 2>/dev/null; then echo hdd; elif grep -q "^Slot_$1=" "$_PLUGIN_CONF" 2>/dev/null; then echo sd; elif [ "$1" -ge 21 ] 2>/dev/null; then echo hdd; else echo sd; fi; }
+upanel_mode_update_slot_info() { _MU_CF=$(upanel_mode_conf "$1"); [ -f "$_MU_CF" ] || touch "$_MU_CF" 2>/dev/null; sed -i "/^Slot_$2=/d" "$_MU_CF" 2>/dev/null; echo "Slot_$2=$3" >> "$_MU_CF"; }
+upanel_plugin_conf_init() { [ -f "$_PLUGIN_CONF" ] || touch "$_PLUGIN_CONF" 2>/dev/null; }
+upanel_plugin_update_slot_info() { # $1=slot $2=name
+  upanel_plugin_conf_init
+  sed -i "/^Slot_$1=/d" "$_PLUGIN_CONF" 2>/dev/null
+  echo "Slot_$1=$2" >> "$_PLUGIN_CONF"
+}
+upanel_plugin_remove_startup_file() { # $1=slot - plugin remove_startup_file
+  mount -o remount,rw /boot 2>/dev/null
+  rm -f "/boot/STARTUP_LINUX_$1" 2>/dev/null
+  sync
+}
+upanel_plugin_inject_to_slot_mode() { # $1=mode $2=slot - plugin inject_plugin_to_slot
+  _IJ_MODE="$1"; _IJ_N="$2"; _IJ_PI=$((_IJ_N - $(upanel_mode_offset "$_IJ_MODE"))); _IJ_DK=$(upanel_mode_disk "$_IJ_MODE"); _IJ_SP=$(upanel_plugin_sep "$_IJ_DK"); _IJ_DEV="/dev/${_IJ_DK}${_IJ_SP}$_IJ_PI"; _IJ_MNT="/mnt/sdcard_inject_$_IJ_N"; case "$_IJ_MODE" in hdd) _IJ_MNT="/mnt/hdd_inject_$_IJ_N";; esac
+  [ -b "$_IJ_DEV" ] || return 1
+  umount -f "$_IJ_DEV" 2>/dev/null; umount -f "$_IJ_MNT" 2>/dev/null
+  mkdir -p "$_IJ_MNT"
+  mount "$_IJ_DEV" "$_IJ_MNT" 2>/dev/null || { rm -rf "$_IJ_MNT" 2>/dev/null; return 1; }
+  _IJ_TGT="$_IJ_MNT/usr/lib/enigma2/python/Plugins/Extensions/$(upanel_mode_plugin_dir "$_IJ_MODE")"
+  mkdir -p "$_IJ_TGT"
+  cp -rf /usr/lib/enigma2/python/Plugins/Extensions/$(upanel_mode_plugin_dir "$_IJ_MODE")/* "$_IJ_TGT/" 2>/dev/null
+  cp -f "$(upanel_mode_engine_path "$_IJ_MODE")" "$_IJ_MNT/usr/bin/" 2>/dev/null
+  cp -f "$(upanel_mode_conf "$_IJ_MODE")" "$_IJ_MNT/etc/$(upanel_mode_conf_name "$_IJ_MODE")" 2>/dev/null
+  chmod 755 "$_IJ_MNT/usr/bin/$(upanel_mode_engine_name "$_IJ_MODE")" 2>/dev/null
+  umount -f "$_IJ_MNT" 2>/dev/null
+  rm -rf "$_IJ_MNT" 2>/dev/null
+  echo "[INJECT] Plugin injected to Slot $_IJ_N."
+  return 0
+}
+upanel_plugin_inject_to_slot() { upanel_plugin_inject_to_slot_mode "$(upanel_slot_mode "$1")" "$1"; }
+
+upanel_plugin_inject_all_mode() { # $1=mode - plugin inject_all for ONE disk (SD or HDD)
+  _IA_MODE="$1"; _IA_CF=$(upanel_mode_conf "$_IA_MODE")
+  [ -f "$_IA_CF" ] || return 0
+  for _IA_S in $(grep -E "^Slot_[0-9]+" "$_IA_CF" | cut -d= -f1 | cut -d_ -f2); do
+    echo "[*] Injecting plugin to Slot $_IA_S..."
+    upanel_plugin_inject_to_slot_mode "$_IA_MODE" "$_IA_S"
+  done
+}
+upanel_plugin_inject_all() { # plugin inject_all - SD slots + HDD slots
+  upanel_plugin_conf_init
+  upanel_plugin_inject_all_mode sd
+  upanel_plugin_inject_all_mode hdd
+  echo "================================================="
+  echo " SUCCESS: Plugin injected to all installed slots!"
+  echo "================================================="
+}
+upanel_plugin_format_sd() { # $1=slots (empty = ask, presets 4/8/10/20) $2=disk (default mmcblk1) $3=slot size GB (empty = plugin rule) $4=storage spec (empty = one storage, rest) $5=NOREBOOT (caller continues - flash, then forced reboot) - plugin format_sd, step-for-step
+  _PF_SLOTS="$1"; _PF_DISK="${2:-mmcblk1}"; _PF_SIZE_OPT="$3"; _PF_STOR_SPEC="${4:-}"; _PF_NRB="$5"; _PF_SEP="p"; case "$_PF_DISK" in mmcblk*|nvme*) _PF_SEP="p";; *) _PF_SEP="";; esac
+  # V6.30 SAFETY: never format the disk the receiver booted from (root disk).
+  _PF_ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  if [ "$_PF_ROOTSRC" = "/dev/root" ] || [ -z "$_PF_ROOTSRC" ]; then _PF_ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
+  _PF_ROOTDISK="${_PF_ROOTSRC#/dev/}"; case "$_PF_ROOTDISK" in mmcblk*|nvme*) _PF_ROOTDISK="${_PF_ROOTDISK%%p*}";; *) _PF_ROOTDISK="${_PF_ROOTDISK%%[0-9]*}";; esac
+  if [ -n "$_PF_ROOTDISK" ] && [ "$_PF_DISK" = "$_PF_ROOTDISK" ]; then echo "[FORMAT-FAIL] /dev/$_PF_DISK is the ROOT disk (you booted from it) - it can NEVER be formatted. Pick another disk."; return 1; fi
+  [ -n "$_PF_SLOTS" ] || { printf "Partition & Format SD Card - how many slots? (plugin presets: 4 / 8 / 10 / 20): "; read _PF_SLOTS; }
+  case "$_PF_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) ;; *) echo "[FORMAT-FAIL] Slots must be 2-15 (numbered 6..20)."; return 1;; esac
+  command -v parted >/dev/null 2>&1 || { echo "[FORMAT-FAIL] parted NOT found - cannot partition like the plugin. Install parted first."; return 1; }
+  echo "COUNT=${_PF_SLOTS}" > "$_PLUGIN_CONF"
+  echo "DISK=$_PF_DISK" >> "$_PLUGIN_CONF"
+  echo "[1/6] Unmounting SD Card partitions..."
+  umount -f /dev/${_PF_DISK}* 2>/dev/null
+  _PF_TOTAL=$(parted -s /dev/$_PF_DISK unit MB print 2>/dev/null | grep -E "^Disk /dev/$_PF_DISK" | cut -d' ' -f3 | tr -d 'MB' | cut -d'.' -f1)
+  [ -z "$_PF_TOTAL" ] && _PF_TOTAL=32000
+  if [ -n "$_PF_SIZE_OPT" ]; then case "$_PF_SIZE_OPT" in 2|3|4|5|6|7|8) _PF_SIZE_MB=$((_PF_SIZE_OPT * 1024)); echo "[*] Slot size option: ${_PF_SIZE_OPT}GB (${_PF_SIZE_MB}MB) per slot.";; *) echo "[FORMAT-FAIL] Slot size must be 2-8 GB (or empty = plugin rule)."; return 1;; esac
+  elif [ "$_PF_TOTAL" -gt 30000 ]; then _PF_SIZE_MB=3000; echo "[*] Disk Size Detected: ${_PF_TOTAL}MB. Setting Slot Size to 3000MB (3GB) - plugin rule."; else _PF_SIZE_MB=1600; echo "[*] Disk Size Detected: ${_PF_TOTAL}MB. Setting Slot Size to 1600MB - plugin rule."; fi
+  echo "[2/6] Creating GPT Partition Table on /dev/$_PF_DISK..."
+  parted -s /dev/$_PF_DISK mklabel gpt
+  _PF_I=1; _PF_START=2
+  while [ "$_PF_I" -le "$_PF_SLOTS" ]; do
+    _PF_SN=$((5 + _PF_I)); _PF_END=$((_PF_START + _PF_SIZE_MB))
+    echo "[3/6] Creating Slot $_PF_SN Partition (/dev/${_PF_DISK}${_PF_SEP}$_PF_I): ${_PF_START}MiB to ${_PF_END}MiB..."
+    parted -s /dev/$_PF_DISK mkpart primary ext4 "${_PF_START}MiB" "${_PF_END}MiB"
+    _PF_START=$((_PF_END + 1)); _PF_I=$((_PF_I + 1))
+  done
+  # V6.30 STORAGE SPLIT: $4 = comma sizes in GB, e.g. "100,0" = STORAGE 100G +
+  # STORAGE2 takes the rest. Empty = ONE storage partition taking the rest
+  # (exactly the plugin). The FIRST storage partition is always the plugin
+  # storage (partition N+1, LABEL MMC_STORAGE, mounted at /media/mmc) -
+  # extra storage partitions go AFTER it and never disturb the plugin layout.
+  _PF_DATA_IDX=$((_PF_SLOTS + 1)); _PF_STOR_N=0; _PF_STOR_LIST="${_PF_STOR_SPEC:-0}"
+  echo "[4/6] Creating Storage Partition(s) on /dev/$_PF_DISK from ${_PF_START}MiB..."
+  _PF_R="$_PF_STOR_LIST"
+  while [ -n "$_PF_R" ]; do
+    _PF_EL="${_PF_R%%,*}"; case "$_PF_R" in *,*) _PF_R="${_PF_R#*,}";; *) _PF_R="";; esac
+    _PF_STOR_N=$((_PF_STOR_N + 1)); _PF_SIDX=$((_PF_DATA_IDX + _PF_STOR_N - 1))
+    if [ -n "$_PF_R" ]; then _PF_SEND=$((_PF_START + _PF_EL * 1024)); echo "  Storage $_PF_STOR_N: /dev/${_PF_DISK}${_PF_SEP}$_PF_SIDX = ${_PF_EL}G (${_PF_START}MiB to ${_PF_SEND}MiB)"; parted -s /dev/$_PF_DISK mkpart primary ext4 "${_PF_START}MiB" "${_PF_SEND}MiB"; _PF_START=$((_PF_SEND + 1))
+    else echo "  Storage $_PF_STOR_N: /dev/${_PF_DISK}${_PF_SEP}$_PF_SIDX = rest of disk (${_PF_START}MiB to 100%)"; parted -s /dev/$_PF_DISK mkpart primary ext4 "${_PF_START}MiB" 100%; fi
+  done
+  echo "[5/6] Informing Kernel & Refreshing Devices..."
+  partprobe /dev/$_PF_DISK 2>/dev/null
+  sleep 3
+  _PF_I=1
+  while [ "$_PF_I" -le "$_PF_SLOTS" ]; do
+    _PF_SN=$((5 + _PF_I)); _PF_DEV="/dev/${_PF_DISK}${_PF_SEP}$_PF_I"
+    echo "[*] Formatting Slot $_PF_SN ($_PF_DEV)..."
+    mkfs.ext4 -F -O ^has_journal -N 250000 -E lazy_itable_init=1 -L "linux$_PF_SN" "$_PF_DEV"
+    echo "Slot_$_PF_SN=Empty" >> "$_PLUGIN_CONF"
+    upanel_plugin_remove_startup_file "$_PF_SN"
+    _PF_I=$((_PF_I + 1))
+  done
+  # V6.29: free the hidden Slot 5 from any old Panel-layout squatter (an SD
+  # STARTUP_LINUX_5) - the hidden Enigma/Android switcher owns Slot 5 now.
+  if [ -f "/boot/STARTUP_LINUX_5" ] && grep -q "mmcblk1" "/boot/STARTUP_LINUX_5" 2>/dev/null; then cp "/boot/STARTUP_LINUX_5" /tmp/STARTUP_LINUX_5.old-panel-layout.bak 2>/dev/null; rm -f "/boot/STARTUP_LINUX_5"; echo "[FORMAT] Removed old Panel-layout STARTUP_LINUX_5 (SD squatter) - Slot 5 belongs to the hidden switcher now (backup: /tmp/STARTUP_LINUX_5.old-panel-layout.bak)."; fi
+  # Stale SD STARTUP files above the new count (old layout had more slots).
+  _PF_N=6; while [ "$_PF_N" -le 20 ]; do [ "$_PF_N" -gt $((5 + _PF_SLOTS)) ] && rm -f "/boot/STARTUP_LINUX_$_PF_N" 2>/dev/null; _PF_N=$((_PF_N + 1)); done
+  _PF_DATA_DEV="/dev/${_PF_DISK}${_PF_SEP}$_PF_DATA_IDX"
+  if [ -b "$_PF_DATA_DEV" ]; then
+    echo "[*] Formatting Storage Partition 1 ($_PF_DATA_DEV) as MMC_STORAGE (plugin storage)..."
+    mkfs.ext4 -F -O ^has_journal -L "MMC_STORAGE" "$_PF_DATA_DEV"
+    mkdir -p /media/mmc 2>/dev/null
+    mount "$_PF_DATA_DEV" /media/mmc 2>/dev/null
+  fi
+  # Extra storage partitions (2..): LABEL STORAGE2, STORAGE3... - plain ext4.
+  _PF_SN2=2; while [ "$_PF_SN2" -le "$_PF_STOR_N" ]; do _PF_XDEV="/dev/${_PF_DISK}${_PF_SEP}$((_PF_DATA_IDX + _PF_SN2 - 1))"; if [ -b "$_PF_XDEV" ]; then echo "[*] Formatting Storage Partition $_PF_SN2 ($_PF_XDEV) as STORAGE$_PF_SN2..."; mkfs.ext4 -F -O ^has_journal -L "STORAGE$_PF_SN2" "$_PF_XDEV"; fi; _PF_SN2=$((_PF_SN2 + 1)); done
+  echo "================================================="
+  echo " SUCCESS: Formatted SD Card Successfully!"
+  echo " Slot Size: ${_PF_SIZE_MB}MB"
+  echo " Storage Partition 1: /dev/${_PF_DISK}${_PF_SEP}$_PF_DATA_IDX (MMC_STORAGE, Mounted to /media/mmc) + $((_PF_STOR_N - 1)) extra storage partition(s)"
+  if [ "$_PF_NRB" = "NOREBOOT" ]; then
+    echo "================================================="
+    echo " SUCCESS: Formatted Successfully - NO reboot yet (caller continues: optional flash, then forced reboot)."
+    echo "================================================="
+    return 0
+  fi
+  echo " Rebooting in 5 seconds..."
+  echo "================================================="
+  sleep 5
+  reboot
+}
+upanel_plugin_format_sd_slots_only() { # $1=slots $2=disk (default mmcblk1) $3=size GB (empty = plugin rule) $4=NOREBOOT - V6.35 SD: SLOTS ONLY, NO storage partition (memory plugin logic)
+  _PF_SLOTS="$1"; _PF_DISK="${2:-mmcblk1}"; _PF_SIZE_OPT="$3"; _PF_NRB="$4"; _PF_SEP="p"; case "$_PF_DISK" in mmcblk*|nvme*) _PF_SEP="p";; *) _PF_SEP="";; esac
+  _PF_ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  if [ "$_PF_ROOTSRC" = "/dev/root" ] || [ -z "$_PF_ROOTSRC" ]; then _PF_ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
+  _PF_ROOTDISK="${_PF_ROOTSRC#/dev/}"; case "$_PF_ROOTDISK" in mmcblk*|nvme*) _PF_ROOTDISK="${_PF_ROOTDISK%%p*}";; *) _PF_ROOTDISK="${_PF_ROOTDISK%%[0-9]*}";; esac
+  if [ -n "$_PF_ROOTDISK" ] && [ "$_PF_DISK" = "$_PF_ROOTDISK" ]; then echo "[FORMAT-FAIL] /dev/$_PF_DISK is the ROOT disk (you booted from it) - it can NEVER be formatted. Pick another disk."; return 1; fi
+  [ -n "$_PF_SLOTS" ] || { printf "Partition & Format SD Card - how many slots? (2-16): "; read _PF_SLOTS; }
+  case "$_PF_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) ;; *) echo "[FORMAT-FAIL] Slots must be 2-15 (numbered 6..20)."; return 1;; esac
+  command -v parted >/dev/null 2>&1 || { echo "[FORMAT-FAIL] parted NOT found - cannot partition like the plugin. Install parted first."; return 1; }
+  echo "COUNT=${_PF_SLOTS}" > "$_PLUGIN_CONF"
+  echo "DISK=$_PF_DISK" >> "$_PLUGIN_CONF"
+  echo "[1/6] Unmounting SD Card partitions..."
+  umount -f /dev/${_PF_DISK}* 2>/dev/null
+  _PF_TOTAL=$(parted -s /dev/$_PF_DISK unit MB print 2>/dev/null | grep -E "^Disk /dev/$_PF_DISK" | cut -d' ' -f3 | tr -d 'MB' | cut -d'.' -f1)
+  [ -z "$_PF_TOTAL" ] && _PF_TOTAL=32000
+  if [ -n "$_PF_SIZE_OPT" ]; then case "$_PF_SIZE_OPT" in 2|3|4|5|6|7|8) _PF_SIZE_MB=$((_PF_SIZE_OPT * 1024)); echo "[*] Slot size option: ${_PF_SIZE_OPT}GB (${_PF_SIZE_MB}MB) per slot.";; *) echo "[FORMAT-FAIL] Slot size must be 2-8 GB (or empty = plugin rule)."; return 1;; esac
+  elif [ "$_PF_TOTAL" -gt 30000 ]; then _PF_SIZE_MB=3000; echo "[*] Disk Size Detected: ${_PF_TOTAL}MB. Setting Slot Size to 3000MB (3GB) - plugin rule."; else _PF_SIZE_MB=1600; echo "[*] Disk Size Detected: ${_PF_TOTAL}MB. Setting Slot Size to 1600MB - plugin rule."; fi
+  echo "[2/6] Creating GPT Partition Table on /dev/$_PF_DISK..."
+  parted -s /dev/$_PF_DISK mklabel gpt
+  _PF_I=1; _PF_START=2
+  while [ "$_PF_I" -le "$_PF_SLOTS" ]; do
+    _PF_SN=$((5 + _PF_I)); _PF_END=$((_PF_START + _PF_SIZE_MB))
+    echo "[3/6] Creating Slot $_PF_SN Partition (/dev/${_PF_DISK}${_PF_SEP}$_PF_I): ${_PF_START}MiB to ${_PF_END}MiB..."
+    parted -s /dev/$_PF_DISK mkpart primary ext4 "${_PF_START}MiB" "${_PF_END}MiB"
+    _PF_START=$((_PF_END + 1)); _PF_I=$((_PF_I + 1))
+  done
+  echo "[4/6] SD: SLOTS ONLY - NO storage partition (V6.35). The rest of the card stays unpartitioned."
+  echo "[5/6] Informing Kernel & Refreshing Devices..."
+  partprobe /dev/$_PF_DISK 2>/dev/null
+  sleep 3
+  _PF_I=1
+  while [ "$_PF_I" -le "$_PF_SLOTS" ]; do
+    _PF_SN=$((5 + _PF_I)); _PF_DEV="/dev/${_PF_DISK}${_PF_SEP}$_PF_I"
+    echo "[*] Formatting Slot $_PF_SN ($_PF_DEV)..."
+    mkfs.ext4 -F -O ^has_journal -N 250000 -E lazy_itable_init=1 -L "linux$_PF_SN" "$_PF_DEV"
+    echo "Slot_$_PF_SN=Empty" >> "$_PLUGIN_CONF"
+    upanel_plugin_remove_startup_file "$_PF_SN"
+    _PF_I=$((_PF_I + 1))
+  done
+  if [ -f "/boot/STARTUP_LINUX_5" ] && grep -q "mmcblk1" "/boot/STARTUP_LINUX_5" 2>/dev/null; then cp "/boot/STARTUP_LINUX_5" /tmp/STARTUP_LINUX_5.old-panel-layout.bak 2>/dev/null; rm -f "/boot/STARTUP_LINUX_5"; echo "[FORMAT] Removed old Panel-layout STARTUP_LINUX_5 (SD squatter) - Slot 5 belongs to the hidden switcher now (backup: /tmp/STARTUP_LINUX_5.old-panel-layout.bak)."; fi
+  _PF_N=6; while [ "$_PF_N" -le 20 ]; do [ "$_PF_N" -gt $((5 + _PF_SLOTS)) ] && rm -f "/boot/STARTUP_LINUX_$_PF_N" 2>/dev/null; _PF_N=$((_PF_N + 1)); done
+  echo "================================================="
+  echo " SUCCESS: Formatted SD Card Successfully!"
+  echo " Slots: ${_PF_SLOTS} (Slot 6..$((5 + _PF_SLOTS))) - SLOTS ONLY, no storage partition"
+  echo " Slot Size: ${_PF_SIZE_MB}MB"
+  if [ "$_PF_NRB" = "NOREBOOT" ]; then
+    echo "================================================="
+    echo " SUCCESS: Formatted Successfully - NO reboot yet (caller continues: optional flash, then forced reboot)."
+    echo "================================================="
+    return 0
+  fi
+  echo " Rebooting in 5 seconds..."
+  echo "================================================="
+  sleep 5
+  reboot
+}
+upanel_plugin_format_hdd() { # $1=slots $2=disk (default sda) $3=size GB (empty = plugin rule) $4=storage spec (empty = one storage, rest) $5=NOREBOOT - HDD: slots 21..50 + storage split
+  _PH_SLOTS="$1"; _PH_DISK="${2:-sda}"; _PH_SIZE_OPT="$3"; _PH_STOR_SPEC="${4:-}"; _PH_NRB="$5"; _PH_SEP=""; case "$_PH_DISK" in mmcblk*|nvme*) _PH_SEP="p";; *) _PH_SEP="";; esac
+  _PH_ROOTSRC=$(awk '$2 == "/" {print $1; exit}' /proc/mounts 2>/dev/null)
+  if [ "$_PH_ROOTSRC" = "/dev/root" ] || [ -z "$_PH_ROOTSRC" ]; then _PH_ROOTSRC=$(grep -oE 'root=/dev/[^ ]+' /proc/cmdline 2>/dev/null | cut -d= -f2 | head -1); fi
+  _PH_ROOTDISK="${_PH_ROOTSRC#/dev/}"; case "$_PH_ROOTDISK" in mmcblk*|nvme*) _PH_ROOTDISK="${_PH_ROOTDISK%%p*}";; *) _PH_ROOTDISK="${_PH_ROOTDISK%%[0-9]*}";; esac
+  if [ -n "$_PH_ROOTDISK" ] && [ "$_PH_DISK" = "$_PH_ROOTDISK" ]; then echo "[FORMAT-FAIL] /dev/$_PH_DISK is the ROOT disk (you booted from it) - it can NEVER be formatted. Pick another disk."; return 1; fi
+  [ -n "$_PH_SLOTS" ] || { printf "Partition & Format HDD/SSD - how many slots? (plugin presets: 10 / 15 / 20): "; read _PH_SLOTS; }
+  case "$_PH_SLOTS" in 2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30) ;; *) echo "[FORMAT-FAIL] Slots must be 2-30 (plugin presets: 10 / 15 / 20)."; return 1;; esac
+  command -v parted >/dev/null 2>&1 || { echo "[FORMAT-FAIL] parted NOT found - cannot partition like the plugin. Install parted first."; return 1; }
+  echo "COUNT=${_PH_SLOTS}" > "$_PLUGIN_HDD_CONF"
+  echo "DISK=$_PH_DISK" >> "$_PLUGIN_HDD_CONF"
+  echo "[1/6] Unmounting Hard Disk partitions..."
+  umount -f /dev/${_PH_DISK}* 2>/dev/null
+  _PH_TOTAL=$(parted -s /dev/$_PH_DISK unit MB print 2>/dev/null | grep -E "^Disk /dev/$_PH_DISK" | cut -d' ' -f3 | tr -d 'MB' | cut -d'.' -f1)
+  [ -z "$_PH_TOTAL" ] && _PH_TOTAL=32000
+  if [ -n "$_PH_SIZE_OPT" ]; then case "$_PH_SIZE_OPT" in 2|3|4|5|6|7|8) _PH_SIZE_MB=$((_PH_SIZE_OPT * 1024)); echo "[*] Slot size option: ${_PH_SIZE_OPT}GB (${_PH_SIZE_MB}MB) per slot.";; *) echo "[FORMAT-FAIL] Slot size must be 2-8 GB (or empty = plugin rule)."; return 1;; esac
+  elif [ "$_PH_TOTAL" -gt 30000 ]; then _PH_SIZE_MB=3000; echo "[*] Disk Size Detected: ${_PH_TOTAL}MB. Setting Slot Size to 3000MB (3GB) - plugin rule."; else _PH_SIZE_MB=1600; echo "[*] Disk Size Detected: ${_PH_TOTAL}MB. Setting Slot Size to 1600MB - plugin rule."; fi
+  echo "[2/6] Creating GPT Partition Table on /dev/$_PH_DISK..."
+  parted -s /dev/$_PH_DISK mklabel gpt
+  _PH_I=1; _PH_START=2
+  while [ "$_PH_I" -le "$_PH_SLOTS" ]; do
+    _PH_SN=$((20 + _PH_I)); _PH_END=$((_PH_START + _PH_SIZE_MB))
+    echo "[3/6] Creating Slot $_PH_SN Partition (/dev/${_PH_DISK}${_PH_SEP}$_PH_I): ${_PH_START}MiB to ${_PH_END}MiB..."
+    parted -s /dev/$_PH_DISK mkpart primary ext4 "${_PH_START}MiB" "${_PH_END}MiB"
+    _PH_START=$((_PH_END + 1)); _PH_I=$((_PH_I + 1))
+  done
+  _PH_DATA_IDX=$((_PH_SLOTS + 1)); _PH_STOR_N=0; _PH_STOR_LIST="${_PH_STOR_SPEC:-0}"
+  echo "[4/6] Creating Storage Partition(s) on /dev/$_PH_DISK from ${_PH_START}MiB..."
+  _PH_R="$_PH_STOR_LIST"
+  while [ -n "$_PH_R" ]; do
+    _PH_EL="${_PH_R%%,*}"; case "$_PH_R" in *,*) _PH_R="${_PH_R#*,}";; *) _PH_R="";; esac
+    _PH_STOR_N=$((_PH_STOR_N + 1)); _PH_SIDX=$((_PH_DATA_IDX + _PH_STOR_N - 1))
+    if [ -n "$_PH_R" ]; then _PH_SEND=$((_PH_START + _PH_EL * 1024)); echo "  Storage $_PH_STOR_N: /dev/${_PH_DISK}${_PH_SEP}$_PH_SIDX = ${_PH_EL}G (${_PH_START}MiB to ${_PH_SEND}MiB)"; parted -s /dev/$_PH_DISK mkpart primary ext4 "${_PH_START}MiB" "${_PH_SEND}MiB"; _PH_START=$((_PH_SEND + 1))
+    else echo "  Storage $_PH_STOR_N: /dev/${_PH_DISK}${_PH_SEP}$_PH_SIDX = rest of disk (${_PH_START}MiB to 100%)"; parted -s /dev/$_PH_DISK mkpart primary ext4 "${_PH_START}MiB" 100%; fi
+  done
+  echo "[5/6] Informing Kernel & Refreshing Devices..."
+  partprobe /dev/$_PH_DISK 2>/dev/null
+  sleep 3
+  _PH_I=1
+  while [ "$_PH_I" -le "$_PH_SLOTS" ]; do
+    _PH_SN=$((20 + _PH_I)); _PH_DEV="/dev/${_PH_DISK}${_PH_SEP}$_PH_I"
+    echo "[*] Formatting Slot $_PH_SN ($_PH_DEV)..."
+    mkfs.ext4 -F -O ^has_journal -N 250000 -E lazy_itable_init=1 -L "linux$_PH_SN" "$_PH_DEV"
+    echo "Slot_$_PH_SN=Empty" >> "$_PLUGIN_HDD_CONF"
+    upanel_plugin_remove_startup_file "$_PH_SN"
+    _PH_I=$((_PH_I + 1))
+  done
+  _PH_N=21; while [ "$_PH_N" -le 50 ]; do [ "$_PH_N" -gt $((20 + _PH_SLOTS)) ] && rm -f "/boot/STARTUP_LINUX_$_PH_N" 2>/dev/null; _PH_N=$((_PH_N + 1)); done
+  _PH_SN2=1; while [ "$_PH_SN2" -le "$_PH_STOR_N" ]; do _PH_XDEV="/dev/${_PH_DISK}${_PH_SEP}$((_PH_DATA_IDX + _PH_SN2 - 1))"; if [ -b "$_PH_XDEV" ]; then if [ "$_PH_SN2" = "1" ]; then echo "[*] Formatting Storage Partition 1 ($_PH_XDEV) as HDD_STORAGE (HDD plugin storage)..."; mkfs.ext4 -F -O ^has_journal -L "HDD_STORAGE" "$_PH_XDEV"; mkdir -p /media/hdd2 2>/dev/null; mount "$_PH_XDEV" /media/hdd2 2>/dev/null; else echo "[*] Formatting Storage Partition $_PH_SN2 ($_PH_XDEV) as HDD_STORAGE$_PH_SN2..."; mkfs.ext4 -F -O ^has_journal -L "HDD_STORAGE$_PH_SN2" "$_PH_XDEV"; mkdir -p /media/hdd$((_PH_SN2 + 1)) 2>/dev/null; mount "$_PH_XDEV" /media/hdd$((_PH_SN2 + 1)) 2>/dev/null; fi; fi; _PH_SN2=$((_PH_SN2 + 1)); done
+  echo "================================================="
+  echo " SUCCESS: Formatted Hard Disk Successfully!"
+  echo " Slots: ${_PH_SLOTS} (Slot 21..$((20 + _PH_SLOTS))) - Slot Size: ${_PH_SIZE_MB}MB"
+  echo " Storage Partition 1: /dev/${_PH_DISK}${_PH_SEP}$_PH_DATA_IDX (HDD_STORAGE, Mounted to /media/hdd2) + $((_PH_STOR_N - 1)) extra storage partition(s)"
+  if [ "$_PH_NRB" = "NOREBOOT" ]; then
+    echo "================================================="
+    echo " SUCCESS: Formatted Successfully - NO reboot yet (caller continues: optional flash, then forced reboot)."
+    echo "================================================="
+    return 0
+  fi
+  echo " Rebooting in 5 seconds..."
+  echo "================================================="
+  sleep 5
+  reboot
+}
+upanel_plugin_install_image_mode() { # $1=mode (sd|hdd) $2=slot $3=zip path - plugin install_image, step-for-step
+  _IM_MODE="$1"; _II_N="$2"; _II_ZIP="$3"
+  [ -n "$_II_N" ] && [ -n "$_II_ZIP" ] || { echo "ERROR: Missing Slot Number or ZIP Path!"; return 1; }
+  _II_BASE=$(upanel_mode_base "$_IM_MODE"); _II_MAX=$(upanel_mode_max "$_IM_MODE"); if [ "$_II_N" -lt "$_II_BASE" ] 2>/dev/null || [ "$_II_N" -gt "$_II_MAX" ] 2>/dev/null; then echo "ERROR: SLOT $_II_N is not a $_IM_MODE slot ($_IM_MODE slots are $_II_BASE..$_II_MAX)."; return 1; fi
+  _II_PI=$((_II_N - $(upanel_mode_offset "$_IM_MODE"))); _II_DK=$(upanel_mode_disk "$_IM_MODE"); _II_SP=$(upanel_plugin_sep "$_II_DK"); _II_DEV="/dev/${_II_DK}${_II_SP}$_II_PI"; _II_MNT=$(upanel_mode_mount "$_IM_MODE" "$_II_N"); _II_NAME=$(basename "$_II_ZIP" .zip)
+  [ -f "$_II_ZIP" ] || { echo "ERROR: Image ZIP not found at: $_II_ZIP"; return 1; }
+  echo "[1/5] Unmounting target partition if busy..."
+  umount -f "$_II_DEV" 2>/dev/null; umount -f "$_II_MNT" 2>/dev/null
+  echo "[2/5] Fast formatting Slot $_II_N ($_II_DEV)..."
+  mkfs.ext4 -F -O ^has_journal -N 250000 -E lazy_itable_init=1 -L "linux$_II_N" "$_II_DEV"
+  echo "[3/5] Mounting Partition $_II_DEV to $_II_MNT..."
+  mkdir -p "$_II_MNT"
+  mount "$_II_DEV" "$_II_MNT" || { echo "ERROR: Failed to mount partition $_II_DEV!"; return 1; }
+  echo "[4/5] Unpacking Image directly to Slot $_II_N..."
+  _II_TMP=$(upanel_mode_tmp "$_IM_MODE")
+  rm -rf "$_II_TMP"; mkdir -p "$_II_TMP"
+  unzip -q -j "$_II_ZIP" "*/rootfs.tar.bz2" -d "$_II_TMP/"
+  if [ -f "$_II_TMP/rootfs.tar.bz2" ]; then
+    tar -xjf "$_II_TMP/rootfs.tar.bz2" -C "$_II_MNT/"
+    _II_TAR=$?
+    rm -rf "$_II_TMP"
+    sync
+    if [ "$_II_TAR" -ne 0 ]; then echo "ERROR: Failed to unpack rootfs archive!"; umount "$_II_MNT"; return 1; fi
+  else
+    echo "ERROR: rootfs.tar.bz2 missing inside ZIP archive!"
+    rm -rf "$_II_TMP"; umount "$_II_MNT"; return 1
+  fi
+  _II_DET=""
+  if [ -f "$_II_MNT/etc/issue" ]; then _II_DET=$(grep -E -i "openatv|egami|openbh|openpli|pure2|openspa|openvix|corvoboys" "$_II_MNT/etc/issue" | head -n 1 | sed -e 's/\\\\n//g' -e 's/\\\\l//g' | xargs); fi
+  [ -z "$_II_DET" ] && _II_DET="$_II_NAME"
+  upanel_mode_update_slot_info "$_IM_MODE" "$_II_N" "$_II_DET"
+  upanel_startup_plugin_format_mode "$_IM_MODE" "$_II_N"
+  echo "[5/5] Injecting slot plugin ($_IM_MODE) to Slot $_II_N..."
+  _II_TGT="$_II_MNT/usr/lib/enigma2/python/Plugins/Extensions/$(upanel_mode_plugin_dir "$_IM_MODE")"
+  mkdir -p "$_II_TGT"
+  cp -rf /usr/lib/enigma2/python/Plugins/Extensions/$(upanel_mode_plugin_dir "$_IM_MODE")/* "$_II_TGT/" 2>/dev/null
+  cp -f "$(upanel_mode_engine_path "$_IM_MODE")" "$_II_MNT/usr/bin/" 2>/dev/null
+  cp -f "$(upanel_mode_conf "$_IM_MODE")" "$_II_MNT/etc/$(upanel_mode_conf_name "$_IM_MODE")" 2>/dev/null
+  chmod 755 "$_II_MNT/usr/bin/$(upanel_mode_engine_name "$_IM_MODE")" 2>/dev/null
+  umount "$_II_MNT"
+  sync
+  echo "================================================="
+  echo " SUCCESS: Installed $_II_DET on Slot $_II_N!"
+  echo "================================================="
+  return 0
+}
+upanel_plugin_install_image() { upanel_plugin_install_image_mode "$(upanel_slot_mode "$1")" "$1" "$2"; }
+
+upanel_plugin_wipe_slot_mode() { # $1=mode $2=slot - plugin wipe_slot
+  _WP_MODE="$1"; _WP_N="$2"
+  [ -n "$_WP_N" ] || { echo "ERROR: Missing Slot Number!"; return 1; }
+  _WP_BASE=$(upanel_mode_base "$_WP_MODE"); _WP_MAX=$(upanel_mode_max "$_WP_MODE"); if [ "$_WP_N" -lt "$_WP_BASE" ] 2>/dev/null || [ "$_WP_N" -gt "$_WP_MAX" ] 2>/dev/null; then echo "ERROR: SLOT $_WP_N is not a $_WP_MODE slot ($_WP_MODE slots are $_WP_BASE..$_WP_MAX) - can NEVER be wiped."; return 1; fi
+  _WP_PI=$((_WP_N - $(upanel_mode_offset "$_WP_MODE"))); _WP_DK=$(upanel_mode_disk "$_WP_MODE"); _WP_SP=$(upanel_plugin_sep "$_WP_DK"); _WP_DEV="/dev/${_WP_DK}${_WP_SP}$_WP_PI"; _WP_MNT=$(upanel_mode_mount "$_WP_MODE" "$_WP_N")
+  echo "Wiping Slot $_WP_N ($_WP_DEV)..."
+  umount -f "$_WP_DEV" 2>/dev/null; umount -f "$_WP_MNT" 2>/dev/null
+  mkfs.ext4 -F -O ^has_journal -N 250000 -E lazy_itable_init=1 -L "linux$_WP_N" "$_WP_DEV"
+  sync
+  upanel_mode_update_slot_info "$_WP_MODE" "$_WP_N" "Empty"
+  upanel_plugin_remove_startup_file "$_WP_N"
+  echo "================================================="
+  echo " SUCCESS: Slot $_WP_N wiped successfully!"
+  echo "================================================="
+  return 0
+}
+upanel_plugin_wipe_slot() { upanel_plugin_wipe_slot_mode "$(upanel_slot_mode "$1")" "$1"; }
+
+upanel_plugin_reboot_slot_mode() { # $1=mode $2=slot - plugin reboot_slot for that mode
+  _RM_MODE="$1"; _RM_N="$2"; _RM_FILE="/boot/STARTUP_LINUX_$_RM_N"
+  echo "Preparing Boot parameters for Slot $_RM_N..."
+  mount -o remount,rw /boot 2>/dev/null
+  if [ -f "$_RM_FILE" ]; then
+    cp -f "$_RM_FILE" /boot/STARTUP
+  else
+    upanel_startup_plugin_format_mode "$_RM_MODE" "$_RM_N"
+    cp -f "$_RM_FILE" /boot/STARTUP
+  fi
+  sync
+  echo "Rebooting to Slot $_RM_N..."
+  sleep 1
+  reboot
+}
+upanel_plugin_reboot_slot() { # $1=slot - plugin reboot_slot (mode detected from the confs)
+  upanel_plugin_reboot_slot_mode "$(upanel_slot_mode "$1")" "$1"
+}
+
+upanel_startup_plugin_format_mode() { # $1=mode $2=slot
+  _PF_MODE="$1"; _PF_N="$2"
+  # V6.29 PLUGIN LAYOUT: Slot 5 is the HIDDEN internal Enigma/Android switcher -
+  # never an SD slot. External slots are 6..50 - SD maps to partition p(N-5), HDD maps to partition p(N-20):
+  # Slot 6 -> mmcblk1p1, Slot 7 -> p2, ... Slot 20 -> p15 (SD: PART_INDEX = SLOT - 5). HDD: Slot 21 -> p1, ... Slot 50 -> p30 (PART_INDEX = SLOT - 20). Storage = next partition after slots. NO BOOT partition on the disk.
+  _PF_BASE=$(upanel_mode_base "$_PF_MODE"); if [ "$_PF_N" -lt "$_PF_BASE" ] 2>/dev/null; then echo "[PLUGIN-FMT-FAIL] SLOT $_PF_N is not a $_PF_MODE slot ($_PF_MODE slots start at $_PF_BASE)."; return 1; fi
+  _PF_PDK=$(upanel_mode_disk "$_PF_MODE"); _PF_PSP=$(upanel_plugin_sep "$_PF_PDK"); _PF_DEV="/dev/${_PF_PDK}${_PF_PSP}$((_PF_N - $(upanel_mode_offset "$_PF_MODE")))"
+  mount -o remount,rw /boot 2>/dev/null
+  printf "bootcmd=setenv bootargs \\$(bootargs) \\$(bootargs_common); mmc read 0 0x1000000 0x3D5000 0x8000; bootm 0x1000000; run bootcmd_fallback\\nbootargs=root=%s rootfstype=ext4 rw rootwait console=ttyAMA0,115200 kernel=/dev/mmcblk0p22\\n" "$_PF_DEV" > "/boot/STARTUP_LINUX_$_PF_N" 2>/dev/null
+  if [ -s "/boot/STARTUP_LINUX_$_PF_N" ] && grep -q "0x3D5000" "/boot/STARTUP_LINUX_$_PF_N"; then echo "[PLUGIN-FMT] STARTUP_LINUX_$_PF_N rewritten in slot plugin format (root=$_PF_DEV, kernel=p22, bootcmd 0x3D5000)"; upanel_push_boot_file "/boot/STARTUP_LINUX_$_PF_N" >/dev/null 2>&1; mount -o remount,ro /boot 2>/dev/null; return 0; fi
+  echo "[PLUGIN-FMT-FAIL] Could not write STARTUP_LINUX_$_PF_N in plugin format."; mount -o remount,ro /boot 2>/dev/null; return 1
+}
+upanel_startup_plugin_format() { upanel_startup_plugin_format_mode "$(upanel_slot_mode "$1")" "$1"; }
+
+
+# V6.28 MIGRATION: old Panel numbering 5..24 -> new numbering 6..25.
+# Runs ONLY when the old layout is detected (LABEL=linux5 on mmcblk1p5, or
+# STARTUP_LINUX_5 containing mmcblk1p5). If LABEL=linux6 is already on p5,
+# the card is already on the new numbering and nothing moves.
+# Descending order (24 -> 5) so no target is ever clobbered.
+# STARTUP file contents are NOT edited: old Slot N root=pN == new Slot N+1
+# root=p(N+1-1)=pN, so the same file is correct under its new name.
+# The hidden internal boot 5 (STARTUP_LINUX_5 WITHOUT mmcblk1 in it) is NEVER moved.
+upanel_migrate_slot5_to_6() {
+  # V6.29: NO auto-shift anymore - the user reformats the card to the plugin
+  # layout (Format SD). This step only frees the hidden Slot 5 from an old
+  # Panel-layout squatter (an SD STARTUP_LINUX_5) and warns if the card still
+  # uses the old Panel layout (LABEL linux5 on p5) - those slots must be
+  # reformatted, they are NOT shifted.
+  if [ -f "/boot/STARTUP_LINUX_5" ] && grep -q "mmcblk1" "/boot/STARTUP_LINUX_5" 2>/dev/null; then
+    cp "/boot/STARTUP_LINUX_5" /tmp/STARTUP_LINUX_5.old-panel-layout.bak 2>/dev/null
+    rm -f "/boot/STARTUP_LINUX_5"
+    echo "[MIGRATE-6] Removed old Panel-layout STARTUP_LINUX_5 (SD squatter) - Slot 5 belongs to the hidden Enigma/Android switcher now (backup: /tmp/STARTUP_LINUX_5.old-panel-layout.bak)."
+  fi
+  if blkid 2>/dev/null | grep -q 'mmcblk1p5.*LABEL="linux5"'; then
+    echo "[MIGRATE-6] WARNING: this card still uses the OLD Panel layout (LABEL linux5 on mmcblk1p5). Reformat it with: Boot Slot Manager > Disk Slots Formatting. Old-layout slots are NOT shifted anymore."
+  else
+    echo "[MIGRATE-6] Slot 5 is free for the hidden switcher - nothing to migrate."
+  fi
+  return 0
+}
+
+# Rewrite every SD-slot STARTUP_LINUX_N (6+) that is still in the old
+# oe-alliance format (no 0x3D5000) into the plugin format. Old-format files
+# are NON-EMPTY, so rebuild_missing skipped them - that is why Fix Bootmenu
+# kept "succeeding" while Slot 5 kept booting EGAMI.
+upanel_fix_sd_startup_format() {
+  _FX=0
+  for _FX_N in 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+    [ -f "/boot/STARTUP_LINUX_$_FX_N" ] || continue
+    grep -q "0x3D5000" "/boot/STARTUP_LINUX_$_FX_N" 2>/dev/null && continue
+    # Only rewrite if the slot really holds an image (else leave it alone).
+    _FX_RP=$(upanel_root "$_FX_N" 2>/dev/null); _FX_RP="${_FX_RP%%|*}"
+    [ -n "$_FX_RP" ] || continue
+    mkdir -p /tmp/upanel-fmtchk 2>/dev/null
+    mount -o ro "$_FX_RP" /tmp/upanel-fmtchk 2>/dev/null || continue
+    _FX_HAS=0; [ -f "/tmp/upanel-fmtchk/etc/image-version" ] && _FX_HAS=1; [ -f "/tmp/upanel-fmtchk/usr/bin/enigma2" ] && _FX_HAS=1
+    umount /tmp/upanel-fmtchk 2>/dev/null
+    [ "$_FX_HAS" = "1" ] || continue
+    if upanel_startup_plugin_format "$_FX_N"; then _FX=$((_FX+1)); fi
+  done
+  [ "$_FX" -gt 0 ] && echo "[PLUGIN-FMT] $_FX SD STARTUP file(s) converted to plugin format." || echo "[PLUGIN-FMT] All SD STARTUP files already in plugin format."
+  return 0
+}
+
 # V6.26 NEW: rebuild a missing / 0-byte STARTUP_LINUX_N from the slot's REAL content.
 # V6.24 fixed Switch (push to every BOOT), but nothing rebuilt a STARTUP that was
 # already 0 bytes - Sync just copied the empty file around, so the slot never
 # showed in Recovery. This mounts each slot, proves it holds an image
 # (image-version / enigma2), then rebuilds its STARTUP from a healthy template.
 # Internal 1-4: root/subdir per slot + its own kernel partition (mmcblk0p19-22).
-# External 5+: root = slot partition, rootsubdir=/.
+# External 6+: root = slot partition, rootsubdir=/.
 upanel_boot_rebuild_missing() {
   _RB_REBUILT=0
-  for _RB_N in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
+  for _RB_N in 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do  # V6.28: 5 skipped - hidden internal Enigma/Android switcher, never rebuilt
     if [ -f "/boot/STARTUP_LINUX_$_RB_N" ] && [ -s "/boot/STARTUP_LINUX_$_RB_N" ]; then continue; fi
     _RB_ROOTINFO=$(upanel_root "$_RB_N" 2>/dev/null) || continue
     case "$_RB_ROOTINFO" in *"|"*) _RB_RP="${_RB_ROOTINFO%%|*}"; _RB_SUB="${_RB_ROOTINFO#*|}" ;; *) _RB_RP="$_RB_ROOTINFO"; _RB_SUB="" ;; esac
@@ -11484,7 +12025,9 @@ upanel_boot_rebuild_missing() {
     if [ "$_RB_N" -le 4 ]; then
       sed -e "s|root=[^ ]*|root=$_RB_RP|" -e "s|rootsubdir=[^ ]*|rootsubdir=linuxrootfs$_RB_N|" -e "s|kernel=[^ ]*|kernel=/dev/mmcblk0p$((18+_RB_N))|" "$_RB_TPL" > "/boot/STARTUP_LINUX_$_RB_N" 2>/dev/null
     else
-      sed -e "s|root=[^ ]*|root=$_RB_RP|" -e "s|rootsubdir=[^ ]*|rootsubdir=/|" "$_RB_TPL" > "/boot/STARTUP_LINUX_$_RB_N" 2>/dev/null
+      # V6.27: SD slots are written in the slot plugin format, NOT by
+      # sed-editing an internal template (that produced kernel=p19 -> EGAMI).
+      upanel_startup_plugin_format "$_RB_N"
     fi
     if [ -s "/boot/STARTUP_LINUX_$_RB_N" ]; then _RB_REBUILT=$((_RB_REBUILT+1)); echo "[REBUILD] STARTUP_LINUX_$_RB_N rebuilt from real content (root=$_RB_RP)"; upanel_push_boot_file "/boot/STARTUP_LINUX_$_RB_N" >/dev/null 2>&1; else rm -f "/boot/STARTUP_LINUX_$_RB_N"; fi
   done
@@ -11496,7 +12039,11 @@ upanel_boot_rebuild_missing() {
 upanel_fix_bootmenu() {
   show_banner; line; info "Fix Bootmenu - ONE CLICK: Rebuild + Sync + Hide empty + Names"
   echo "No re-partition - nothing is erased. Your images stay."
-  echo "=== Step 0/4: Rebuild missing / 0-byte STARTUP files from real slot content ==="
+  echo "=== Step -1/4: Free hidden Slot 5 + check card layout (V6.29) ==="
+  upanel_migrate_slot5_to_6
+  echo "=== Step 0/4: Convert SD STARTUP files to the slot plugin format (V6.27) ==="
+  upanel_fix_sd_startup_format
+  echo "=== Step 0b/4: Rebuild missing / 0-byte STARTUP files from real slot content ==="
   upanel_boot_rebuild_missing
   echo "=== Step 1/4: Sync STARTUP files to every BOOT partition ==="
   multiboot_sync_startup
@@ -11526,138 +12073,76 @@ upanel_force_reboot_bg() { # $1=delay seconds (default 3) - FORCED reboot that s
   _RC="sleep $_RD; sync; reboot -f; sleep 3; /sbin/reboot -f; sleep 3; init 6; sleep 3; shutdown -r now; sleep 3; echo 1 > /proc/sys/kernel/sysrq 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null"
   if command -v setsid >/dev/null 2>&1; then setsid nohup sh -c "$_RC" >/dev/null 2>&1 < /dev/null & else nohup sh -c "$_RC" >/dev/null 2>&1 < /dev/null & fi
 }
-upanel_formatting_slots() { # $1=disk $2=slots $3=size (all optional)
-  show_banner; line; info "Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot"
+upanel_formatting_slots() { # $1=kind (sd|hdd, empty = ask) $2=disk $3=slots $4=size $5=storage spec
+  show_banner; line; info "Disk Slots Formatting - SD / HDD-SSD"
+  _FS_KIND="$1"
+  if [ -z "$_FS_KIND" ]; then
+    echo "Format WHAT?"
+    echo "  [1] SD / Memory Card - memory plugin logic - SLOTS ONLY (no storage partition)"
+    echo "  [2] HDD / SSD - HDD plugin logic - slots 21..50 + storage split"
+    printf "Your choice (1/2): "; read _FS_PICK
+    case "$_FS_PICK" in 1) _FS_KIND=sd;; 2) _FS_KIND=hdd;; *) echo "Cancelled."; return 1;; esac
+  fi
+  case "$_FS_KIND" in sd|hdd) ;; *) echo "Kind must be sd or hdd."; return 1;; esac
+  _FS_DISK="$2"; _FS_SLOTS="$3"; _FS_SIZE="$4"; _FS_STOR="$5"
+  if [ "$_FS_KIND" = "sd" ]; then
+    [ -z "$_FS_DISK" ] && { printf "SD card disk (mmcblk1 = SD card, Enter = mmcblk1): "; read _FS_IN; [ -n "$_FS_IN" ] && _FS_DISK="$_FS_IN"; }
+    [ -z "$_FS_DISK" ] && _FS_DISK="mmcblk1"
+    echo "=== SD format on /dev/$_FS_DISK - SLOTS ONLY, no storage partition (slots: ${_FS_SLOTS:-ask}, size: ${_FS_SIZE:-plugin rule} GB) ==="
+  else
+    [ -z "$_FS_DISK" ] && { printf "HDD/SSD disk (sda = HDD/SSD, Enter = sda): "; read _FS_IN; [ -n "$_FS_IN" ] && _FS_DISK="$_FS_IN"; }
+    [ -z "$_FS_DISK" ] && _FS_DISK="sda"
+    echo "=== HDD format on /dev/$_FS_DISK - slots 21..50 + storage split (slots: ${_FS_SLOTS:-ask}, size: ${_FS_SIZE:-plugin rule} GB, storage: ${_FS_STOR:-one partition, rest}) ==="
+  fi
   echo "WARNING: Step 1 ERASES the WHOLE chosen disk - backups, movies, everything."
-  echo "=== Step 1/4: Partition disk (slots + storage) ==="
-  multiboot_prepare_disk "$1" "$2" "$3" "$4"
+  printf "Type ERASE or e to confirm (anything else cancels): "; read _CONF; case "$_CONF" in ERASE|erase|e|E) ;; *) echo "Cancelled - nothing touched."; return 1;; esac
+  if [ "$_FS_KIND" = "sd" ]; then upanel_plugin_format_sd_slots_only "$_FS_SLOTS" "$_FS_DISK" "$_FS_SIZE" "NOREBOOT"; else upanel_plugin_format_hdd "$_FS_SLOTS" "$_FS_DISK" "$_FS_SIZE" "$_FS_STOR" "NOREBOOT"; fi
   _FSRC=$?
-  if [ $_FSRC -ne 0 ]; then echo "[SLOTS-DISK-MANAGEMENT] Partition cancelled/failed - STOPPING. Nothing else ran, NO reboot."; return $_FSRC; fi
-  echo ""; echo "=== Step 2/4: Sync STARTUP files to every BOOT partition ==="
-  multiboot_sync_startup
-  echo ""; echo "=== Step 3/4: Hide empty slots in Recovery ==="
-  upanel_recovery_names 4
-  echo ""; echo "=== Step 4/4: Apply image names to all slots ==="
-  upanel_recovery_names 2
-  echo ""; echo "[SLOTS-DISK-MANAGEMENT] All 4 steps done. FORCED reboot in 3 seconds (reboot -f + fallbacks)..."
-  upanel_force_reboot_bg 3
+  if [ $_FSRC -ne 0 ]; then echo "[DISK-SLOTS-FORMATTING] Format failed - STOPPING. Nothing flashed, NO reboot."; return $_FSRC; fi
+  printf "Flash an image to a slot now? (y/n, Enter = n): "; read _FF
+  case "$_FF" in y|Y)
+    if U_PANEL_FORMAT_MODE="$_FS_KIND" upanel_format_flash_now; then
+      echo "[DISK-SLOTS-FORMATTING] Flash done - FORCED reboot in 3 seconds (reboot -f)..."
+      upanel_force_reboot_bg 3
+      return 0
+    fi
+    echo "[DISK-SLOTS-FORMATTING] Flash skipped/failed - rebooting in 5 seconds..."
+    sleep 5; reboot; return 0
+    ;;
+  esac
+  echo "[DISK-SLOTS-FORMATTING] Format done - rebooting in 5 seconds..."
+  sleep 5; reboot
   return 0
 }
-web_formatting_slots() { printf "ERASE\n\n" | upanel_formatting_slots "$1" "$2" "$3" "$4"; }
 
-boot_slot_manager() {
-  echo "[BUILD V23.4 - all 14 slots + clean screen]"
-  upanel_boot_mount
-  command -v debugfs >/dev/null 2>&1 || echo "[WARN] debugfs NOT installed - slot names may read Empty until it installs (needs network for opkg/apt)."
-  while true; do
-    show_banner; line; info "Boot Slot Manager - Box: $BOX - Machine: $MACHINE"
-    _CS=$(upanel_current); _SL=$(upanel_slots)
-    echo "Current Slot: SLOT $_CS - $IMAGE"
-    echo "[BUILD V23.4]"
-    echo "Slots:"
-    for _N in $_SL; do
-      _NM=$(upanel_name "$_N"); _WHY=$(cat /tmp/upanel_why_$$ 2>/dev/null)
-      if [ "$_NM" = "Empty / Unknown" ] && [ -n "$_WHY" ]; then _NM="$_NM ($_WHY)"; fi
-      if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE"; else echo "  [$_N] SLOT $_N - $_NM"; fi
-    done
-    line
-    echo "  [2] Show Slots"
-    echo "  [3] Switch Slot + Reboot"
-    echo "  [4] Backup Current Slot"
-    echo "  [5] Restore to Slot"
-    echo "  [6] Diagnose Slots"
-    echo "  [7] Test Switch"
-    echo "  [8] Flash Image to Slot"
-    echo "  [9] Download Image from Internet"
-    echo "  [10] Rollback guard (auto-return if new slot fails to boot)"
-    echo "  [11] Wipe Slot - erase the image on a slot completely"
-    echo "  [12] Recovery Slot Names - make image names show in Recovery (TEST)"
-    echo "  [13] Slots disk management - ONE BUTTON: Partition + Storage + Sync + Hide empty + Names + Reboot"
-    echo "  [14] Fix Bootmenu - 3 steps WITHOUT re-partition (Sync + Hide empty + Names)"
-    echo "  [R] Rename a slot"
-    echo "  [0] Back"
-    printf "Your choice: "; read _BC || return 0
-    case "$_BC" in
-      0) return 0 ;;
-      2) rm -f /tmp/upanel_slot_img_* /tmp/upanel_e2fs_tried 2>/dev/null; continue ;;
-      10) rollback_guard_status ;;
-      11) upanel_wipe ;;
-      12) upanel_recovery_names ;;
-      13) upanel_formatting_slots ;;
-      14) upanel_fix_bootmenu ;;
-      R|r) upanel_rename_menu ;;
-      3)
-        printf "Switch to which SLOT number? (0 = cancel): "; read _TS
-        [ "$_TS" = "0" ] && continue
-        case " $_SL " in *" $_TS "*) ;; *) echo "SLOT $_TS not found. Available: $_SL";
-          echo "--- why? ---";
-          echo "  /boot/STARTUP_LINUX_$_TS: $([ -f "/boot/STARTUP_LINUX_$_TS" ] && echo EXISTS || echo MISSING)";
-          echo "  /boot/STARTUP_$_TS: $([ -f "/boot/STARTUP_$_TS" ] && echo EXISTS || echo MISSING)";
-          echo "  blkid LABEL=linux$_TS: $(blkid 2>/dev/null | grep "LABEL=\"linux$_TS\"" | cut -d: -f1 || echo none)";
-          echo "  MMC devices: $(ls /dev/mmcblk* 2>/dev/null | tr '\n' ' ' || echo none)";
-          [ -e /dev/mmcblk1 ] || echo "  >> SD card (mmcblk1) NOT detected - slots on SD (6,7,...) can NOT appear until the card is reinserted + reboot.";
-          printf "Press ENTER... "; read _b; continue;; esac
-        if [ "$(upanel_name "$_TS")" = "Empty / Unknown" ]; then echo "SLOT $_TS is Empty - flash an image into it first, there is nothing to boot."; printf "Press ENTER... "; read _b; continue; fi
-        if [ "$_TS" = "$_CS" ]; then echo "You are already on SLOT $_TS."; printf "Press ENTER... "; read _b; continue; fi
-        echo "WARNING: device will REBOOT into SLOT $_TS - $(upanel_name "$_TS")"
-        printf "Type YES / y to switch + reboot: "; read _CF; if is_yes "$_CF"; then :; else echo "Cancelled."; printf "Press ENTER... "; read _b; continue; fi
-        _APPLIED=0
-        upanel_boot_mount; echo "[SLOT] /boot mount: $(grep " /boot " /proc/mounts 2>/dev/null || echo NOT-MOUNTED)"
-        mount -o remount,rw /boot 2>/dev/null
-        if [ -f "/boot/STARTUP_LINUX_$_TS" ]; then cp "/boot/STARTUP_LINUX_$_TS" /boot/STARTUP && cmp -s "/boot/STARTUP_LINUX_$_TS" /boot/STARTUP && _APPLIED=1 && echo "[SLOT] /boot/STARTUP_LINUX_$_TS -> /boot/STARTUP (verified)"; elif [ -f "/boot/STARTUP_$_TS" ]; then cp "/boot/STARTUP_$_TS" /boot/STARTUP && cmp -s "/boot/STARTUP_$_TS" /boot/STARTUP && _APPLIED=1 && echo "[SLOT] /boot/STARTUP_$_TS -> /boot/STARTUP (verified)"; fi
-                # V6.24 FIX: push the ACTIVE STARTUP (+ its kernel) to EVERY BOOT partition -
-        # the bootloader may read a different BOOT than the mounted /boot, so a
-        # switch that only touches the mounted /boot never reached it (Recovery).
-        if [ "$_APPLIED" = "1" ]; then
-          _SKF=$(grep -oE 'kernel=[^ ]+' /boot/STARTUP 2>/dev/null | head -1 | cut -d= -f2)
-          case "$_SKF" in /*) ;; *) _SKF="/boot/$_SKF";; esac
-          [ -n "$_SKF" ] && [ -f "$_SKF" ] && upanel_push_boot_file "$_SKF"
-          upanel_push_boot_file "/boot/STARTUP"
-        fi
-if [ "$_APPLIED" = "0" ]; then echo "[SLOT-FAIL] Copy to /boot/STARTUP failed - /boot may still be read-only. NOT rebooting."; printf "Press ENTER... "; read _b; continue; fi
-        rollback_guard_arm "$_CS" "$_TS"
-        case ":$PATH:" in *":/tmp/no-reboot:"*) PATH=$(echo "$PATH" | sed -e 's|/tmp/no-reboot:||g' -e 's|:/tmp/no-reboot$||'); export PATH; echo "[SLOT] Reboot-Guard PATH override stripped - real reboot will run";; esac
-        if command -v fw_setenv >/dev/null 2>&1; then fw_setenv boot_slot "$_TS" 2>/dev/null && echo "[SLOT] fw_setenv boot_slot=$_TS"; fi
-        sync; echo "[SLOT] Rebooting into SLOT $_TS..."
-        echo "[SLOT] reboot binary: $(command -v reboot) / sbin: $(ls -l /sbin/reboot 2>/dev/null)"
-        reboot -f; sleep 3; echo "[SLOT] reboot -f did NOT reboot (still alive), trying next..."
-        /sbin/reboot -f; sleep 3; echo "[SLOT] /sbin/reboot -f did NOT reboot, trying next..."
-        init 6; sleep 3; echo "[SLOT] init 6 did NOT reboot, trying next..."
-        shutdown -r now; sleep 3; echo "[SLOT] shutdown -r now did NOT reboot, trying last resort..."
-        echo 1 > /proc/sys/kernel/sysrq 2>/dev/null; echo b > /proc/sysrq-trigger; sleep 3
-        echo "[SLOT-FAIL] ALL reboot methods failed - the box refused to reboot."
-        echo "[SLOT-FAIL] Reboot it manually from the remote / power button - it WILL boot into SLOT $_TS (STARTUP already switched)."
-        printf "Press ENTER to return... "; read _b; continue ;;
-      4)
-        echo "Backup Current Slot: SLOT $_CS - $IMAGE"
-        printf "Press ENTER to start Backup Ur Data for SLOT $_CS - or 0 to cancel: "; read _go; [ "$_go" = "0" ] && continue
-        backup_plugins_then_files
-        _NB=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null | head -1)
-        if [ -n "$_NB" ]; then case "$_NB" in *"SLOT"*) echo "[SLOT] Backup already tagged: $_NB";; *) mv "$_NB" "${_NB}_SLOT$_CS" 2>/dev/null && echo "[SLOT] Backup tagged: ${_NB}_SLOT$_CS";; esac; fi
-        printf "Press ENTER to return... "; read _b ;;
-      6) upanel_diagnose ;;
-      7) upanel_probe ;;
-      8) upanel_flash ;;
-      9) download_image_menu ;;
-      5)
-        echo "Restore to Slot - restores to the slot you are CURRENTLY booted from (SLOT $_CS)."
-        echo "To restore to ANOTHER slot: Switch to it + reboot FIRST, then come back here and Restore."
-        _BL=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null)
-        [ -z "$_BL" ] && { echo "No backups found."; printf "Press ENTER... "; read _b; continue; }
-        _i=0; for _d in $_BL; do _i=$((_i+1)); echo "  [$_i] $(basename "$_d")"; done
-        printf "Pick backup number (0 = cancel): "; read _PN; [ "$_PN" = "0" ] && continue
-        _SEL=$(echo "$_BL" | sed -n "${_PN}p"); [ -z "$_SEL" ] && { echo "Bad number."; printf "Press ENTER... "; read _b; continue; }
-        printf "Restore target SLOT (must be your CURRENT slot $_CS - or 0 to cancel): "; read _TS; [ "$_TS" = "0" ] && continue
-        if [ "$_TS" != "$_CS" ]; then echo "[SLOT] Target SLOT $_TS is NOT the running slot."; echo "Steps: [2] Switch Slot -> SLOT $_TS -> reboot -> then Restore this backup there."; printf "Press ENTER... "; read _b; continue; fi
-        case "$(basename "$_SEL")" in *"SLOT$_TS"*|*"$IMAGE"*) ;; *) echo "[SLOT-WARN] Backup '$(basename "$_SEL")' does not look like SLOT $_TS / $IMAGE."; printf "Type YES / y to continue anyway: "; read _CF2; is_yes "$_CF2" || { echo "Cancelled."; printf "Press ENTER... "; read _b; continue; };; esac
-        echo "WARNING: this will overwrite the RUNNING system on SLOT $_TS."
-        printf "Type YES / y twice to confirm - first YES / y: "; read _C1; printf "Second YES / y: "; read _C2
-        if is_yes "$_C1" && is_yes "$_C2"; then echo "Opening Custom Restore - pick the SAME backup: $(basename "$_SEL")"; selective_restore_menu; else echo "Cancelled."; fi
-        printf "Press ENTER to return... "; read _b ;;
-      *) wrong_choice ;;
-    esac
-  done
+# V6.35: flash-after-format - pick an image from the list, flash it to a slot,
+# then the caller does the FORCED reboot. WebUI passes the image + slot in
+# U_PANEL_FORMAT_FLASH_IMG / U_PANEL_FORMAT_FLASH_SLOT (no prompts then).
+upanel_format_flash_now() { # V6.35: mode from U_PANEL_FORMAT_MODE (sd|hdd) - slot range + partition offset follow the mode
+  _FF_MODE="${U_PANEL_FORMAT_MODE:-sd}"; _FF_BASE=$(upanel_mode_base "$_FF_MODE"); _FF_MAX=$(upanel_mode_max "$_FF_MODE")
+  _FF_IMG="$U_PANEL_FORMAT_FLASH_IMG"; _FF_SLOT="$U_PANEL_FORMAT_FLASH_SLOT"
+  if [ -z "$_FF_IMG" ]; then
+    _FF_LIST=""; for _Z in /media/hdd/*.zip /media/usb/*.zip /media/mmc/*.zip; do [ -f "$_Z" ] && _FF_LIST="$_FF_LIST $_Z"; done
+    [ -z "$_FF_LIST" ] && { echo "[FLASH] No .zip images found on /media/hdd, /media/usb or /media/mmc - skipping flash."; return 1; }
+    echo "Images (pick one):"; _FF_I=0; for _Z in $_FF_LIST; do _FF_I=$((_FF_I + 1)); echo "  [$_FF_I] $_Z"; done
+    printf "Pick image number (0 = skip flash): "; read _FF_PICK
+    case "$_FF_PICK" in *[!0-9]*|"") echo "Bad pick."; return 1;; 0) echo "Skipped."; return 1;; esac
+    _FF_IMG=$(echo "$_FF_LIST" | tr ' ' '\n' | grep -v '^$' | sed -n "${_FF_PICK}p")
+    [ -z "$_FF_IMG" ] && { echo "Bad pick."; return 1; }
+  fi
+  if [ -z "$_FF_SLOT" ]; then printf "Flash to which SLOT ($_FF_BASE-$_FF_MAX, 0 = skip)? "; read _FF_SLOT; fi
+  case "$_FF_SLOT" in *[!0-9]*|"") echo "Bad slot."; return 1;; 0) echo "Skipped."; return 1;; esac
+  if [ "$_FF_SLOT" -lt "$_FF_BASE" ] 2>/dev/null || [ "$_FF_SLOT" -gt "$_FF_MAX" ] 2>/dev/null; then echo "Slot must be $_FF_BASE-$_FF_MAX ($_FF_MODE)."; return 1; fi
+  _FF_CS=$(upanel_current)
+  if [ "$_FF_SLOT" = "$_FF_CS" ]; then echo "REFUSED: SLOT $_FF_SLOT is the running slot."; return 1; fi
+  [ -f "$_FF_IMG" ] || { echo "Image not found: $_FF_IMG"; return 1; }
+  upanel_plugin_install_and_verify "$_FF_MODE" "$_FF_SLOT" "$_FF_IMG"
 }
+web_formatting_slots() { # $1=disk $2=slots $3=size $4=spec $5=flash img (optional) $6=flash slot (optional) $7=kind (sd|hdd)
+  _WF_KIND="${7:-sd}"; case "$_WF_KIND" in sd|hdd) ;; *) _WF_KIND=sd;; esac
+  if [ -n "$5" ]; then printf "ERASE\ny\n" | U_PANEL_FORMAT_MODE="$_WF_KIND" U_PANEL_FORMAT_FLASH_IMG="$5" U_PANEL_FORMAT_FLASH_SLOT="$6" upanel_formatting_slots "$_WF_KIND" "$1" "$2" "$3" "$4";
+  else printf "ERASE\n\n" | U_PANEL_FORMAT_MODE="$_WF_KIND" upanel_formatting_slots "$_WF_KIND" "$1" "$2" "$3" "$4"; fi; }
+
 
 
 
@@ -12728,13 +13213,175 @@ web_plugin_update() { force_reinstall_plugin_by_num "$1"; }
 web_plugin_update_custom() { force_reinstall_custom_by_num "$1"; }
 web_plugin_uninstall() { uninstall_plugin_by_num "$1"; }
 web_multiboot_show() { upanel_boot_mount; _CS=$(upanel_current); _SL=$(upanel_slots); echo "Current Slot: SLOT $_CS - $IMAGE"; echo "Slots:"; for _N in $_SL; do _NM=$(upanel_name "$_N"); if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE"; else echo "  [$_N] SLOT $_N - $_NM"; fi; done; }
-web_multiboot_switch() { echo "[WEB-SWITCH] target SLOT $1"; printf "\n3\n%s\nYES\n" "$1" | boot_slot_manager; }
-web_multiboot_backup() { printf "\n4\n\n\n" | boot_slot_manager; }
-web_multiboot_diagnose() { printf "\n6\n\n" | boot_slot_manager; }
-web_multiboot_probe() { printf "\n7\n\n" | boot_slot_manager; }
-web_multiboot_rollback() { printf "\n10\nn\n\n" | boot_slot_manager; }
-web_multiboot_wipe() { printf "\n11\n%s\nWIPE\nWIPE\n\n" "$1" | boot_slot_manager; }
-web_multiboot_rename() { printf "\nR\n%s\n%s\n\n" "$1" "$2" | boot_slot_manager; }
+web_multiboot_switch() { echo "[WEB-SWITCH] target SLOT $1"; printf "\n3\n%s\n%s\nYES\n" "$(upanel_web_slot_disk "$1")" "$1" | boot_slot_manager; }
+web_multiboot_backup() { _WB_CS=$(upanel_current); echo "Backup Current Slot: SLOT $_WB_CS - $IMAGE"; backup_plugins_then_files; _NB=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null | head -1); if [ -n "$_NB" ]; then case "$_NB" in *"SLOT"*) echo "[SLOT] Backup already tagged: $_NB";; *) mv "$_NB" "${_NB}_SLOT$_WB_CS" 2>/dev/null && echo "[SLOT] Backup tagged: ${_NB}_SLOT$_WB_CS";; esac; fi; }
+web_multiboot_diagnose() { upanel_diagnose; }
+web_multiboot_probe() { upanel_probe; }
+web_multiboot_rollback() { printf "n\n\n" | rollback_guard_status; }
+# V6.35: Wipe Slots - erase ONE or MORE slots in one go. $1 = optional slot
+# list (WebUI passes it) - else ask: "7 8 9" or ALL (all external 6..50).
+# One WIPE confirm for the whole list. External slots use the plugin wipe,
+# internal slots (1-4) reuse the single-slot wipe. Current slot + Slot 5
+# can NEVER be wiped. Web per-slot wipe still pipes "11\n<slot>\nWIPE" here.
+upanel_mode_slots_list() { # $1=mode - "  [N] SLOT N - name" per slot in the mode conf
+  _MS_CF=$(upanel_mode_conf "$1"); _MS_CNT=4; [ "$1" = "hdd" ] && _MS_CNT=10
+  if [ -f "$_MS_CF" ]; then _MS_C=$(grep -E '^COUNT=' "$_MS_CF" 2>/dev/null | cut -d= -f2 | head -1); case "$_MS_C" in *[!0-9]*|"") ;; *) _MS_CNT="$_MS_C";; esac; fi
+  _MS_BASE=$(upanel_mode_base "$1"); _MS_I=1
+  while [ "$_MS_I" -le "$_MS_CNT" ]; do
+    _MS_N=$((_MS_BASE + _MS_I - 1))
+    _MS_NM=$(grep -E "^Slot_$_MS_N=" "$_MS_CF" 2>/dev/null | cut -d= -f2-)
+    [ -z "$_MS_NM" ] && _MS_NM="Empty"
+    echo "  [$_MS_N] SLOT $_MS_N - $_MS_NM"
+    _MS_I=$((_MS_I + 1))
+  done
+}
+upanel_mode_pick_disk() { # sets _PICKED_DISK (sd|hdd), empty = cancel/bad
+  _PICKED_DISK=""
+  echo "Disk:"
+  echo "  [1] SD / Memory Card"
+  echo "  [2] HDD / SSD"
+  printf "Pick disk (1/2, 0 = cancel): "; read _MP_D || return 1
+  case "$_MP_D" in 1) _PICKED_DISK=sd;; 2) _PICKED_DISK=hdd;; 0) return 1;; *) echo "Bad disk."; return 1;; esac
+  return 0
+}
+upanel_mode_pick_slot() { # $1=mode $2=prompt - sets _PICKED_SLOT (empty = bad, 0 = cancel)
+  _PICKED_SLOT=""
+  upanel_mode_slots_list "$1"
+  printf "%s" "$2"; read _MP_S || return 1
+  case "$_MP_S" in *[!0-9]*|"") echo "Bad slot number."; return 1;; esac
+  [ "$_MP_S" = "0" ] && { _PICKED_SLOT="0"; return 0; }
+  _MP_BASE=$(upanel_mode_base "$1"); _MP_MAX=$(upanel_mode_max "$1")
+  if [ "$_MP_S" -lt "$_MP_BASE" ] 2>/dev/null || [ "$_MP_S" -gt "$_MP_MAX" ] 2>/dev/null; then echo "Slot must be $_MP_BASE-$_MP_MAX."; return 1; fi
+  _PICKED_SLOT="$_MP_S"
+  return 0
+}
+upanel_plugin_install_and_verify() { # $1=mode $2=slot $3=zip - plugin install_image + push STARTUP + verify + rollback checker + label + INJECT plugin into the slot
+  _IV_MODE="$1"; _IV_SLOT="$2"; _IV_ZIP="$3"
+  echo "[FLASH] Installing $(basename "$_IV_ZIP") to SLOT $_IV_SLOT ($_IV_MODE plugin install_image)..."
+  upanel_plugin_install_image_mode "$_IV_MODE" "$_IV_SLOT" "$_IV_ZIP" || { echo "[FLASH-FAIL] install_image failed."; return 1; }
+  upanel_push_boot_file "/boot/STARTUP_LINUX_$_IV_SLOT" >/dev/null 2>&1
+  sync
+  if ! upanel_verify_after_flash "$_IV_SLOT"; then echo "[FLASH-FAIL] SLOT $_IV_SLOT did NOT verify - do NOT boot it."; return 1; fi
+  _IV_MP2=/tmp/upanel_flash_mnt2; mkdir -p "$_IV_MP2"
+  _IV_DK=$(upanel_mode_disk "$_IV_MODE"); _IV_SP=$(upanel_plugin_sep "$_IV_DK")
+  if mount "/dev/${_IV_DK}${_IV_SP}$((_IV_SLOT - $(upanel_mode_offset "$_IV_MODE")))" "$_IV_MP2" 2>/dev/null; then upanel_install_rollback_checker "$_IV_MP2"; umount "$_IV_MP2" 2>/dev/null; fi
+  _IV_NM=$(upanel_name "$_IV_SLOT")
+  if [ "$_IV_NM" = "Empty / Unknown" ]; then _IV_LBL=$(basename "$_IV_ZIP" | sed -e 's/\.zip$//' -e 's/[-_]/ /g' | cut -c1-40); echo "$_IV_LBL" > "$(upanel_label_file "$_IV_SLOT")" 2>/dev/null; fi
+  echo "[INJECT] Injecting plugin into SLOT $_IV_SLOT (flashed slot)..."
+  upanel_plugin_inject_to_slot_mode "$_IV_MODE" "$_IV_SLOT"
+  echo "[FLASH] DONE - SLOT $_IV_SLOT now has: $(upanel_name "$_IV_SLOT")"
+  return 0
+}
+upanel_web_slot_disk() { # $1=slot - echoes 1 (SD) or 2 (HDD) for the WebUI wrappers
+  if grep -q "^Slot_$1=" "$_PLUGIN_HDD_CONF" 2>/dev/null; then echo 2; elif grep -q "^Slot_$1=" "$_PLUGIN_CONF" 2>/dev/null; then echo 1; elif [ "$1" -ge 22 ] 2>/dev/null; then echo 2; else echo 1; fi
+}
+# V6.38: Boot Slot Manager - ONE main choice [1] Disk Slots Formatting with
+# TWO sub-choices inside (SD / HDD-SSD, asked by upanel_formatting_slots).
+# Numbering: SD 6..20, HDD/SSD 21..50 - no overlap.
+# SD format = slots ONLY (no storage partition). HDD format = slots +
+# storage split. Both offer flash + inject + forced reboot.
+boot_slot_manager() {
+  while true; do
+    show_banner; line; info "Boot Slot Manager - Box: $BOX - Machine: $MACHINE"
+    _CS=$(upanel_current); _SL=$(upanel_slots)
+    echo "Current Slot: SLOT $_CS - $IMAGE"
+    echo "Slots:"
+    for _N in $_SL; do _NM=$(upanel_name "$_N"); if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE"; else echo "  [$_N] SLOT $_N - $_NM"; fi; done
+    line
+    echo "  [1] Disk Slots Formatting - SD / HDD-SSD (slots + storage)"
+    echo "  [2] Install Image to Selected Slot"
+    echo "  [3] Reboot to Selected Slot"
+    echo "  [4] Wipe / Clear Selected Slot"
+    echo "  [5] Inject Plugin to All Installed Slots"
+    echo "  [6] Fix Bootmenu - rebuild + sync + hide empty + names (NO re-partition)"
+    echo "  [0] Back"
+    printf "Your choice: "; read _BC || return 0
+    case "$_BC" in
+      0) return 0 ;;
+      1) upanel_formatting_slots ;;
+      2)
+        upanel_mode_pick_disk || { printf "Press ENTER... "; read _b; continue; }
+        upanel_mode_pick_slot "$_PICKED_DISK" "Install to which SLOT ($(upanel_mode_base "$_PICKED_DISK")-$(upanel_mode_max "$_PICKED_DISK"), 0 = cancel)? " || { printf "Press ENTER... "; read _b; continue; }
+        [ "$_PICKED_SLOT" = "0" ] && continue
+        if [ "$_PICKED_SLOT" = "$(upanel_current)" ]; then echo "REFUSED: SLOT $_PICKED_SLOT is the running slot."; printf "Press ENTER... "; read _b; continue; fi
+        _BM_ZIPS=""; for _Z in /media/hdd/*.zip /media/usb/*.zip /media/mmc/*.zip; do [ -f "$_Z" ] && _BM_ZIPS="$_BM_ZIPS $_Z"; done
+        if [ -z "$_BM_ZIPS" ]; then echo "[FLASH] No .zip images found on /media/hdd, /media/usb or /media/mmc - skipping flash."; printf "Press ENTER... "; read _b; continue; fi
+        echo "Images (pick one):"; _BM_I=0; for _Z in $_BM_ZIPS; do _BM_I=$((_BM_I + 1)); echo "  [$_BM_I] $_Z"; done
+        printf "Pick image number (0 = cancel): "; read _BM_PICK
+        case "$_BM_PICK" in *[!0-9]*|"") echo "Bad pick."; printf "Press ENTER... "; read _b; continue;; 0) continue;; esac
+        _BM_IMG=$(echo "$_BM_ZIPS" | tr ' ' '\n' | grep -v '^$' | sed -n "${_BM_PICK}p")
+        [ -z "$_BM_IMG" ] && { echo "Bad pick."; printf "Press ENTER... "; read _b; continue; }
+        upanel_plugin_install_and_verify "$_PICKED_DISK" "$_PICKED_SLOT" "$_BM_IMG"
+        printf "Press ENTER... "; read _b ;;
+      3)
+        upanel_mode_pick_disk || { printf "Press ENTER... "; read _b; continue; }
+        upanel_mode_pick_slot "$_PICKED_DISK" "Reboot to which SLOT ($(upanel_mode_base "$_PICKED_DISK")-$(upanel_mode_max "$_PICKED_DISK"), 0 = cancel)? " || { printf "Press ENTER... "; read _b; continue; }
+        [ "$_PICKED_SLOT" = "0" ] && continue
+        _BM_NM=$(upanel_name "$_PICKED_SLOT")
+        if [ "$_BM_NM" = "Empty / Unknown" ]; then echo "SLOT $_PICKED_SLOT is Empty - flash an image into it first, there is nothing to boot."; printf "Press ENTER... "; read _b; continue; fi
+        if [ "$_PICKED_SLOT" = "$(upanel_current)" ]; then echo "You are already on SLOT $_PICKED_SLOT."; printf "Press ENTER... "; read _b; continue; fi
+        echo "WARNING: device will REBOOT into SLOT $_PICKED_SLOT - $_BM_NM"
+        printf "Type YES / y to reboot: "; read _BM_CF
+        if is_yes "$_BM_CF"; then upanel_plugin_reboot_slot_mode "$_PICKED_DISK" "$_PICKED_SLOT"; else echo "Cancelled."; printf "Press ENTER... "; read _b; fi ;;
+      4)
+        upanel_mode_pick_disk || { printf "Press ENTER... "; read _b; continue; }
+        upanel_mode_pick_slot "$_PICKED_DISK" "Wipe which SLOT ($(upanel_mode_base "$_PICKED_DISK")-$(upanel_mode_max "$_PICKED_DISK"), 0 = cancel)? " || { printf "Press ENTER... "; read _b; continue; }
+        [ "$_PICKED_SLOT" = "0" ] && continue
+        if [ "$_PICKED_SLOT" = "$(upanel_current)" ]; then echo "REFUSED: you are RUNNING on SLOT $_PICKED_SLOT."; printf "Press ENTER... "; read _b; continue; fi
+        echo "WILL WIPE: SLOT $_PICKED_SLOT ($(upanel_name "$_PICKED_SLOT")) - this CANNOT be undone."
+        printf "Type WIPE to confirm: "; read _BM_W1
+        if confirm_word "$_BM_W1" "wipe"; then upanel_plugin_wipe_slot_mode "$_PICKED_DISK" "$_PICKED_SLOT"; rm -f "$(upanel_label_file "$_PICKED_SLOT")"; else echo "Cancelled."; fi
+        printf "Press ENTER... "; read _b ;;
+      5)
+        echo "Inject to:"
+        echo "  [1] SD / Memory Card"
+        echo "  [2] HDD / SSD"
+        echo "  [3] Both disks"
+        printf "Pick (1/2/3, 0 = cancel): "; read _BM_INJ || continue
+        case "$_BM_INJ" in 1) upanel_plugin_inject_all_mode sd;; 2) upanel_plugin_inject_all_mode hdd;; 3) upanel_plugin_inject_all;; 0) ;; *) wrong_choice;; esac
+        printf "Press ENTER... "; read _b ;;
+      6) upanel_fix_bootmenu; printf "Press ENTER... "; read _b ;;
+      *) wrong_choice ;;
+    esac
+  done
+}
+
+
+upanel_wipe_slots() {
+  show_banner; line; info "Wipe Slots - erase images from one or more slots - every slot stays Empty"
+  _CS=$(upanel_current); _SL=$(upanel_slots)
+  echo "Current Slot: SLOT $_CS - $IMAGE - THIS SLOT CAN NEVER BE WIPED"
+  echo "Slots:"
+  for _N in $_SL; do _NM=$(upanel_name "$_N"); if [ "$_N" = "$_CS" ]; then echo "  [$_N] SLOT $_N - $_NM  <-- YOU ARE HERE (PROTECTED)"; else echo "  [$_N] SLOT $_N - $_NM"; fi; done
+  if [ -n "$1" ]; then _WL="$1"; else printf "Wipe which slots? (numbers separated by space, e.g. 7 8 9 - ALL = all external slots 6..50, 0 = cancel): "; read _WL; fi
+  [ "$_WL" = "0" ] && return 0
+  if [ "$_WL" = "ALL" ] || [ "$_WL" = "all" ]; then _WL=""; _WN=6; while [ "$_WN" -le 25 ]; do _WL="$_WL $_WN"; _WN=$((_WN + 1)); done; fi
+  _TODO=""
+  for _WS in $_WL; do
+    case "$_WS" in *[!0-9]*|"") echo "Skipping bad entry: $_WS"; continue;; esac
+    if [ "$_WS" = "5" ]; then echo "Skipping SLOT 5 - hidden switcher, can NEVER be wiped."; continue; fi
+    if [ "$_WS" = "$_CS" ]; then echo "Skipping SLOT $_WS - you are RUNNING on it."; continue; fi
+    if [ "$_WS" -lt 1 ] || [ "$_WS" -gt 50 ]; then echo "Skipping SLOT $_WS - must be 1-4 or 6-50."; continue; fi
+    case " $_SL " in *" $_WS "*) ;; *) echo "Skipping SLOT $_WS - not found. Available: $_SL"; continue;; esac
+    if [ "$(upanel_name "$_WS")" = "Empty / Unknown" ]; then echo "SLOT $_WS is already Empty - nothing to wipe."; continue; fi
+    _TODO="$_TODO $_WS"
+  done
+  [ -z "$_TODO" ] && { echo "Nothing to wipe."; printf "Press ENTER... "; read _b; return 0; }
+  echo "WILL WIPE:$(echo "$_TODO" | sed 's/ / SLOT /g')"
+  echo "WARNING: this CANNOT be undone (take a Backup first if you need it)."
+  printf "Type WIPE to confirm: "; read _W1
+  if ! confirm_word "$_W1" "wipe"; then echo "Cancelled."; printf "Press ENTER... "; read _b; return 0; fi
+  for _WS in $_TODO; do
+    echo "--- Wiping SLOT $_WS ($(upanel_name "$_WS")) ---"
+    if [ "$_WS" -ge 6 ] 2>/dev/null; then upanel_plugin_wipe_slot "$_WS"; rm -f "$(upanel_label_file "$_WS")";
+    else printf "%s\nWIPE\nWIPE\n\n" "$_WS" | upanel_wipe; fi
+  done
+  echo "Wipe Slots done."
+  printf "Press ENTER to return... "; read _b; return 0
+}
+web_multiboot_wipe() { printf "\n4\n%s\n%s\nWIPE\n" "$(upanel_web_slot_disk "$1")" "$1" | boot_slot_manager; }
+web_multiboot_wipe_slots() { printf "WIPE\n" | upanel_wipe_slots "$1"; }
+web_multiboot_rename() { printf "%s\n%s\n\n" "$1" "$2" | upanel_rename_menu; }
 web_multiboot_restore() { boot_slot_manager; }
 web_multiboot_restore_pick() { _BL=$(ls -td /media/hdd/U-Panel-Backup-* /media/usb/U-Panel-Backup-* /media/mmc/U-Panel-Backup-* 2>/dev/null); [ -z "$_BL" ] && { echo "No backups found."; return 1; }; _SEL=$(echo "$_BL" | sed -n "${1}p"); [ -z "$_SEL" ] && { echo "Bad number."; return 1; }; _CS=$(upanel_current); { printf "\n5\n%s\n%s\n" "$1" "$_CS"; case "$(basename "$_SEL")" in *"SLOT$_CS"*|*"${IMAGE}"*) ;; *) printf "YES\n";; esac; printf "YES\nYES\n%s\n\n\n" "$2"; } | boot_slot_manager; }
 web_smart_restore_part() { smart_restore_pick_latest_backup || return 1; smart_restore_detect_mode; echo "MODE: $SMART_MODE - $SMART_MODE_WHY"; case "$1" in packages) if [ "$SMART_MODE" = "FULL" ]; then FULL_AUTO=1; RESTORE_BATCH=1; install_packages; restore_plugins_with_extras; _RC=$?; FULL_AUTO=0; RESTORE_BATCH=0; echo "Smart Packages+Plugins done (rc=$_RC)"; else CROSS_ENIGMA_STOPPED=0; cross_image_restore_plugins; echo "Smart SAFE Packages+Plugins done"; fi;; files) if [ "$SMART_MODE" = "FULL" ]; then FULL_AUTO=1; restore_files_setup; _RC=$?; verify_files_restore; FULL_AUTO=0; echo "Smart Files done (rc=$_RC)"; else CROSS_ENIGMA_STOPPED=0; cross_image_restore_files; echo "Smart SAFE Files done"; fi;; esac; }
@@ -12983,13 +13630,15 @@ case "$1" in
   --web-multiboot-probe) lock_startup_check; web_multiboot_probe; exit $?;;
   --web-multiboot-rollback) lock_startup_check; web_multiboot_rollback; exit $?;;
   --web-multiboot-wipe) lock_startup_check; web_multiboot_wipe "$2"; exit $?;;
+  --web-multiboot-wipe-slots) lock_startup_check; web_multiboot_wipe_slots "$2"; exit $?;;
   --web-multiboot-rename) lock_startup_check; web_multiboot_rename "$2" "$3"; exit $?;;
-    --web-formatting-slots) lock_startup_check; web_formatting_slots "$2" "$3" "$4" "$5"; exit $?;;
+    --web-formatting-slots) lock_startup_check; web_formatting_slots "$2" "$3" "$4" "$5" "$6" "$7" "$8"; exit $?;;
     --web-multiboot-sync) lock_startup_check; multiboot_sync_startup; exit $?;;
     --web-recovery-names-hide) lock_startup_check; upanel_recovery_names 4; exit $?;;
     --web-recovery-names-apply) lock_startup_check; upanel_recovery_names 2; exit $?;;
     --web-internal-check) lock_startup_check; upanel_internal_slots; exit $?;;
     --web-fix-bootmenu) lock_startup_check; upanel_fix_bootmenu; exit $?;;
+    --web-inject-all) lock_startup_check; upanel_plugin_inject_all; exit $?;;
   --web-multiboot-restore) lock_startup_check; web_multiboot_restore; exit $?;;
   --web-smart-restore-part) lock_startup_check; web_smart_restore_part "$2"; exit $?;;
   --web-custom-restore-part) lock_startup_check; web_custom_restore_part "$2"; exit $?;;
