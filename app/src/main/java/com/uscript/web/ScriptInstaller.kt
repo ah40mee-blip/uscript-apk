@@ -124,6 +124,31 @@ object ScriptInstaller {
         }
     }
 
+    // إعادة تشغيل السيرفر - بيناديها MainActivity لما السيرفر يقع في نص الشغل
+    fun restartServer(context: Context, ip: String, rootPassword: String): Boolean {
+        return try {
+            val jsch = JSch()
+            val pw = if (rootPassword.isEmpty()) "root" else rootPassword
+            val session = jsch.getSession("root", ip, 22)
+            session.setPassword(pw)
+            session.setConfig("StrictHostKeyChecking", "no")
+            session.setConfig("PreferredAuthentications", "password,keyboard-interactive")
+            session.connect(10000)
+            try {
+                fun exec2(cmd: String, waitMs: Long = 3000): String {
+                    val ch = session.openChannel("exec") as com.jcraft.jsch.ChannelExec
+                    ch.setCommand(cmd)
+                    val o = ByteArrayOutputStream(); ch.setOutputStream(o); ch.setErrStream(ByteArrayOutputStream())
+                    ch.connect(10000); Thread.sleep(waitMs)
+                    val r = o.toString(); try { ch.disconnect() } catch (e: Exception) {}; return r
+                }
+                exec2("sh /tmp/uscript.sh restart-server < /dev/null 2>/dev/null; sh /etc/uscript.sh restart-server < /dev/null 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo RESTARTED", 5000)
+                val check = exec2("ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK", 2000)
+                check.contains("8080")
+            } finally { try { session.disconnect() } catch (e: Exception) {} }
+        } catch (e: Exception) { false }
+    }
+
     // توافق قديم: بيوزر root
     fun installWithError(context: Context, ip: String, rootPassword: String, onProgress: (String) -> Unit): Pair<Boolean, String> {
         return installWithError(context, ip, "root", rootPassword, onProgress)
