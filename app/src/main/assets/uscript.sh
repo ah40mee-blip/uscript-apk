@@ -15,9 +15,9 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.46 - U-PANEL"
+_SCRIPT_VERSION="V 6.47 - U-PANEL"
 # V6.43 (27 Nov): VERSION FIX - _SCRIPT_VERSION was defined as `VAR="..." | # comment`, so bash ran it as a pipeline in a subshell and the variable stayed EMPTY. /version returned {"version": ""} and the ensure-running check *"$_SCRIPT_VERSION"* matched ANYTHING, so a new version never replaced an old server. Now the assignment is on its own line. V6.42 boot fix + V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
-# V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
+# V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then FORCED reboot (reboot -f). No flash-after-format since V6.47. Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
 # V6.42 (27 Nov): BOOT FIX - --web-start-bg no longer runs lock_startup_check: the boot autostart calls that path, and the lock (integrity seal) fails after ANY script edit and asks for Owner PIN with no TTY at boot, so it exited before the server ever started. Server start is not a bypass: every --web-* job and the menu still run lock_startup_check. V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.41 (27 Nov): SERVER-DROPPED FIX - autostart no longer points at /tmp: script is copied to a persistent flash path (/etc/enigma2/U-Panel.sh) before autostart is installed, so the server comes back after ANY reboot (format does a forced reboot). Obfuscated wrapper now also runs the persistent copy, not /tmp. V6.40 slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.40 (27 Nov): Slots renumbered - NO overlap: SD 6..20 (15 slots, partition = slot-5), HDD/SSD 21..50 (30 slots, partition = slot-20). Slot 5 stays the hidden internal switcher. Cosmetic Khaled Ali / Novaler MultiBoot names removed from slot-function comments only - functional plugin folder / engine / conf names kept, slot functions unchanged.
@@ -4568,9 +4568,9 @@ class H(BaseHTTPRequestHandler):
                     if int(_slot) not in multiboot_slots() or str(_slot) == current_slot():
                         self.send_html("<h1>Bad slot</h1><div class='card'>Pick a real slot - not the one you are running on.</div><a href='/multiboot/slots'>Back to slots</a>", code=400); return
                     _sn = slot_names().get(int(_slot), "Empty / Unknown")
-                    body = "<h1>Switch Slot + Reboot</h1><div class='card'><b>SLOT %s - %s</b><br><span class='small'>The receiver WILL REBOOT into this slot. Rollback guard arms automatically.</span></div><form method='get' action='/multiboot/switch'><input type='hidden' name='slot' value='%s'><input type='hidden' name='confirm' value='1'><button class='danger'>YES - Switch + Reboot</button></form><a href='/multiboot/slots'>Cancel</a>" % (_slot, html.escape(_sn), _slot)
+                    body = "<h1>Switch Slot + Reboot</h1><div class='card'><b>SLOT %s - %s</b><br><span class='small'>The receiver WILL REBOOT into this slot.</span></div><form method='get' action='/multiboot/switch'><input type='hidden' name='slot' value='%s'><input type='hidden' name='confirm' value='1'><button class='danger'>YES - Switch + Reboot</button></form><a href='/multiboot/slots'>Cancel</a>" % (_slot, html.escape(_sn), _slot)
                     self.send_html(body); return
-                body = "<h1>Switch Slot + Reboot</h1><p class='small'>Pick the slot - the receiver WILL reboot into it. Rollback guard is armed automatically.</p><form method='get' action='/multiboot/switch'><input name='slot' placeholder='Slot number' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>Switch + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>"
+                body = "<h1>Switch Slot + Reboot</h1><p class='small'>Pick the slot - the receiver WILL reboot into it.</p><form method='get' action='/multiboot/switch'><input name='slot' placeholder='Slot number' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'><button>Switch + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>"
             elif u.path == "/multiboot/wipe":
                 _slot=(q.get("slot") or [""])[0]
                 if _slot.isdigit():
@@ -4623,7 +4623,6 @@ class H(BaseHTTPRequestHandler):
                 # the form's own defaults (4 slots x 4G) so the preview string never crashes.
                 if not _slots.isdigit(): _slots="4"
                 if _size not in ("2","3","4","5","6","7","8"): _size="4"
-                _flash_img=(q.get("flash_img") or [""])[0]; _flash_slot=(q.get("flash_slot") or [""])[0]
                 _fkind=(q.get("kind") or [""])[0]
                 if _fkind not in ("sd","hdd"):
                     body=("<h1>Disk Slots Formatting</h1><div class='card'><b>Choose what to format:</b><br><span class='small'>SD follows the memory plugin logic - slots ONLY, no storage partition. HDD/SSD follows the HDD plugin logic - slots 21..50 + storage split.</span></div>"
@@ -4631,7 +4630,6 @@ class H(BaseHTTPRequestHandler):
                     "<a href='/multiboot/slots-disk-management?kind=hdd'>HDD / SSD - slots + storage split (Slot 21..50)</a>"
                     "<a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
-                _flash_ok=(not _flash_img) or (_flash_slot.isdigit() and ((6 <= int(_flash_slot) <= 20) if _fkind=="sd" else (21 <= int(_flash_slot) <= 50)))
                 _spec=""; _stor_ok=True; _stor_txt=""; _sc=1; _ss=["0","0","0","0"]  # V6.45: _sc/_ss must exist for SD too - preview form uses them
                 if _fkind=="hdd":
                     _sc=(q.get("storage") or ["1"])[0]; _ss=[(q.get("s%d"%_k) or ["0"])[0] for _k in range(1,5)]
@@ -4666,13 +4664,13 @@ class H(BaseHTTPRequestHandler):
                     # V6.20 FIX: was "%" formatting with a literal width:100% in the
                     # template -> TypeError -> empty reply (curl 52). Concatenation only.
                     body=("<h1>Disk Slots Formatting - Confirm</h1><div class='card'><b>/dev/" + _disk + " - CURRENT layout (will ALL be erased):</b><br><span class='small'>" + _lay + "</span></div>"
-                    "<div class='card'><b>NEW layout:</b> " + _new_layout + "</div>" + ("<div class='card'><b>After format:</b> flash " + _flash_img + " to SLOT " + _flash_slot + ", then <b>FORCED reboot (reboot -f)</b>.</div>" if _flash_img and _flash_ok else "<div class='card'><b>After format:</b> no flash - <b>REBOOT</b> in 5 seconds (plugin format_sd).</div>") +
-                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='kind' value='" + _fkind + "'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'><input type='hidden' name='storage' value='" + str(_sc) + "'><input type='hidden' name='s1' value='" + _ss[0] + "'><input type='hidden' name='s2' value='" + _ss[1] + "'><input type='hidden' name='s3' value='" + _ss[2] + "'><input type='hidden' name='s4' value='" + _ss[3] + "'><input type='hidden' name='flash_img' value='" + _flash_img + "'><input type='hidden' name='flash_slot' value='" + _flash_slot + "'>"
+                    "<div class='card'><b>NEW layout:</b> " + _new_layout + "</div>" + "<div class='card'><b>After format:</b> <b>FORCED reboot (reboot -f)</b> - no flash here. Flash an image from Install Image after the reboot.</div>" +
+                    "<form method='get' action='/multiboot/slots-disk-management'><input type='hidden' name='kind' value='" + _fkind + "'><input type='hidden' name='disk' value='" + _disk + "'><input type='hidden' name='slots' value='" + _slots + "'><input type='hidden' name='size' value='" + _size + "'><input type='hidden' name='storage' value='" + str(_sc) + "'><input type='hidden' name='s1' value='" + _ss[0] + "'><input type='hidden' name='s2' value='" + _ss[1] + "'><input type='hidden' name='s3' value='" + _ss[2] + "'><input type='hidden' name='s4' value='" + _ss[3] + "'>"
                     "<label>Type ERASE or e to erase /dev/" + _disk + " and run Disk Slots Formatting + reboot:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
                     "<button class='danger'>ERASE DISK + Disk Slots Formatting + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
-                if _disk and _slots.isdigit() and (2 <= int(_slots) <= (15 if _fkind=="sd" else 30)) and _size in ("2","3","4","5","6","7","8") and _stor_ok and _flash_ok and _cf in ("ERASE", "erase", "e", "E"):
-                    ACTIONS["formatting-slots-%s" % _disk] = ("Disk Slots Formatting - %s - /dev/%s (%s slots x %sG%s - ERASES DISK + Reboot%s)" % ("SD" if _fkind=="sd" else "HDD/SSD", _disk, _slots, _size, _stor_txt, (" + Flash " + _flash_img + " to SLOT " + _flash_slot + " + FORCED Reboot") if _flash_img else ""), True, ["--web-formatting-slots", _disk, _slots, _size, _spec, _flash_img, _flash_slot, _fkind])
+                if _disk and _slots.isdigit() and (2 <= int(_slots) <= (15 if _fkind=="sd" else 30)) and _size in ("2","3","4","5","6","7","8") and _stor_ok and _cf in ("ERASE", "erase", "e", "E"):
+                    ACTIONS["formatting-slots-%s" % _disk] = ("Disk Slots Formatting - %s - /dev/%s (%s slots x %sG%s - ERASES DISK + FORCED Reboot)" % ("SD" if _fkind=="sd" else "HDD/SSD", _disk, _slots, _size, _stor_txt), True, ["--web-formatting-slots", _disk, _slots, _size, _spec, _fkind])
                     self.send_response(302); self.send_header("Location", "/run?action=formatting-slots-%s" % _disk); self.end_headers(); return
                 _opts=""
                 try:
@@ -4742,9 +4740,7 @@ class H(BaseHTTPRequestHandler):
                     "<label>Size of HDD_STORAGE3 partition (GB, min 1):</label><input name='s3' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
                     "<label>Size of HDD_STORAGE4 partition (GB, min 1):</label><input name='s4' placeholder='e.g. 100' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
                     "<div class='card'><b>Storage rule:</b> enter a size for every storage partition EXCEPT the last one - the last one always takes the rest of the disk. Each size min 1 GB.</div>")) +
-                    "<label>Flash an image AFTER format (optional) - pick from the list:</label><select name='flash_img'><option value='' selected>No flash - reboot after format</option>" + _zip_opts + "</select>"
-                    "<label>Flash to SLOT (" + ("6-20" if _fkind=="sd" else "21-50") + ", only if an image is picked above):</label><input name='flash_slot' placeholder='" + ("e.g. 6" if _fkind=="sd" else "e.g. 21") + "' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
-                    "<div class='card'><b>After format + flash:</b> the receiver does a <b>FORCED reboot (reboot -f)</b> into the flashed slot. Without flash: normal reboot in 5 seconds.</div>"
+                    "<div class='card'><b>After format:</b> the receiver does a <b>FORCED reboot (reboot -f)</b>. No flash here - flash an image from Install Image after the reboot.</div>"
                     "<label>Type ERASE or e to confirm:</label><input name='confirm' placeholder='ERASE or e' style='display:block;width:100%;margin:6px 0;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff'>"
                     "<button class='danger'>ERASE DISK + Disk Slots Formatting + Reboot</button></form><a href='/multiboot'>Back to Multiboot</a>")
             elif u.path == "/download-image/pin":
@@ -9566,7 +9562,8 @@ upanel_flash() {
       _NM=$(upanel_name "$_TS")
       if [ "$_NM" = "Empty / Unknown" ]; then _LBL2=$(basename "$_IP" | sed -e 's/\.zip$//' -e 's/[-_]/ /g' | cut -c1-40); echo "$_LBL2" > "$(upanel_label_file "$_TS")" 2>/dev/null && echo "[SLOT] Named SLOT $_TS: $_LBL2"; fi
       echo "[FLASH] DONE - SLOT $_TS now has: $(upanel_name "$_TS")"
-      echo "Use [3] Reboot to Selected Slot to boot into SLOT $_TS (rollback guard will arm on switch)."
+      echo "[FLASH] Switching active STARTUP to SLOT $_TS and FORCED reboot in 3 seconds (reboot -f)..."
+      if upanel_activate_startup "$_TS"; then upanel_force_reboot_bg 3; else echo "[FLASH-WARN] Could NOT switch active STARTUP to SLOT $_TS - staying on current slot. Use Reboot to Selected Slot to boot it."; fi
     fi
     printf "Press ENTER to return... "; read _b; return 0
   fi
@@ -9643,7 +9640,8 @@ upanel_flash() {
     echo "$_LBL2" > "$(upanel_label_file "$_TS")" 2>/dev/null && echo "[SLOT] Named SLOT $_TS: $_LBL2"
   fi
   echo "[FLASH] DONE - SLOT $_TS now has: $(upanel_name "$_TS")"
-  echo "Use [2] Switch to boot into SLOT $_TS (rollback guard will arm on switch)."
+  echo "[FLASH] Switching active STARTUP to SLOT $_TS and FORCED reboot in 3 seconds (reboot -f)..."
+  if upanel_activate_startup "$_TS"; then upanel_force_reboot_bg 3; else echo "[FLASH-WARN] Could NOT switch active STARTUP to SLOT $_TS - staying on current slot. Use Reboot to Selected Slot to boot it."; fi
   printf "Press ENTER to return... "; read _b
 
 }
@@ -11950,17 +11948,25 @@ upanel_plugin_wipe_slot_mode() { # $1=mode $2=slot - plugin wipe_slot
 }
 upanel_plugin_wipe_slot() { upanel_plugin_wipe_slot_mode "$(upanel_slot_mode "$1")" "$1"; }
 
+upanel_activate_startup() { # $1=slot - copy STARTUP_LINUX_N -> /boot/STARTUP, verify with cmp, push to ALL BOOT partitions. NO reboot. Returns 0/1.
+  _AS_N="$1"
+  mount -o remount,rw /boot 2>/dev/null
+  [ -s "/boot/STARTUP_LINUX_$_AS_N" ] || { echo "[SWITCH-FAIL] STARTUP_LINUX_$_AS_N missing or 0 bytes - NOT switching."; return 1; }
+  cp -f "/boot/STARTUP_LINUX_$_AS_N" /boot/STARTUP 2>/dev/null || { echo "[SWITCH-FAIL] Could NOT copy STARTUP_LINUX_$_AS_N to /boot/STARTUP."; return 1; }
+  if ! cmp -s "/boot/STARTUP_LINUX_$_AS_N" /boot/STARTUP; then echo "[SWITCH-FAIL] /boot/STARTUP does NOT match STARTUP_LINUX_$_AS_N after copy."; return 1; fi
+  echo "[SWITCH-OK] /boot/STARTUP verified for SLOT $_AS_N."
+  upanel_push_boot_file /boot/STARTUP
+  sync
+  return 0
+}
 upanel_plugin_reboot_slot_mode() { # $1=mode $2=slot - plugin reboot_slot for that mode
+  # V6.47 SWITCH FIX: verify the copy, push STARTUP to ALL BOOT partitions, NEVER reboot on a failed switch.
   _RM_MODE="$1"; _RM_N="$2"; _RM_FILE="/boot/STARTUP_LINUX_$_RM_N"
   echo "Preparing Boot parameters for Slot $_RM_N..."
-  mount -o remount,rw /boot 2>/dev/null
-  if [ -f "$_RM_FILE" ]; then
-    cp -f "$_RM_FILE" /boot/STARTUP
-  else
-    upanel_startup_plugin_format_mode "$_RM_MODE" "$_RM_N"
-    cp -f "$_RM_FILE" /boot/STARTUP
+  if [ ! -f "$_RM_FILE" ]; then
+    upanel_startup_plugin_format_mode "$_RM_MODE" "$_RM_N" || { echo "[SWITCH-FAIL] Could NOT generate STARTUP_LINUX_$_RM_N - NOT rebooting."; return 1; }
   fi
-  sync
+  upanel_activate_startup "$_RM_N" || { echo "[SWITCH-FAIL] NOT rebooting."; return 1; }
   echo "Rebooting to Slot $_RM_N..."
   sleep 1
   reboot
@@ -12134,50 +12140,16 @@ upanel_formatting_slots() { # $1=kind (sd|hdd, empty = ask) $2=disk $3=slots $4=
   printf "Type ERASE or e to confirm (anything else cancels): "; read _CONF; case "$_CONF" in ERASE|erase|e|E) ;; *) echo "Cancelled - nothing touched."; return 1;; esac
   if [ "$_FS_KIND" = "sd" ]; then upanel_plugin_format_sd_slots_only "$_FS_SLOTS" "$_FS_DISK" "$_FS_SIZE" "NOREBOOT"; else upanel_plugin_format_hdd "$_FS_SLOTS" "$_FS_DISK" "$_FS_SIZE" "$_FS_STOR" "NOREBOOT"; fi
   _FSRC=$?
-  if [ $_FSRC -ne 0 ]; then echo "[DISK-SLOTS-FORMATTING] Format failed - STOPPING. Nothing flashed, NO reboot."; return $_FSRC; fi
-  printf "Flash an image to a slot now? (y/n, Enter = n): "; read _FF
-  case "$_FF" in y|Y)
-    if U_PANEL_FORMAT_MODE="$_FS_KIND" upanel_format_flash_now; then
-      echo "[DISK-SLOTS-FORMATTING] Flash done - FORCED reboot in 3 seconds (reboot -f)..."
-      upanel_force_reboot_bg 3
-      return 0
-    fi
-    echo "[DISK-SLOTS-FORMATTING] Flash skipped/failed - FORCED reboot in 5 seconds (reboot -f)..."
-    upanel_force_reboot_bg 5; return 0
-    ;;
-  esac
+  if [ $_FSRC -ne 0 ]; then echo "[DISK-SLOTS-FORMATTING] Format failed - STOPPING. NO reboot."; return $_FSRC; fi
+  # V6.47: NO flash-after-format anymore - format ONLY (slots + partitions), then FORCED reboot. Flash from Install Image after the reboot.
   echo "[DISK-SLOTS-FORMATTING] Format done - FORCED reboot in 5 seconds (reboot -f)..."
   upanel_force_reboot_bg 5
   return 0
 }
 
-# V6.35: flash-after-format - pick an image from the list, flash it to a slot,
-# then the caller does the FORCED reboot. WebUI passes the image + slot in
-# U_PANEL_FORMAT_FLASH_IMG / U_PANEL_FORMAT_FLASH_SLOT (no prompts then).
-upanel_format_flash_now() { # V6.35: mode from U_PANEL_FORMAT_MODE (sd|hdd) - slot range + partition offset follow the mode
-  _FF_MODE="${U_PANEL_FORMAT_MODE:-sd}"; _FF_BASE=$(upanel_mode_base "$_FF_MODE"); _FF_MAX=$(upanel_mode_max "$_FF_MODE")
-  _FF_IMG="$U_PANEL_FORMAT_FLASH_IMG"; _FF_SLOT="$U_PANEL_FORMAT_FLASH_SLOT"
-  if [ -z "$_FF_IMG" ]; then
-    _FF_LIST=""; for _Z in /media/hdd/*.zip /media/usb/*.zip /media/mmc/*.zip; do [ -f "$_Z" ] && _FF_LIST="$_FF_LIST $_Z"; done
-    [ -z "$_FF_LIST" ] && { echo "[FLASH] No .zip images found on /media/hdd, /media/usb or /media/mmc - skipping flash."; return 1; }
-    echo "Images (pick one):"; _FF_I=0; for _Z in $_FF_LIST; do _FF_I=$((_FF_I + 1)); echo "  [$_FF_I] $_Z"; done
-    printf "Pick image number (0 = skip flash): "; read _FF_PICK
-    case "$_FF_PICK" in *[!0-9]*|"") echo "Bad pick."; return 1;; 0) echo "Skipped."; return 1;; esac
-    _FF_IMG=$(echo "$_FF_LIST" | tr ' ' '\n' | grep -v '^$' | sed -n "${_FF_PICK}p")
-    [ -z "$_FF_IMG" ] && { echo "Bad pick."; return 1; }
-  fi
-  if [ -z "$_FF_SLOT" ]; then printf "Flash to which SLOT ($_FF_BASE-$_FF_MAX, 0 = skip)? "; read _FF_SLOT; fi
-  case "$_FF_SLOT" in *[!0-9]*|"") echo "Bad slot."; return 1;; 0) echo "Skipped."; return 1;; esac
-  if [ "$_FF_SLOT" -lt "$_FF_BASE" ] 2>/dev/null || [ "$_FF_SLOT" -gt "$_FF_MAX" ] 2>/dev/null; then echo "Slot must be $_FF_BASE-$_FF_MAX ($_FF_MODE)."; return 1; fi
-  _FF_CS=$(upanel_current)
-  if [ "$_FF_SLOT" = "$_FF_CS" ]; then echo "REFUSED: SLOT $_FF_SLOT is the running slot."; return 1; fi
-  [ -f "$_FF_IMG" ] || { echo "Image not found: $_FF_IMG"; return 1; }
-  upanel_plugin_install_and_verify "$_FF_MODE" "$_FF_SLOT" "$_FF_IMG"
-}
-web_formatting_slots() { # $1=disk $2=slots $3=size $4=spec $5=flash img (optional) $6=flash slot (optional) $7=kind (sd|hdd)
-  _WF_KIND="${7:-sd}"; case "$_WF_KIND" in sd|hdd) ;; *) _WF_KIND=sd;; esac
-  if [ -n "$5" ]; then printf "ERASE\ny\n" | U_PANEL_FORMAT_MODE="$_WF_KIND" U_PANEL_FORMAT_FLASH_IMG="$5" U_PANEL_FORMAT_FLASH_SLOT="$6" upanel_formatting_slots "$_WF_KIND" "$1" "$2" "$3" "$4";
-  else printf "ERASE\n\n" | U_PANEL_FORMAT_MODE="$_WF_KIND" upanel_formatting_slots "$_WF_KIND" "$1" "$2" "$3" "$4"; fi; }
+web_formatting_slots() { # $1=disk $2=slots $3=size $4=spec $5=kind (sd|hdd) - V6.47: NO flash-after-format
+  _WF_KIND="${5:-sd}"; case "$_WF_KIND" in sd|hdd) ;; *) _WF_KIND=sd;; esac
+  printf "ERASE\\n" | upanel_formatting_slots "$_WF_KIND" "$1" "$2" "$3" "$4"; }
 
 
 
@@ -13306,6 +13278,8 @@ upanel_plugin_install_and_verify() { # $1=mode $2=slot $3=zip - plugin install_i
   echo "[INJECT] Injecting plugin into SLOT $_IV_SLOT (flashed slot)..."
   upanel_plugin_inject_to_slot_mode "$_IV_MODE" "$_IV_SLOT"
   echo "[FLASH] DONE - SLOT $_IV_SLOT now has: $(upanel_name "$_IV_SLOT")"
+  echo "[FLASH] Switching active STARTUP to SLOT $_IV_SLOT and FORCED reboot in 3 seconds (reboot -f)..."
+  if upanel_activate_startup "$_IV_SLOT"; then upanel_force_reboot_bg 3; else echo "[FLASH-WARN] Could NOT switch active STARTUP to SLOT $_IV_SLOT - staying on current slot. Use Reboot to Selected Slot to boot it."; fi
   return 0
 }
 upanel_web_slot_disk() { # $1=slot - echoes 1 (SD) or 2 (HDD) for the WebUI wrappers
