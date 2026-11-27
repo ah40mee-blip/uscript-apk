@@ -28,10 +28,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ipField: EditText
     private lateinit var portField: EditText
+    private lateinit var pinField: EditText
     lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var connectBtn: Button
-    private lateinit var configureBtn: Button // بقى Connect Panel - بيعمل Configure + دخول أوتوماتيك
+    private lateinit var configureBtn: Button
     private lateinit var enterPanelBtn: Button
     private lateinit var statusText: TextView
     private lateinit var webView: WebView
@@ -43,7 +44,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressFill: View
     private lateinit var discView: View
     private var baseUrl = ""
-    private var autoRetrying = false // عشان الـ Auto-Retry ميتكررش لانهائي لو السيرفر فعلا واقع
     private var barAnim: android.animation.ValueAnimator? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     private fun field(hint: String, text: String, isPw: Boolean = false): EditText {
         return EditText(this).apply {
             this.hint = hint; setText(text)
-            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.parseColor("#C0C0C0"))
+            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.WHITE)
             textSize = 16f; gravity = Gravity.CENTER
             if (isPw) inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
@@ -65,53 +65,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // لوجو برميوم: دائرة جريدينت + حرف U + هالة
-    // لوجو برميوم أكتر: هالة خارجية + حلقتين + جريدينت 4 ألوان + ظل + لمعة
-    private fun premiumLogo(sizeDp: Int, logoTextSize: Float): FrameLayout {
-        val halo = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(sizeDp + 28), dp(sizeDp + 28)).apply { gravity = Gravity.CENTER; topMargin = dp(10); bottomMargin = dp(10) }
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#1A1033")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
-            elevation = dp(20).toFloat()
-        }
-        val outer = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(3), Color.parseColor("#FF1E1E")) }
-            elevation = dp(16).toFloat()
-        }
-        val mid = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 10), dp(sizeDp - 10)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }
-        }
-        val inner = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 26), dp(sizeDp - 26)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
-        }
-        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.parseColor("#C0C0C0")); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); elevation = dp(4).toFloat(); setShadowLayer(20f, 0f, 2f, Color.parseColor("#FF1E1E")) }
-        // لمعة صغيرة فوق اللوجو
-        val shine = View(this).apply { layoutParams = FrameLayout.LayoutParams(dp(sizeDp / 3), dp(sizeDp / 6)).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; topMargin = dp(10) }; background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#FFFFFF")); alpha = 60 } }
-        inner.addView(letter); inner.addView(shine); mid.addView(inner); outer.addView(mid); halo.addView(outer)
-        return halo
-    }
-    // شاشة شيك بدل رسالة Panel Configured - اللوجو الجديد + Enjoy The Premium Experience بفونت عريض جلوسي
-    private fun showConfiguredDialog() {
-        val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
-        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(36), dp(28), dp(28)); background = GradientDrawable().apply { cornerRadius = dp(28).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#FF1E1E")) }; elevation = dp(24).toFloat() }
-        val enjoyLogo = premiumLogo(150, 85f)
-        card.addView(enjoyLogo)
-        enjoyLogo.animate().scaleX(1.08f).scaleY(1.08f).setDuration(1200).withEndAction { enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(1200).start() }.start() // أنيميشن لمعان الزجاج - نبضة خفيفة
-        card.addView(TextView(this).apply { text = "Enjoy The Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#C0C0C0")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(14f, 0f, 4f, Color.parseColor("#FF1E1E")) })
-        card.addView(TextView(this).apply { text = "Your Enigma is connected\nWelcome to U-Panel"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)) })
-        // من غير زراير - الأنيميشن 5 ثواني وبعدها دخول أوتوماتيك على البانل
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }, 5000) // أنيميشن اللوجو + Enjoy = 5 ثواني
-        dlg.setContentView(FrameLayout(this).apply { setPadding(dp(24), dp(24), dp(24), dp(24)); addView(card) })
-        dlg.setCancelable(true); dlg.show()
-        card.alpha = 0f; card.scaleX = 0.85f; card.scaleY = 0.85f; card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(600).setInterpolator(OvershootInterpolator(1.3f)).start()
-    }
-    private fun nativeEnterPanel() { onEnterPanelClicked() }
-
     private fun btn(text: String, color: String, onClick: () -> Unit): Button {
         return Button(this).apply {
-            this.text = text; textSize = 16f; setTextColor(Color.parseColor("#C0C0C0"))
+            this.text = text; textSize = 16f; setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) }
             background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor(color)) }
             setPadding(dp(16), dp(16), dp(16), dp(16)); setOnClickListener { onClick() }
@@ -130,9 +86,9 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#070B1E")) }
 
         // ===== 1) Splash متحرك =====
-        val splashLogo = premiumLogo(165, 95f)
-        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#0A0A0A")); gravity = Gravity.CENTER; setShadowLayer(22f, 0f, 2f, Color.parseColor("#FF1E1E")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // أسود جلوسي بلمسة فوشيا
-        val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 26f; setTextColor(Color.parseColor("#0A0A0A")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.04f; setShadowLayer(22f, 0f, 2f, Color.parseColor("#FF1E1E")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // الكتابة أسود جلوسي بلمسة فوشيا
+        val splashLogo = TextView(this).apply { text = "U"; textSize = 72f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 36f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val splashCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
@@ -140,35 +96,35 @@ class MainActivity : AppCompatActivity() {
         splashView = FrameLayout(this).apply { addView(splashCol) }
 
         // ===== 2) صفحة الخانات =====
-        val formLogo = premiumLogo(125, 70f)
-        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#C0C0C0")); gravity = Gravity.CENTER }
-        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
+        val title = TextView(this).apply { text = "U-Panel"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val sub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
-        // البورت اتشال من الشاشة - ثابت على 8080
+        portField = field("Port  ( 8080 )", savedPort)
         usernameField = field("Username  ( root )", savedUser)
         passwordField = field("Password  ( root )", savedPw, true)
-        statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
-        connectBtn = btn("CONNECT", "#FF1E1E") { onConnectClicked() }
-        configureBtn = btn("Connect to your Enigma", "#0A0A0A") { onConnectPanelClicked() } // جلوسي أسود - بيعمل Configure + دخول أوتوماتيك
-        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
+        statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
+        configureBtn = btn("Configure U-Panel", "#E879F9") { onConfigureClicked() }
+        enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }.apply { visibility = View.GONE }
+        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(48), dp(24), dp(28)) // قايمة أكبر وأشيك
-            addView(formLogo); addView(title); addView(sub); addView(ipField) // من غير خانة بورت - البورت ثابت 8080
-            addView(configureBtn); addView(statusText) // زرار واحد بس: Connect Panel
+            orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
+            addView(title); addView(sub); addView(ipField); addView(portField)
+            addView(configureBtn); addView(pinField); addView(enterPanelBtn); addView(statusText)
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
         // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
-        val wLogo = premiumLogo(135, 76f)
-        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 34f; setTextColor(Color.parseColor("#C0C0C0")); gravity = Gravity.CENTER }
-        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 20f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
+        val wLogo = TextView(this).apply { text = "U"; textSize = 64f; setTextColor(Color.parseColor("#E879F9")); gravity = Gravity.CENTER }
+        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 28f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 16f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val track = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(300), dp(14)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
-            background = GradientDrawable().apply { cornerRadius = dp(4).toFloat(); setColor(Color.parseColor("#1E2A55")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
+            layoutParams = LinearLayout.LayoutParams(dp(240), dp(6)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#1E2A55")) }
         }
         progressFill = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(0, dp(14))
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(8).toFloat() }
+            layoutParams = FrameLayout.LayoutParams(0, dp(6))
+            background = GradientDrawable().apply { cornerRadius = dp(3).toFloat(); setColor(Color.parseColor("#E879F9")) }
         }
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
@@ -178,8 +134,8 @@ class MainActivity : AppCompatActivity() {
         welcomeView = FrameLayout(this).apply { addView(wCol); visibility = View.GONE }
 
         // ===== 4) شاشة Disconnected - ثابتة =====
-        val dTitle = TextView(this).apply { text = "Disconnected"; textSize = 26f; setTextColor(Color.parseColor("#C0C0C0")); gravity = Gravity.CENTER }
-        val dSub = TextView(this).apply { text = "Check connection and try again"; textSize = 14f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
+        val dTitle = TextView(this).apply { text = "Disconnected"; textSize = 26f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        val dSub = TextView(this).apply { text = "Check connection and try again"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
         val dBack = btn("BACK", "#0D1330") { discView.visibility = View.GONE; ipView.visibility = View.VISIBLE }
         val dCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(20), dp(40), dp(20), dp(20))
@@ -192,20 +148,10 @@ class MainActivity : AppCompatActivity() {
             visibility = View.GONE; settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             webViewClient = object : WebViewClient() {
                 override fun onReceivedError(v: WebView?, r: android.webkit.WebResourceRequest?, e: android.webkit.WebResourceError?) {
-                    // السيرفر وقع في نص الشغل - متخرجش المستخدم بره، اعمل Restart لوحده وارجع حمّل
-                    if (r?.isForMainFrame == true && !autoRetrying) {
-                        autoRetrying = true
-                        showWelcome("Server dropped... Restarting...")
-                        Thread {
-                            val (_, _, pw) = saveFields(); val (ip2, _, _) = saveFields()
-                            val ok = try { ScriptInstaller.restartServer(this@MainActivity, ip2, pw) } catch (e2: Exception) { false }
-                            runOnUiThread {
-                                stopBar(); welcomeView.visibility = View.GONE; autoRetrying = false
-                                if (ok) { webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl); Toast.makeText(this@MainActivity, "Server restarted", Toast.LENGTH_SHORT).show() }
-                                else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Cannot reach $baseUrl - دوس ENTER PANEL تاني" }
-                            }
-                        }.start()
-                    }
+                    v?.visibility = View.GONE
+                    ipView.visibility = View.VISIBLE
+                    statusText.setTextColor(Color.parseColor("#F472B6"))
+                    statusText.text = "Cannot reach $baseUrl - اتأكد الرسيفر شغال ودوس ENTER PANEL تاني"
                 }
             }
         }
@@ -221,12 +167,12 @@ class MainActivity : AppCompatActivity() {
         splashSub.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
         Handler(Looper.getMainLooper()).postDelayed({
             splashView.visibility = View.GONE; ipView.visibility = View.VISIBLE
-        }, 5000) // Splash تقعد 5 ثواني
+        }, 1600)
     }
 
     private fun saveFields(): Triple<String, String, String> {
         val ip = ipField.text.toString().trim()
-        val port = "8080" // ثابت - خانة البورت اتشالت
+        val port = portField.text.toString().trim().ifEmpty { "8080" }
         val user = usernameField.text.toString().trim().ifEmpty { "root" }
         val pw = passwordField.text.toString().trim().ifEmpty { "root" }
         getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit()
@@ -242,7 +188,7 @@ class MainActivity : AppCompatActivity() {
             duration = 2200; repeatCount = android.animation.ValueAnimator.INFINITE
             addUpdateListener { a ->
                 val f = a.animatedValue as Float
-                progressFill.layoutParams.width = (dp(300) * f).toInt()
+                progressFill.layoutParams.width = (dp(240) * f).toInt()
                 progressFill.requestLayout()
             }
         }
@@ -264,7 +210,7 @@ class MainActivity : AppCompatActivity() {
     private fun onConnectClicked() {
         val (ip, port, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Connecting..."
+        statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Connecting..."
         connectBtn.isEnabled = false
         Thread {
             var ok = false
@@ -283,74 +229,24 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 connectBtn.isEnabled = true
                 if (ok) { statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Connected ✅ to $ip" }
-                else { statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Cannot reach $ip - لو لسه عامل ريستارت استنى دقيقة وجرب تاني" }
+                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip - لو لسه عامل ريستارت استنى دقيقة وجرب تاني" }
             }
         }.start()
     }
 
     // ENTER PANEL: افتح البانل على طول - من غير SSH
     // سيرفر الـ WebUI بتاع Enigma2 بيشتغل لوحده، مش محتاج أمر start
-    // ENTER: استنى السيرفر يقوم الأول - جرّب 8080 لحد 30 ثانية قبل ما يفتح
     private fun onEnterPanelClicked() {
-        val (ip, port, _) = saveFields()
+        val (ip, _, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        showWelcome("Waiting for server...")
-        Thread {
-            var up = false
-            for (i in 1..15) {
-                runOnUiThread { welcomeConnecting.text = "Waiting for server... (" + (16 - i) * 2 + "s)" }
-                try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
-            }
-            runOnUiThread {
-                stopBar(); welcomeView.visibility = View.GONE
-                if (up) {
-                    ipView.visibility = View.GONE; discView.visibility = View.GONE
-                    webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
-                } else {
-                    ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#FF1E1E"))
-                    statusText.text = "Cannot reach http://$ip:$port - اتأكد السيرفر شغال ودوس ENTER PANEL تاني"
-                }
-            }
-        }.start()
-    }
-
-
-    // Connect Panel: بيعمل اللي كان بيعمله Configure + بيدخل أوتوماتيك
-    // وقبل الدخول: شاشة جلوسي Welcome to U-Panel تعمل Fade Out وتظهر Control ur Enigma Life
-    private fun onConnectPanelClicked() {
-        val (ip, _, pw) = saveFields()
-        if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        showWelcome("Configuring U-Panel")
-        Thread {
-            val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
-            runOnUiThread {
-                stopBar()
-                if (!ok) { welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err"; return@runOnUiThread }
-                // شاشة Welcome جلوسي: Welcome to U-Panel -> Fade Out -> Control ur Enigma Life -> دخول
-                welcomeConnecting.text = "Welcome to U-Panel"
-                welcomeConnecting.textSize = 32f
-                welcomeConnecting.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
-                welcomeConnecting.letterSpacing = 0.05f
-                welcomeConnecting.animate().alpha(1f).setDuration(800).start()
-                android.os.Handler(Looper.getMainLooper()).postDelayed({
-                    welcomeConnecting.animate().alpha(0f).setDuration(800).withEndAction {
-                        welcomeConnecting.text = "Control ur Enigma Life"
-                        welcomeConnecting.textSize = 26f
-                        welcomeConnecting.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
-                        welcomeConnecting.letterSpacing = 0.04f
-                        welcomeConnecting.animate().alpha(1f).setDuration(800).start()
-                        android.os.Handler(Looper.getMainLooper()).postDelayed({
-                            welcomeView.animate().alpha(0f).setDuration(800).withEndAction {
-                                welcomeView.visibility = View.GONE; welcomeView.alpha = 1f
-                                // دخول أوتوماتيك للبانل
-                                onEnterPanelClicked()
-                            }.start()
-                        }, 5000) // Control ur Enigma Life تقعد 5 ثواني
-                    }.start()
-                }, 5000) // Welcome to U-Panel تقعد 5 ثواني
-            }
-        }.start()
+        val pin = try { pinField.text.toString().trim() } catch (e: Exception) { "" }
+        if (pin.isEmpty()) { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Enter the Panel PIN first"; return }
+        // PIN بيتسلم للبانل نفسه - هو اللي بيأكده
+        getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("panel_pin", pin).apply()
+        statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Opening U-Panel..."
+        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        webView.loadUrl(baseUrl)
     }
 
 private fun onConfigureClicked() {
@@ -362,26 +258,18 @@ private fun onConfigureClicked() {
             runOnUiThread {
                 stopBar()
                 if (ok) {
-                    // Configure بيعمل كل حاجة: زرع + تشغيل + دخول لصفحة PIN على طول
+                    // CONFIGURE خلص - متدخلش لوحدك، استنى ENTER PANEL
                     statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "U-Panel is Configured"
-                    showConfiguredDialog()
+                    Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
                     welcomeView.visibility = View.GONE
-                    ipView.visibility = View.GONE
-                    discView.visibility = View.GONE
-                    // استنى السيرفر يقوم بعد --restart-server قبل ما نفتح (كان بيفتح وهو لسه بيقوم فيضرب Cannot reach)
-                    Thread {
-                        var up = false
-                        for (i in 1..15) { try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) } }
-                        runOnUiThread {
-                            welcomeView.visibility = View.GONE; ipView.visibility = View.GONE; discView.visibility = View.GONE
-                            if (up) { try { webView.clearCache(true) } catch (e: Exception) {}; webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl) }
-                            else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Server not up yet on 8080 - دوس ENTER U-PANEL بعد 10 ثواني" }
-                        }
-                    }.start()
+                    ipView.visibility = View.VISIBLE
+                    pinField.visibility = View.VISIBLE
+                    enterPanelBtn.visibility = View.VISIBLE
+                    try { webView.clearCache(true) } catch (e: Exception) {}
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err"
+                    statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configure failed: $err"
                 }
             }
         }.start()
