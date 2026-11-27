@@ -341,20 +341,17 @@ class MainActivity : AppCompatActivity() {
         // شاشة Welcome اتشالت - مفيش Waiting screen - بعد Enjoy يدخل على البانل على طول
         Thread {
             var up = false
-            for (i in 1..15) {
-                // شاشة Welcome اتشالت - مفيش تحديث لنص Waiting
+            // استنى السيرفر 90 ثانية مش 30 - الريستارت بياخد وقت
+            for (i in 1..45) {
                 try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
             }
             runOnUiThread {
                 stopBar(); welcomeView.visibility = View.GONE
-                if (up) {
-                    ipView.visibility = View.GONE; discView.visibility = View.GONE
-                    webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
-                } else {
-                    ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#B0FFFFFF"))
-                    statusText.text = "Cannot reach http://$ip:$port - اتأكد السيرفر شغال ودوس ENTER PANEL تاني"
-                }
+                // افتح البانل حتى لو السوكت لسه مش رادد - الـ WebView نفسه هيحاول وهيعمل Auto-Retry
+                // مترجعش المستخدم لشاشة IP تاني - ده اللي كان بيخلي البانل مش ظاهرة
+                ipView.visibility = View.GONE; discView.visibility = View.GONE
+                webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
+                if (!up) { statusText.text = "Waiting for server... - البانل بيحمل" }
             }
         }.start()
     }
