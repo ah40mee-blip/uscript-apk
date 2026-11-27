@@ -43,7 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressFill: View
     private lateinit var discView: View
     private var baseUrl = ""
-    private var autoRetrying = false // عشان الـ Auto-Retry ميتكررش لانهائي لو السيرفر فعلا واقع
+    private var autoRetrying = false
+    private var installRunning = false // التثبيت شغال - Enjoy متفتحش البانل قبل ما يخلص // عشان الـ Auto-Retry ميتكررش لانهائي لو السيرفر فعلا واقع
     private var barAnim: android.animation.ValueAnimator? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)); layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER } } // الكتابة في نص الشاشة بالظبط - منظم
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
-        val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 22f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
+        val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 26f; setTextColor(Color.parseColor("#F2FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.08f; setPadding(0, dp(16), 0, 0); setShadowLayer(18f, 0f, 6f, Color.parseColor("#A0FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
         val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 12f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
         // كارت زجاجي للكتابة - Enjoy + Sub جواه
         val enjoyCard = LinearLayout(this@MainActivity).apply {
@@ -108,8 +109,10 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(12), dp(10), dp(12), dp(10)) // الكارت اتصغر
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14); leftMargin = dp(32); rightMargin = dp(32) } // أضيق من الجناب - أصغر
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
-            elevation = dp(12).toFloat(); alpha = 0f // يبدأ مخفي - يظهر مع الكتابة
-            addView(enjoyText); addView(enjoySub)
+            elevation = dp(12).toFloat(); alpha = 0f // يبدأ مخفي - يظهر بعد اختفاء اللوجو
+            val lineTop = View(this@MainActivity).apply { layoutParams = LinearLayout.LayoutParams(dp(48), dp(1)).apply { bottomMargin = dp(12) }; background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#00FFFFFF"), Color.parseColor("#CCFFFFFF"), Color.parseColor("#00FFFFFF"))) }
+            val lineBottom = View(this@MainActivity).apply { layoutParams = LinearLayout.LayoutParams(dp(48), dp(1)).apply { topMargin = dp(12) }; background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#00FFFFFF"), Color.parseColor("#CCFFFFFF"), Color.parseColor("#00FFFFFF"))) }
+            addView(lineTop); addView(enjoyText); addView(lineBottom); addView(enjoySub)
         }
         col.addView(enjoyLogo); col.addView(enjoyCard)
         bg.addView(col)
@@ -118,19 +121,28 @@ class MainActivity : AppCompatActivity() {
         dlg.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)) // الأركان البيضا اتشالت - الخلفية الرخامي مالية الشاشة كلها
         dlg.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT) // ملء الشاشة - مفيش أبيض في الأركان
         dlg.show()
-        // 1) اللوجو Fade In - 800ms + تكبير خفيف
-        enjoyLogo.animate().alpha(1f).scaleX(1.05f).scaleY(1.05f).setDuration(800).withEndAction { enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(600).start() }.start()
-        // 2) بعد اللوجو - Enjoy Ur Premium Experience Fade In - 800ms + الكلام متحرك
-        enjoyCard.animate().alpha(1f).setDuration(800).setStartDelay(800).start() // الكارت الزجاجي يظهر مع الكتابة
-        enjoyText.animate().alpha(1f).translationY(12f).setDuration(800).setStartDelay(800).withEndAction {
-            enjoyText.animate().translationY(0f).setDuration(500).start()
-            // Enjoy متحرك: نبضة + طلوع ونزول بخفة
-            enjoyText.animate().scaleX(1.04f).scaleY(1.04f).setDuration(800).withEndAction { enjoyText.animate().scaleX(1f).scaleY(1f).setDuration(800).start() }.start()
-            enjoyText.animate().translationY(-6f).setDuration(700).withEndAction { enjoyText.animate().translationY(0f).setDuration(700).start() }.start()
+        // التسلسل: 1) اللوجو Fade In - 2) اللوجو Fade Out - 3) Enjoy تدخل لوحدها
+        // 1) اللوجو Fade In - 900ms + تكبير خفيف
+        enjoyLogo.animate().alpha(1f).scaleX(1.05f).scaleY(1.05f).setDuration(900).withEndAction {
+            enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(400).start()
+            // ثبات نص ثانية - وبعدين Fade Out
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                // 2) اللوجو Fade Out - 800ms - يختفي خالص
+                enjoyLogo.animate().alpha(0f).scaleX(0.92f).scaleY(0.92f).setDuration(800).withEndAction {
+                    enjoyLogo.visibility = View.GONE
+                    // 3) Enjoy تدخل لوحدها - Fade In + طلوع خفيف من تحت
+                    enjoyCard.animate().alpha(1f).translationY(14f).setDuration(800).withEndAction { enjoyCard.animate().translationY(0f).setDuration(500).start() }.start()
+                    enjoyText.animate().alpha(1f).translationY(14f).setDuration(800).withEndAction {
+                        enjoyText.animate().translationY(0f).setDuration(500).start()
+                        enjoyText.animate().scaleX(1.04f).scaleY(1.04f).setDuration(800).withEndAction { enjoyText.animate().scaleX(1f).scaleY(1f).setDuration(800).start() }.start()
+                        enjoyText.animate().translationY(-6f).setDuration(700).withEndAction { enjoyText.animate().translationY(0f).setDuration(700).start() }.start()
+                    }.start()
+                    enjoySub.animate().alpha(1f).setDuration(800).setStartDelay(400).start()
+                }.start()
+            }, 500)
         }.start()
-        enjoySub.animate().alpha(1f).setDuration(800).setStartDelay(1200).start()
         // 5 ثواني وبعدها دخول أوتوماتيك على البانل - من غير زراير
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }, 5000)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ dlg.dismiss(); if (!installRunning) { try { nativeEnterPanel() } catch (e: Exception) {} } }, 6500) // 6500 عشان Enjoy تتلحق بعد اللوجو - لو التثبيت لسه شغال متفتحش البانل متفتحش البانل - هو اللي هيفتحها لما يخلص + يعيد تشغيل السيرفر
     }
 
     private fun nativeEnterPanel() { onEnterPanelClicked() }
@@ -351,11 +363,21 @@ class MainActivity : AppCompatActivity() {
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
         // مفيش شاشة Configuring خالص - بمجرد ما تدوس Connect تظهر شاشة Enjoy Ur Premium Experience
         ipView.visibility = View.GONE
-        showConfiguredDialog() // شاشة أسود جلوسي زجاجي - فوقيها اللوجو + Enjoy Ur Premium Experience - 5 ثواني - من غير زراير - دخول أوتوماتيك
+        installRunning = true
+        showConfiguredDialog()
         Thread {
+            // 1) زرع البانل (install) - 2) تشغيل السيرفر (start) - 3) إعادة تشغيل السيرفر (reboot) - كل ده جوه ScriptInstaller
             val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
+            // 4) استنى السيرفر يقوم بعد الـ Reboot - لحد 90 ثانية
+            var up = false
+            for (i in 1..45) {
+                try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
+            }
+            installRunning = false
             runOnUiThread {
-                if (!ok) { statusText.setTextColor(Color.parseColor("#B0FFFFFF")); statusText.text = "Configure failed: $err" }
+                if (!ok) { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#B0FFFFFF")); statusText.text = "Configure failed: $err" }
+                else if (!up) { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#B0FFFFFF")); statusText.text = "Server did not come up on 8080 - اتأكد ان الموبايل على نفس الـ WiFi والرسيفر شغال" }
+                else { onEnterPanelClicked() } // السيرفر قام - افتح البانل
             }
         }.start()
     }
