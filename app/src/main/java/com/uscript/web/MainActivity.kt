@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     private fun field(hint: String, text: String, isPw: Boolean = false): EditText {
         return EditText(this).apply {
             this.hint = hint; setText(text)
-            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض
             textSize = 16f; gravity = Gravity.CENTER
             if (isPw) inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
@@ -75,43 +75,43 @@ class MainActivity : AppCompatActivity() {
         }
         val outer = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(3), Color.parseColor("#E879F9")) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#2A1B4A")); setStroke(dp(3), Color.parseColor("#FF1E1E")) }
             elevation = dp(16).toFloat()
         }
         val mid = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 10), dp(sizeDp - 10)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }
         }
         val inner = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 26), dp(sizeDp - 26)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"))).apply { shape = GradientDrawable.OVAL }
         }
-        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); elevation = dp(4).toFloat(); setShadowLayer(12f, 0f, 4f, Color.parseColor("#4C1D95")) }
+        val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض; gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); elevation = dp(4).toFloat(); setShadowLayer(20f, 0f, 2f, Color.parseColor("#FF1E1E")) }
         // لمعة صغيرة فوق اللوجو
         val shine = View(this).apply { layoutParams = FrameLayout.LayoutParams(dp(sizeDp / 3), dp(sizeDp / 6)).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; topMargin = dp(10) }; background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#FFFFFF")); alpha = 60 } }
         inner.addView(letter); inner.addView(shine); mid.addView(inner); outer.addView(mid); halo.addView(outer)
         return halo
     }
-    // دايلوج برميوم لـ Panel Configured
+    // شاشة شيك بدل رسالة Panel Configured - اللوجو الجديد + Enjoy The Premium Experience بفونت عريض جلوسي
     private fun showConfiguredDialog() {
         val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
-        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(32), dp(28), dp(28)); background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0D1330")); setStroke(dp(2), Color.parseColor("#E879F9")) }; elevation = dp(24).toFloat() }
-        val checkBg = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(dp(84), dp(84)).apply { gravity = Gravity.CENTER }; background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4ADE80"), Color.parseColor("#22D3EE"))).apply { shape = GradientDrawable.OVAL }; elevation = dp(12).toFloat() }
-        checkBg.addView(TextView(this).apply { text = "✓"; textSize = 44f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD) })
-        card.addView(checkBg)
-        card.addView(TextView(this).apply { text = "Panel Configured"; textSize = 24f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(16), 0, 0) })
-        card.addView(TextView(this).apply { text = "U-Panel is ready\nEnjoy your premium experience"; textSize = 14f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(20)) })
-        val ok = btn("Enter U-Panel", "#E879F9") { dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }
-        card.addView(ok)
-        dlg.setContentView(FrameLayout(this).apply { setPadding(dp(28), dp(28), dp(28), dp(28)); addView(card); setOnClickListener { dlg.dismiss() } })
+        val card = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(36), dp(28), dp(28)); background = GradientDrawable().apply { cornerRadius = dp(28).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#FF1E1E")) }; elevation = dp(24).toFloat() }
+        val enjoyLogo = premiumLogo(150, 85f)
+        card.addView(enjoyLogo)
+        enjoyLogo.animate().scaleX(1.08f).scaleY(1.08f).setDuration(1200).withEndAction { enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(1200).start() }.start() // أنيميشن لمعان الزجاج - نبضة خفيفة
+        card.addView(TextView(this).apply { text = "Enjoy The Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض; gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(14f, 0f, 4f, Color.parseColor("#FF1E1E")) })
+        card.addView(TextView(this).apply { text = "Your Enigma is connected\nWelcome to U-Panel"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)) })
+        // من غير زراير - الأنيميشن 5 ثواني وبعدها دخول أوتوماتيك على البانل
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }, 5000) // أنيميشن اللوجو + Enjoy = 5 ثواني
+        dlg.setContentView(FrameLayout(this).apply { setPadding(dp(24), dp(24), dp(24), dp(24)); addView(card) })
         dlg.setCancelable(true); dlg.show()
-        card.alpha = 0f; card.scaleX = 0.8f; card.scaleY = 0.8f; card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(450).setInterpolator(OvershootInterpolator(1.4f)).start()
+        card.alpha = 0f; card.scaleX = 0.85f; card.scaleY = 0.85f; card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(600).setInterpolator(OvershootInterpolator(1.3f)).start()
     }
     private fun nativeEnterPanel() { onEnterPanelClicked() }
 
     private fun btn(text: String, color: String, onClick: () -> Unit): Button {
         return Button(this).apply {
-            this.text = text; textSize = 16f; setTextColor(Color.WHITE)
+            this.text = text; textSize = 16f; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) }
             background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor(color)) }
             setPadding(dp(16), dp(16), dp(16), dp(16)); setOnClickListener { onClick() }
@@ -131,8 +131,8 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 1) Splash متحرك =====
         val splashLogo = premiumLogo(165, 95f)
-        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val splashSub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#0A0A0A")); gravity = Gravity.CENTER; setShadowLayer(22f, 0f, 2f, Color.parseColor("#FF1E1E")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // أسود جلوسي بلمسة فوشيا
+        val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 26f; setTextColor(Color.parseColor("#0A0A0A")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.04f; setShadowLayer(22f, 0f, 2f, Color.parseColor("#FF1E1E")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // الكتابة أسود جلوسي بلمسة فوشيا
         val splashCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
@@ -141,34 +141,34 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 2) صفحة الخانات =====
         val formLogo = premiumLogo(125, 70f)
-        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val title = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض; gravity = Gravity.CENTER }
+        val sub = TextView(this).apply { text = "✨  Control Ur Enigma  ✨"; textSize = 18f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
         ipField = field("Receiver IP  ( 192.168.1.45 )", savedIp)
-        portField = field("Port  ( 8080 )", savedPort)
+        // البورت اتشال من الشاشة - ثابت على 8080
         usernameField = field("Username  ( root )", savedUser)
         passwordField = field("Password  ( root )", savedPw, true)
-        statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
-        connectBtn = btn("CONNECT", "#E879F9") { onConnectClicked() }
-        configureBtn = btn("Connect Panel  →", "#0A0A0A") { onConnectPanelClicked() } // أسود جلوسي - بيعمل Configure + دخول أوتوماتيك
+        statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
+        connectBtn = btn("CONNECT", "#FF1E1E") { onConnectClicked() }
+        configureBtn = btn("Connect to your Enigma", "#0A0A0A") { onConnectPanelClicked() } // جلوسي أسود - بيعمل Configure + دخول أوتوماتيك
         enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
         val form = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(40), dp(20), dp(20))
-            addView(formLogo); addView(title); addView(sub); addView(ipField); addView(portField)
+            orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(48), dp(24), dp(28)) // قايمة أكبر وأشيك
+            addView(formLogo); addView(title); addView(sub); addView(ipField) // من غير خانة بورت - البورت ثابت 8080
             addView(configureBtn); addView(statusText) // زرار واحد بس: Connect Panel
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
         // ===== 3) شاشة Connecting / Configuring - متحركة + بار متحرك =====
         val wLogo = premiumLogo(135, 76f)
-        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 34f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 20f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        welcomeTitle = TextView(this).apply { text = "U-Panel"; textSize = 34f; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض; gravity = Gravity.CENTER }
+        welcomeConnecting = TextView(this).apply { text = "Connecting..."; textSize = 20f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
         val track = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(dp(300), dp(14)).apply { topMargin = dp(20); gravity = Gravity.CENTER }
             background = GradientDrawable().apply { cornerRadius = dp(4).toFloat(); setColor(Color.parseColor("#1E2A55")); setStroke(dp(1), Color.parseColor("#3B2F5E")) }
         }
         progressFill = View(this).apply {
             layoutParams = FrameLayout.LayoutParams(0, dp(14))
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#F472B6"), Color.parseColor("#E879F9"), Color.parseColor("#A855F7"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(8).toFloat() }
+            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.parseColor("#FF1E1E"), Color.parseColor("#FF1E1E"), Color.parseColor("#FF3B3B"), Color.parseColor("#6366F1"), Color.parseColor("#22D3EE"))).apply { cornerRadius = dp(8).toFloat() }
         }
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
@@ -178,8 +178,8 @@ class MainActivity : AppCompatActivity() {
         welcomeView = FrameLayout(this).apply { addView(wCol); visibility = View.GONE }
 
         // ===== 4) شاشة Disconnected - ثابتة =====
-        val dTitle = TextView(this).apply { text = "Disconnected"; textSize = 26f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        val dSub = TextView(this).apply { text = "Check connection and try again"; textSize = 14f; setTextColor(Color.parseColor("#F472B6")); gravity = Gravity.CENTER }
+        val dTitle = TextView(this).apply { text = "Disconnected"; textSize = 26f; setTextColor(Color.parseColor("#C0C0C0")) // U جراي بدل الأبيض; gravity = Gravity.CENTER }
+        val dSub = TextView(this).apply { text = "Check connection and try again"; textSize = 14f; setTextColor(Color.parseColor("#FF1E1E")); gravity = Gravity.CENTER }
         val dBack = btn("BACK", "#0D1330") { discView.visibility = View.GONE; ipView.visibility = View.VISIBLE }
         val dCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(20), dp(40), dp(20), dp(20))
@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity() {
                             runOnUiThread {
                                 stopBar(); welcomeView.visibility = View.GONE; autoRetrying = false
                                 if (ok) { webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl); Toast.makeText(this@MainActivity, "Server restarted", Toast.LENGTH_SHORT).show() }
-                                else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $baseUrl - دوس ENTER PANEL تاني" }
+                                else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Cannot reach $baseUrl - دوس ENTER PANEL تاني" }
                             }
                         }.start()
                     }
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveFields(): Triple<String, String, String> {
         val ip = ipField.text.toString().trim()
-        val port = portField.text.toString().trim().ifEmpty { "8080" }
+        val port = "8080" // ثابت - خانة البورت اتشالت
         val user = usernameField.text.toString().trim().ifEmpty { "root" }
         val pw = passwordField.text.toString().trim().ifEmpty { "root" }
         getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit()
@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
     private fun onConnectClicked() {
         val (ip, port, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Connecting..."
+        statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Connecting..."
         connectBtn.isEnabled = false
         Thread {
             var ok = false
@@ -283,7 +283,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 connectBtn.isEnabled = true
                 if (ok) { statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "Connected ✅ to $ip" }
-                else { statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Cannot reach $ip - لو لسه عامل ريستارت استنى دقيقة وجرب تاني" }
+                else { statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Cannot reach $ip - لو لسه عامل ريستارت استنى دقيقة وجرب تاني" }
             }
         }.start()
     }
@@ -308,7 +308,7 @@ class MainActivity : AppCompatActivity() {
                     webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
                 } else {
                     ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#F472B6"))
+                    statusText.setTextColor(Color.parseColor("#FF1E1E"))
                     statusText.text = "Cannot reach http://$ip:$port - اتأكد السيرفر شغال ودوس ENTER PANEL تاني"
                 }
             }
@@ -326,7 +326,7 @@ class MainActivity : AppCompatActivity() {
             val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
             runOnUiThread {
                 stopBar()
-                if (!ok) { welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configure failed: $err"; return@runOnUiThread }
+                if (!ok) { welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err"; return@runOnUiThread }
                 // شاشة Welcome جلوسي: Welcome to U-Panel -> Fade Out -> Control ur Enigma Life -> دخول
                 welcomeConnecting.text = "Welcome to U-Panel"
                 welcomeConnecting.textSize = 32f
@@ -375,13 +375,13 @@ private fun onConfigureClicked() {
                         runOnUiThread {
                             welcomeView.visibility = View.GONE; ipView.visibility = View.GONE; discView.visibility = View.GONE
                             if (up) { try { webView.clearCache(true) } catch (e: Exception) {}; webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl) }
-                            else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Server not up yet on 8080 - دوس ENTER U-PANEL بعد 10 ثواني" }
+                            else { ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Server not up yet on 8080 - دوس ENTER U-PANEL بعد 10 ثواني" }
                         }
                     }.start()
                 } else {
                     welcomeView.visibility = View.GONE
                     ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#F472B6")); statusText.text = "Configure failed: $err"
+                    statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err"
                 }
             }
         }.start()
