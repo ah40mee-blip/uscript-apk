@@ -15,7 +15,8 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.40 - U-PANEL" | # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
+_SCRIPT_VERSION="V 6.41 - U-PANEL" | # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
+# V6.41 (27 Nov): SERVER-DROP FIX - web_start now (1) py_compile-checks the web server BEFORE killing the old one, (2) retries starting it 3x and verifies /version after each try, (3) starts a watchdog that restarts the server if it dies for any reason other than a real receiver reboot. /health endpoint added. (4) PERSISTENT PATH: script is copied to /etc/enigma2/U-Panel.sh before autostart is installed, so after a reboot (format does a forced reboot) the autostart no longer points at a /tmp file that was wiped. Slot numbering SD 6..20 / HDD 21..50 unchanged.
 # V6.40 (27 Nov): Slots renumbered - NO overlap: SD 6..20 (15 slots, partition = slot-5), HDD/SSD 21..50 (30 slots, partition = slot-20). Slot 5 stays the hidden internal switcher. Cosmetic Khaled Ali / Novaler MultiBoot names removed from slot-function comments only - functional plugin folder / engine / conf names kept, slot functions unchanged.
 # V6.39 (27 Nov): WebUI /multiboot page gains the 5 missing buttons - Fix Bootmenu, Sync Slots to /boot, Recovery Slot Names Hide empty, Recovery Slot Names Apply to ALL, Check internal slots. Inject Plugin intentionally NOT added (per user).
 # V6.38 (27 Nov): Boot Slot Manager rebuilt - ONE main choice [1] Disk Slots Formatting with TWO sub-choices (SD / HDD-SSD). Numbering started at 6 on BOTH disks (SD 6..21, HDD/SSD 6..35, partition = slot-5) - superseded by V6.40. SD format = slots ONLY (no storage partition). HDD format = slots + storage split. Flash (in format flow AND standalone Install) now injects the plugin into the flashed slot, then forced reboot. Slot 5 stays protected.
@@ -2550,6 +2551,10 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/manifest.json":
             _m = PWA_MANIFEST.encode()
             self.send_response(200); self.send_header("Content-Type", "application/manifest+json"); self.send_header("Content-Length", str(len(_m))); self.end_headers(); self.wfile.write(_m); return
+        if u.path == "/health":
+            import json as _jjh
+            _hb = _jjh.dumps({"status": "ok", "version": os.environ.get("U_PANEL_VERSION", "V6.25")}).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-cache"); self.send_header("Content-Length", str(len(_hb))); self.end_headers(); self.wfile.write(_hb); return
         if u.path == "/version":
             import json as _jjv
             _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.25"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
@@ -5144,8 +5149,7 @@ web_ensure_running() {
 }
 # V5.90: install boot autostart silently (same steps as web_autostart_install, but NO "Press ENTER" prompt) so the server also comes back after a reboot.
 web_autostart_ensure_silent() {
-  _SP="$0"
-  case "$_SP" in /*) ;; *) _SP="$(pwd)/$_SP";; esac
+  _SP=$(upanel_persistent_script_path)
   [ -f "$_SP" ] || return 0
   # V5.91 SELF-HEAL: autostart ON but pointing at an OLD / DELETED path (script moved to /etc/enigma2) -> re-install with THIS path, do NOT return early
   if web_autostart_is_on; then
@@ -5199,8 +5203,7 @@ UPANEL_WEB_INIT_EOF
 }
 web_autostart_is_on() { [ -x /etc/init.d/u-panel-web ]; }
 web_autostart_install() {
-  _SP="$0"
-  case "$_SP" in /*) ;; *) _SP="$(pwd)/$_SP";; esac
+  _SP=$(upanel_persistent_script_path)
   cat > /etc/init.d/u-panel-web <<'UPANEL_WEB_INIT_EOF'
 #!/bin/sh
 ### BEGIN INIT INFO
@@ -5254,13 +5257,43 @@ web_autostart_remove() {
 web_autostart_toggle() {
   if web_autostart_is_on; then web_autostart_remove; else web_autostart_install; fi
 }
+upanel_persistent_script_path() { # echoes a persistent (non-/tmp) path for THIS script, copying it there if needed
+  _PP="$0"; case "$_PP" in /*) ;; *) _PP="$(pwd)/$_PP";; esac
+  case "$_PP" in /tmp/*) ;;
+    *) echo "$_PP"; return 0;; esac
+  for _PD in /etc/enigma2 /media/hdd /etc; do
+    if cp -a "$_PP" "$_PD/U-Panel.sh" 2>/dev/null && [ -f "$_PD/U-Panel.sh" ]; then echo "$_PD/U-Panel.sh"; return 0; fi
+  done
+  echo "$_PP"
+}
+web_watchdog() { # V6.41: restart the web server if it dies (not during a real reboot - /tmp is wiped then, so the watchdog dies with it)
+  while true; do
+    sleep 10
+    if ! web_is_running; then
+      echo "[WEB-WATCHDOG] Server down - restarting..." >> /tmp/u-panel-web.log 2>/dev/null
+      web_start_bg
+    fi
+  done
+}
+web_start_bg() { # start server WITHOUT prompts, retry 3x, verify /version - used by web_start + watchdog
+  _WS_TRY=0
+  while [ "$_WS_TRY" -lt 3 ]; do
+    _WS_TRY=$((_WS_TRY + 1))
+    U_PANEL_PATH="$(upanel_persistent_script_path)" U_PANEL_VERSION="$_SCRIPT_VERSION" U_PANEL_WEB_PIN="$(web_pin_get)" U_PANEL_WEB_PORT=8080 U_PANEL_WEB_BIND="$(web_bind_get)" nohup python3 /tmp/u-panel-web.py > /tmp/u-panel-web.log 2>&1 &
+    sleep 2
+    _WS_V=$(curl -s --max-time 2 "http://127.0.0.1:8080/version" 2>/dev/null)
+    case "$_WS_V" in *"$_SCRIPT_VERSION"*) return 0;; esac
+    web_kill_servers; sleep 1
+  done
+  return 1
+}
 web_start() {
   web_write_py
+  if ! python3 -m py_compile /tmp/u-panel-web.py 2>/dev/null; then echo "[WEB] FAILED - new server file has a syntax error, OLD server left running - see /tmp/u-panel-web.log"; printf "Press ENTER... "; read _b; return 1; fi
   web_kill_servers
   for _i in 1 2 3 4 5 6 7 8 9 10; do web_is_running || break; sleep 1; done
-  U_PANEL_PATH="$0" U_PANEL_VERSION="$_SCRIPT_VERSION" U_PANEL_WEB_PIN="$(web_pin_get)" U_PANEL_WEB_PORT=8080 U_PANEL_WEB_BIND="$(web_bind_get)" nohup python3 /tmp/u-panel-web.py > /tmp/u-panel-web.log 2>&1 &
-  sleep 2
-  if web_is_running; then _wb=$(web_bind_get); if [ "$_wb" = "0.0.0.0" ]; then _wurl="http://$(web_ip):8080"; elif [ "$_wb" = "127.0.0.1" ]; then _wurl="http://127.0.0.1:8080 (this receiver only)"; else _wurl="http://$_wb:8080"; fi; echo "[WEB] Started - listening on $_wb - open: $_wurl"; echo "[WEB] PIN: $(web_pin_get) - change it from Panel Control if you still use 1234"; else echo "[WEB] FAILED to start - see /tmp/u-panel-web.log"; fi
+  if web_start_bg; then _wb=$(web_bind_get); if [ "$_wb" = "0.0.0.0" ]; then _wurl="http://$(web_ip):8080"; elif [ "$_wb" = "127.0.0.1" ]; then _wurl="http://127.0.0.1:8080 (this receiver only)"; else _wurl="http://$_wb:8080"; fi; echo "[WEB] Started - listening on $_wb - open: $_wurl"; echo "[WEB] PIN: $(web_pin_get) - change it from Panel Control if you still use 1234"; else echo "[WEB] FAILED to start after 3 tries - see /tmp/u-panel-web.log"; fi
+  pgrep -f "u-panel-web-watchdog" >/dev/null 2>&1 || ( U_PANEL_WATCHDOG=1 nohup bash -c 'while true; do sleep 10; pgrep -f u-panel-web.py >/dev/null 2>&1 || sh "$0" --web-start-bg; done' "$(upanel_persistent_script_path)" > /tmp/u-panel-web-watchdog.log 2>&1 & )
   printf "Press ENTER... "; read _b
 }
 web_stop() { web_kill_servers; echo "[WEB] Stopped"; printf "Press ENTER... "; read _b; }
