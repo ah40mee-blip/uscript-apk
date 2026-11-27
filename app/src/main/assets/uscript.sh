@@ -15,7 +15,7 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.43 - U-PANEL"
+_SCRIPT_VERSION="V 6.44 - U-PANEL"
 # V6.43 (27 Nov): VERSION FIX - _SCRIPT_VERSION was defined as `VAR="..." | # comment`, so bash ran it as a pipeline in a subshell and the variable stayed EMPTY. /version returned {"version": ""} and the ensure-running check *"$_SCRIPT_VERSION"* matched ANYTHING, so a new version never replaced an old server. Now the assignment is on its own line. V6.42 boot fix + V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
 # V6.42 (27 Nov): BOOT FIX - --web-start-bg no longer runs lock_startup_check: the boot autostart calls that path, and the lock (integrity seal) fails after ANY script edit and asks for Owner PIN with no TTY at boot, so it exited before the server ever started. Server start is not a bypass: every --web-* job and the menu still run lock_startup_check. V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
@@ -12117,12 +12117,12 @@ upanel_formatting_slots() { # $1=kind (sd|hdd, empty = ask) $2=disk $3=slots $4=
       upanel_force_reboot_bg 3
       return 0
     fi
-    echo "[DISK-SLOTS-FORMATTING] Flash skipped/failed - rebooting in 5 seconds..."
-    sleep 5; reboot; return 0
+    echo "[DISK-SLOTS-FORMATTING] Flash skipped/failed - FORCED reboot in 5 seconds (reboot -f)..."
+    upanel_force_reboot_bg 5; return 0
     ;;
   esac
-  echo "[DISK-SLOTS-FORMATTING] Format done - rebooting in 5 seconds..."
-  sleep 5; reboot
+  echo "[DISK-SLOTS-FORMATTING] Format done - FORCED reboot in 5 seconds (reboot -f)..."
+  upanel_force_reboot_bg 5
   return 0
 }
 
