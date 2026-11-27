@@ -100,14 +100,14 @@ class MainActivity : AppCompatActivity() {
         val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)); layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER } } // الكتابة في نص الشاشة بالظبط - منظم
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
-        val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
-        val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
+        val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 22f // الفونت اتصغر; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
+        val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 12f // الفونت اتصغر; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
         // كارت زجاجي للكتابة - Enjoy + Sub جواه
         val enjoyCard = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            setPadding(dp(20), dp(18), dp(20), dp(18))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(24); leftMargin = dp(16); rightMargin = dp(16) }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
+            setPadding(dp(12), dp(10), dp(12), dp(10)) // الكارت اتصغر
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14); leftMargin = dp(32); rightMargin = dp(32) } // أضيق من الجناب - أصغر
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
             elevation = dp(12).toFloat(); alpha = 0f // يبدأ مخفي - يظهر مع الكتابة
             addView(enjoyText); addView(enjoySub)
         }
@@ -338,24 +338,11 @@ class MainActivity : AppCompatActivity() {
     private fun onEnterPanelClicked() {
         val (ip, port, _) = saveFields()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
-        // شاشة Welcome اتشالت - مفيش Waiting screen - بعد Enjoy يدخل على البانل على طول
-        Thread {
-            var up = false
-            // استنى السيرفر 90 ثانية مش 30 - الريستارت بياخد وقت
-            for (i in 1..45) {
-                try { val s = java.net.Socket(); s.connect(java.net.InetSocketAddress(ip, port.toIntOrNull() ?: 8080), 2000); s.close(); up = true; break } catch (e: Exception) { Thread.sleep(2000) }
-            }
-            runOnUiThread {
-                stopBar(); welcomeView.visibility = View.GONE
-                // افتح البانل حتى لو السوكت لسه مش رادد - الـ WebView نفسه هيحاول وهيعمل Auto-Retry
-                // مترجعش المستخدم لشاشة IP تاني - ده اللي كان بيخلي البانل مش ظاهرة
-                ipView.visibility = View.GONE; discView.visibility = View.GONE
-                webView.visibility = View.VISIBLE; webView.loadUrl(baseUrl)
-                if (!up) { statusText.text = "Waiting for server... - البانل بيحمل" }
-            }
-        }.start()
+        // افتح البانل فوراً - متستناش السوكت - الشاشة السودة كانت من الانتظار 90 ثانية
+        ipView.visibility = View.GONE; discView.visibility = View.GONE; welcomeView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        webView.loadUrl(baseUrl) // الـ WebView نفسه هيستنى السيرفر وهيعمل Retry لو لسه بيقوم
     }
-
 
     // Connect Panel: بيعمل اللي كان بيعمله Configure + بيدخل أوتوماتيك
     // بمجرد Connect: شاشة Enjoy Ur Premium Experience - 5 ثواني - دخول أوتوماتيك
