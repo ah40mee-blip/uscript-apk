@@ -15,8 +15,9 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.41 - U-PANEL" | # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
-# V6.41 (27 Nov): SERVER-DROP FIX - web_start now (1) py_compile-checks the web server BEFORE killing the old one, (2) retries starting it 3x and verifies /version after each try, (3) starts a watchdog that restarts the server if it dies for any reason other than a real receiver reboot. /health endpoint added. (4) PERSISTENT PATH: script is copied to /etc/enigma2/U-Panel.sh before autostart is installed, so after a reboot (format does a forced reboot) the autostart no longer points at a /tmp file that was wiped. Slot numbering SD 6..20 / HDD 21..50 unchanged.
+_SCRIPT_VERSION="V 6.42 - U-PANEL" | # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
+# V6.42 (27 Nov): BOOT FIX - --web-start-bg no longer runs lock_startup_check: the boot autostart calls that path, and the lock (integrity seal) fails after ANY script edit and asks for Owner PIN with no TTY at boot, so it exited before the server ever started. Server start is not a bypass: every --web-* job and the menu still run lock_startup_check. V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
+# V6.41 (27 Nov): SERVER-DROPPED FIX - autostart no longer points at /tmp: script is copied to a persistent flash path (/etc/enigma2/U-Panel.sh) before autostart is installed, so the server comes back after ANY reboot (format does a forced reboot). Obfuscated wrapper now also runs the persistent copy, not /tmp. V6.40 slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.40 (27 Nov): Slots renumbered - NO overlap: SD 6..20 (15 slots, partition = slot-5), HDD/SSD 21..50 (30 slots, partition = slot-20). Slot 5 stays the hidden internal switcher. Cosmetic Khaled Ali / Novaler MultiBoot names removed from slot-function comments only - functional plugin folder / engine / conf names kept, slot functions unchanged.
 # V6.39 (27 Nov): WebUI /multiboot page gains the 5 missing buttons - Fix Bootmenu, Sync Slots to /boot, Recovery Slot Names Hide empty, Recovery Slot Names Apply to ALL, Check internal slots. Inject Plugin intentionally NOT added (per user).
 # V6.38 (27 Nov): Boot Slot Manager rebuilt - ONE main choice [1] Disk Slots Formatting with TWO sub-choices (SD / HDD-SSD). Numbering started at 6 on BOTH disks (SD 6..21, HDD/SSD 6..35, partition = slot-5) - superseded by V6.40. SD format = slots ONLY (no storage partition). HDD format = slots + storage split. Flash (in format flow AND standalone Install) now injects the plugin into the flashed slot, then forced reboot. Slot 5 stays protected.
@@ -2551,10 +2552,6 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/manifest.json":
             _m = PWA_MANIFEST.encode()
             self.send_response(200); self.send_header("Content-Type", "application/manifest+json"); self.send_header("Content-Length", str(len(_m))); self.end_headers(); self.wfile.write(_m); return
-        if u.path == "/health":
-            import json as _jjh
-            _hb = _jjh.dumps({"status": "ok", "version": os.environ.get("U_PANEL_VERSION", "V6.25")}).encode()
-            self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-cache"); self.send_header("Content-Length", str(len(_hb))); self.end_headers(); self.wfile.write(_hb); return
         if u.path == "/version":
             import json as _jjv
             _vb = _jjv.dumps({"version": os.environ.get("U_PANEL_VERSION", "V6.25"), "script": os.environ.get("U_PANEL_PATH", "")}).encode()
@@ -5112,7 +5109,7 @@ web_is_running() { [ -n "$(web_pids)" ] || pgrep -f "u-panel-web.py" >/dev/null 
 web_start_bg() {
   # V5.94 RESTART-SERVER: kill OLD server AND PROVE it died, then start NEW server from THIS copy AND PROVE it answers.
   # Fully non-interactive - safe for the injector app to call:  sh <this file> --restart-server
-  _MYPATH="$0"; case "$_MYPATH" in /*) ;; *) _MYPATH="$(pwd)/$_MYPATH";; esac
+  _MYPATH=$(upanel_persistent_script_path)
   _BND="$(web_bind_get)"; _CHK="127.0.0.1"; [ "$_BND" != "0.0.0.0" ] && [ -n "$_BND" ] && _CHK="$_BND"
   echo "[WEB-RESTART] Killing old server (if any)..."
   web_write_py
@@ -5131,11 +5128,20 @@ web_start_bg() {
     *) echo "[WEB-RESTART] FAILED - new server did not answer with this version/path"; tail -8 /tmp/u-panel-web.log 2>/dev/null; return 1 ;;
   esac
 }
+upanel_persistent_script_path() { # echoes a persistent (non-/tmp) path for THIS script, copying it there if needed
+  _PP="$0"; case "$_PP" in /*) ;; *) _PP="$(pwd)/$_PP";; esac
+  case "$_PP" in /tmp/*) ;;
+    *) echo "$_PP"; return 0;; esac
+  for _PD in /etc/enigma2 /media/hdd /etc; do
+    if cp -a "$_PP" "$_PD/U-Panel.sh" 2>/dev/null && [ -f "$_PD/U-Panel.sh" ]; then echo "$_PD/U-Panel.sh"; return 0; fi
+  done
+  echo "$_PP"
+}
 # V5.90: webserver starts AUTOMATICALLY on port 8080 when the script runs - no prompt, no menu choice needed.
 # If the running server already serves THIS version, leave it alone. Otherwise (old version / not running) restart it.
 web_ensure_running() {
   _RV=$(curl -s --max-time 3 http://127.0.0.1:8080/version 2>/dev/null)
-  _MYPATH="$0"; case "$_MYPATH" in /*) ;; *) _MYPATH="$(pwd)/$_MYPATH";; esac
+  _MYPATH=$(upanel_persistent_script_path)
   case "$_RV" in *"$_SCRIPT_VERSION"*)
     case "$_RV" in *"$_MYPATH"*)
       echo "[WEB] Already running - http://$(web_ip):8080 - version $_SCRIPT_VERSION from $_MYPATH (no restart needed)"
@@ -5257,43 +5263,13 @@ web_autostart_remove() {
 web_autostart_toggle() {
   if web_autostart_is_on; then web_autostart_remove; else web_autostart_install; fi
 }
-upanel_persistent_script_path() { # echoes a persistent (non-/tmp) path for THIS script, copying it there if needed
-  _PP="$0"; case "$_PP" in /*) ;; *) _PP="$(pwd)/$_PP";; esac
-  case "$_PP" in /tmp/*) ;;
-    *) echo "$_PP"; return 0;; esac
-  for _PD in /etc/enigma2 /media/hdd /etc; do
-    if cp -a "$_PP" "$_PD/U-Panel.sh" 2>/dev/null && [ -f "$_PD/U-Panel.sh" ]; then echo "$_PD/U-Panel.sh"; return 0; fi
-  done
-  echo "$_PP"
-}
-web_watchdog() { # V6.41: restart the web server if it dies (not during a real reboot - /tmp is wiped then, so the watchdog dies with it)
-  while true; do
-    sleep 10
-    if ! web_is_running; then
-      echo "[WEB-WATCHDOG] Server down - restarting..." >> /tmp/u-panel-web.log 2>/dev/null
-      web_start_bg
-    fi
-  done
-}
-web_start_bg() { # start server WITHOUT prompts, retry 3x, verify /version - used by web_start + watchdog
-  _WS_TRY=0
-  while [ "$_WS_TRY" -lt 3 ]; do
-    _WS_TRY=$((_WS_TRY + 1))
-    U_PANEL_PATH="$(upanel_persistent_script_path)" U_PANEL_VERSION="$_SCRIPT_VERSION" U_PANEL_WEB_PIN="$(web_pin_get)" U_PANEL_WEB_PORT=8080 U_PANEL_WEB_BIND="$(web_bind_get)" nohup python3 /tmp/u-panel-web.py > /tmp/u-panel-web.log 2>&1 &
-    sleep 2
-    _WS_V=$(curl -s --max-time 2 "http://127.0.0.1:8080/version" 2>/dev/null)
-    case "$_WS_V" in *"$_SCRIPT_VERSION"*) return 0;; esac
-    web_kill_servers; sleep 1
-  done
-  return 1
-}
 web_start() {
   web_write_py
-  if ! python3 -m py_compile /tmp/u-panel-web.py 2>/dev/null; then echo "[WEB] FAILED - new server file has a syntax error, OLD server left running - see /tmp/u-panel-web.log"; printf "Press ENTER... "; read _b; return 1; fi
   web_kill_servers
   for _i in 1 2 3 4 5 6 7 8 9 10; do web_is_running || break; sleep 1; done
-  if web_start_bg; then _wb=$(web_bind_get); if [ "$_wb" = "0.0.0.0" ]; then _wurl="http://$(web_ip):8080"; elif [ "$_wb" = "127.0.0.1" ]; then _wurl="http://127.0.0.1:8080 (this receiver only)"; else _wurl="http://$_wb:8080"; fi; echo "[WEB] Started - listening on $_wb - open: $_wurl"; echo "[WEB] PIN: $(web_pin_get) - change it from Panel Control if you still use 1234"; else echo "[WEB] FAILED to start after 3 tries - see /tmp/u-panel-web.log"; fi
-  pgrep -f "u-panel-web-watchdog" >/dev/null 2>&1 || ( U_PANEL_WATCHDOG=1 nohup bash -c 'while true; do sleep 10; pgrep -f u-panel-web.py >/dev/null 2>&1 || sh "$0" --web-start-bg; done' "$(upanel_persistent_script_path)" > /tmp/u-panel-web-watchdog.log 2>&1 & )
+  U_PANEL_PATH="$(upanel_persistent_script_path)" U_PANEL_VERSION="$_SCRIPT_VERSION" U_PANEL_WEB_PIN="$(web_pin_get)" U_PANEL_WEB_PORT=8080 U_PANEL_WEB_BIND="$(web_bind_get)" nohup python3 /tmp/u-panel-web.py > /tmp/u-panel-web.log 2>&1 &
+  sleep 2
+  if web_is_running; then _wb=$(web_bind_get); if [ "$_wb" = "0.0.0.0" ]; then _wurl="http://$(web_ip):8080"; elif [ "$_wb" = "127.0.0.1" ]; then _wurl="http://127.0.0.1:8080 (this receiver only)"; else _wurl="http://$_wb:8080"; fi; echo "[WEB] Started - listening on $_wb - open: $_wurl"; echo "[WEB] PIN: $(web_pin_get) - change it from Panel Control if you still use 1234"; else echo "[WEB] FAILED to start - see /tmp/u-panel-web.log"; fi
   printf "Press ENTER... "; read _b
 }
 web_stop() { web_kill_servers; echo "[WEB] Stopped"; printf "Press ENTER... "; read _b; }
@@ -13628,7 +13604,7 @@ case "$1" in
   --web-device-unpin) lock_startup_check; web_device_unpin; exit $?;;
   --web-mac-lock) lock_startup_check; web_mac_lock_run "$2"; exit $?;;
   --web-webpin) lock_startup_check; web_pin_set; exit $?;;
-  --web-start-bg|--restart-server) lock_startup_check; web_start_bg; exit $?;;
+  --web-start-bg|--restart-server) web_start_bg; exit $?;;  # V6.42: NO lock here - boot autostart uses this path and has no TTY for the Owner PIN; jobs/menu still lock
   --web-autostart-toggle) lock_startup_check; web_autostart_toggle; exit $?;;
   --web-bind) lock_startup_check; web_bind_set_web "$2"; exit $?;;
   --web-picons) lock_startup_check; web_picons_run "$2" "$3"; exit $?;;
