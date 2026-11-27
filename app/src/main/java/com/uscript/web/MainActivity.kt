@@ -100,9 +100,18 @@ class MainActivity : AppCompatActivity() {
         val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)); layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER } } // الكتابة في نص الشاشة بالظبط - منظم
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
-        val enjoyText = TextView(this).apply { text = "✦  Enjoy Ur Premium\nExperience  ✦"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
+        val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
         val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
-        col.addView(enjoyLogo); col.addView(enjoyText); col.addView(enjoySub)
+        // كارت زجاجي للكتابة - Enjoy + Sub جواه
+        val enjoyCard = LinearLayout(this@MainActivity).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(24); leftMargin = dp(16); rightMargin = dp(16) }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
+            elevation = dp(12).toFloat(); alpha = 0f // يبدأ مخفي - يظهر مع الكتابة
+            addView(enjoyText); addView(enjoySub)
+        }
+        col.addView(enjoyLogo); col.addView(enjoyCard)
         bg.addView(col)
         dlg.setContentView(bg)
         dlg.setCancelable(true)
@@ -112,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         // 1) اللوجو Fade In - 800ms + تكبير خفيف
         enjoyLogo.animate().alpha(1f).scaleX(1.05f).scaleY(1.05f).setDuration(800).withEndAction { enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(600).start() }.start()
         // 2) بعد اللوجو - Enjoy Ur Premium Experience Fade In - 800ms + الكلام متحرك
+        enjoyCard.animate().alpha(1f).setDuration(800).setStartDelay(800).start() // الكارت الزجاجي يظهر مع الكتابة
         enjoyText.animate().alpha(1f).translationY(12f).setDuration(800).setStartDelay(800).withEndAction {
             enjoyText.animate().translationY(0f).setDuration(500).start()
             // Enjoy متحرك: نبضة + طلوع ونزول بخفة
@@ -156,7 +166,16 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
         }
-        splashView = FrameLayout(this).apply { addView(splashCol) }
+        // كارت زجاجي By Eng Ahmed Abdel Moati - في أول شاشة تحت خالص
+        val splashCredit = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; bottomMargin = dp(28); leftMargin = dp(24); rightMargin = dp(24) }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
+            elevation = dp(10).toFloat()
+            addView(TextView(this).apply { text = "By Eng Ahmed Abdel Moati"; textSize = 15f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setShadowLayer(10f, 0f, 4f, Color.parseColor("#80FFFFFF")) })
+        }
+        splashView = FrameLayout(this).apply { addView(splashCol); addView(splashCredit) }
 
         // ===== 2) صفحة الخانات =====
         val formLogo = premiumLogo(125, 70f)
@@ -174,20 +193,7 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(48), dp(24), dp(28)) // قايمة أكبر وأشيك
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
             addView(formLogo); addView(title); addView(sub); addView(ipField) // من غير خانة بورت - البورت ثابت 8080
-            addView(configureBtn); addView(statusText)
-            // مسافة مرنة تزق الكارت لتحت خالص - المكان اللي علمت عليه
-            val spacer = View(this@MainActivity).apply { layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-            addView(spacer)
-            // كارت زجاجي برميوم - اتنقل لتحت خالص
-            val creditCard = LinearLayout(this@MainActivity).apply { // الكارت بره الـ this بتاع الفورم
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                setPadding(dp(16), dp(14), dp(16), dp(14))
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(18) }
-                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
-                elevation = dp(10).toFloat()
-                addView(TextView(this@MainActivity).apply { text = "✦  By Eng Ahmed Abdel Moati  ✦"; textSize = 15f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setShadowLayer(10f, 0f, 4f, Color.parseColor("#80FFFFFF")) }) // رمز شيك يمين وشمال الكتابة
-            }
-            addView(creditCard) // الكارت لتحت خالص - مش تحت الزرار
+            addView(configureBtn); addView(statusText) // الكارت اتشال من هنا - اتنقل لأول شاشة
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
