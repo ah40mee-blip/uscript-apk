@@ -326,6 +326,36 @@ class MainActivity : AppCompatActivity() {
                 if (!ok) { statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err" }
             }
         }.start()
+    }\n
+    private fun onConfigureClicked() {
+        val (ip, _, pw) = saveFields()
+        if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
+        ipView.visibility = View.GONE
+        showConfiguredDialog()
+        Thread {
+            val (ok, err) = ScriptInstaller.installWithError(this, ip, pw) { _ -> }
+            runOnUiThread {
+                if (!ok) { statusText.setTextColor(Color.parseColor("#FF1E1E")); statusText.text = "Configure failed: $err" }
+            }
+        }.start()
     }
 
+    private fun onEnterPanelClicked() {
+        val (ip, port, _) = saveFields()
+        if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP"; return }
+        ipView.visibility = View.GONE
+        discView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        webView.loadUrl("http://$ip:$port")
+    }
 
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        try {
+            if (webView.visibility == View.VISIBLE) {
+                val p = android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build()
+                enterPictureInPictureMode(p)
+            }
+        } catch (e: Exception) {}
+    }
+}
