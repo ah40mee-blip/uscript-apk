@@ -15,7 +15,7 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.45 - U-PANEL"
+_SCRIPT_VERSION="V 6.46 - U-PANEL"
 # V6.43 (27 Nov): VERSION FIX - _SCRIPT_VERSION was defined as `VAR="..." | # comment`, so bash ran it as a pipeline in a subshell and the variable stayed EMPTY. /version returned {"version": ""} and the ensure-running check *"$_SCRIPT_VERSION"* matched ANYTHING, so a new version never replaced an old server. Now the assignment is on its own line. V6.42 boot fix + V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
 # V6.42 (27 Nov): BOOT FIX - --web-start-bg no longer runs lock_startup_check: the boot autostart calls that path, and the lock (integrity seal) fails after ANY script edit and asks for Owner PIN with no TTY at boot, so it exited before the server ever started. Server start is not a bypass: every --web-* job and the menu still run lock_startup_check. V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
@@ -10277,7 +10277,7 @@ upanel_verify_after_flash() {
   fi
   if [ "$_VOK" = "1" ]; then
     _VK=$(grep -oE 'kernel=[^ ]+' "/boot/STARTUP_LINUX_$_VS" 2>/dev/null | head -1 | sed 's/kernel=//')
-    [ -n "$_VK" ] && [ ! -f "$_VK" ] && { _VOK=0; _VWHY="kernel file missing: $_VK"; }
+    [ -n "$_VK" ] && [ ! -e "$_VK" ] && { _VOK=0; _VWHY="kernel device missing: $_VK"; }  # V6.46: kernel= is a BLOCK device (/dev/mmcblk0p22) - -f is always false on devices, -e is the right test
   fi
   umount "$_VMP" 2>/dev/null
   if [ "$_VOK" = "1" ]; then echo "[VERIFY-OK] SLOT $_VS - image-version + enigma2 + kernel present."; return 0; fi
@@ -11977,7 +11977,7 @@ upanel_startup_plugin_format_mode() { # $1=mode $2=slot
   _PF_BASE=$(upanel_mode_base "$_PF_MODE"); if [ "$_PF_N" -lt "$_PF_BASE" ] 2>/dev/null; then echo "[PLUGIN-FMT-FAIL] SLOT $_PF_N is not a $_PF_MODE slot ($_PF_MODE slots start at $_PF_BASE)."; return 1; fi
   _PF_PDK=$(upanel_mode_disk "$_PF_MODE"); _PF_PSP=$(upanel_plugin_sep "$_PF_PDK"); _PF_DEV="/dev/${_PF_PDK}${_PF_PSP}$((_PF_N - $(upanel_mode_offset "$_PF_MODE")))"
   mount -o remount,rw /boot 2>/dev/null
-  printf "bootcmd=setenv bootargs \\$(bootargs) \\$(bootargs_common); mmc read 0 0x1000000 0x3D5000 0x8000; bootm 0x1000000; run bootcmd_fallback\\nbootargs=root=%s rootfstype=ext4 rw rootwait console=ttyAMA0,115200 kernel=/dev/mmcblk0p22\\n" "$_PF_DEV" > "/boot/STARTUP_LINUX_$_PF_N" 2>/dev/null
+  printf "bootcmd=setenv bootargs \$(bootargs) \$(bootargs_common); mmc read 0 0x1000000 0x3D5000 0x8000; bootm 0x1000000; run bootcmd_fallback\\nbootargs=root=%s rootfstype=ext4 rw rootwait console=ttyAMA0,115200 kernel=/dev/mmcblk0p22\\n" "$_PF_DEV" > "/boot/STARTUP_LINUX_$_PF_N" 2>/dev/null
   if [ -s "/boot/STARTUP_LINUX_$_PF_N" ] && grep -q "0x3D5000" "/boot/STARTUP_LINUX_$_PF_N"; then echo "[PLUGIN-FMT] STARTUP_LINUX_$_PF_N rewritten in slot plugin format (root=$_PF_DEV, kernel=p22, bootcmd 0x3D5000)"; upanel_push_boot_file "/boot/STARTUP_LINUX_$_PF_N" >/dev/null 2>&1; mount -o remount,ro /boot 2>/dev/null; return 0; fi
   echo "[PLUGIN-FMT-FAIL] Could not write STARTUP_LINUX_$_PF_N in plugin format."; mount -o remount,ro /boot 2>/dev/null; return 1
 }
