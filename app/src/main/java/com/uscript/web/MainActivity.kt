@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; bottomMargin = dp(28); leftMargin = dp(24); rightMargin = dp(24) }
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1AFFFFFF"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
             elevation = dp(10).toFloat()
-            addView(TextView(this).apply { text = "By Eng Ahmed Abdel Moati"; textSize = 15f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setShadowLayer(10f, 0f, 4f, Color.parseColor("#80FFFFFF")) })
+            addView(TextView(this@MainActivity).apply { text = "By Eng Ahmed Abdel Moati"; textSize = 15f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setShadowLayer(10f, 0f, 4f, Color.parseColor("#80FFFFFF")) })
         }
         splashView = FrameLayout(this).apply { addView(splashCol); addView(splashCredit) }
 
