@@ -98,9 +98,9 @@ class MainActivity : AppCompatActivity() {
         val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
         // خلفية سودة رخامي مموّجة - ملء الشاشة - من غير كارت ومن غير فريم
         val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)) }
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)); layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER } } // الكتابة في نص الشاشة بالظبط - منظم
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
-        val enjoyText = TextView(this).apply { text = "✦  Enjoy Ur Premium\nExperience  ✦"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
+        val enjoyText = TextView(this).apply { text = "✦  Enjoy Ur Premium\nExperience  ✦"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(24), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني // رمز شيك يمين وشمال الكتابة
         val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
         col.addView(enjoyLogo); col.addView(enjoyText); col.addView(enjoySub)
         bg.addView(col)
@@ -151,20 +151,10 @@ class MainActivity : AppCompatActivity() {
         val splashLogo = premiumLogo(200, 115f) // كبر اللوجو شوية - أولاً
         val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // أسود جلوسي بلمسة فوشيا
         val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 26f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.04f; setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // الكتابة أسود جلوسي بلمسة فوشيا
-        // تصميم Enigma2 تحت اللوجو - زي الصورة التانية: e جوه دايرة + enigma2 بتدرج سماوي/بينك
-        val enigmaTitle = TextView(this).apply {
-            text = "enigma2"; textSize = 52f; gravity = Gravity.CENTER
-            setTypeface(android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)); letterSpacing = 0.02f
-            setPadding(0, dp(28), 0, 0)
-            // تدرج سماوي -> بينك على الحروف
-            paint.shader = android.graphics.LinearGradient(0f, 0f, dp(320).toFloat(), 0f, intArrayOf(Color.parseColor("#00E5FF"), Color.parseColor("#FF2EA6")), null, android.graphics.Shader.TileMode.CLAMP)
-        }
-        val enigmaSub = TextView(this).apply { text = "You are and you will always be a mystery to me..."; textSize = 13f; setTextColor(Color.parseColor("#FF2EA6")); gravity = Gravity.CENTER; setPadding(0, dp(8), 0, 0) }
+        // شاشة البداية اللي قبل دي: اللوجو والكتابة في النص - من غير Enigma2
         val splashCol = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            setPadding(0, dp(48), 0, dp(24)) // اللوجو والكتابة فوق
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(splashLogo); addView(splashTitle); addView(splashSub)
-            addView(enigmaTitle); addView(enigmaSub) // تصميم Enigma2 تحت
         }
         splashView = FrameLayout(this).apply { addView(splashCol) }
 
@@ -182,9 +172,13 @@ class MainActivity : AppCompatActivity() {
         enterPanelBtn = btn("Enter U-Panel", "#1E2A55") { onEnterPanelClicked() }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(48), dp(24), dp(28)) // قايمة أكبر وأشيك
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
             addView(formLogo); addView(title); addView(sub); addView(ipField) // من غير خانة بورت - البورت ثابت 8080
-            addView(configureBtn)
-            // كارت زجاجي برميوم تحت الزرار
+            addView(configureBtn); addView(statusText)
+            // مسافة مرنة تزق الكارت لتحت خالص - المكان اللي علمت عليه
+            val spacer = View(this@MainActivity).apply { layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
+            addView(spacer)
+            // كارت زجاجي برميوم - اتنقل لتحت خالص
             val creditCard = LinearLayout(this@MainActivity).apply { // الكارت بره الـ this بتاع الفورم
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
                 setPadding(dp(16), dp(14), dp(16), dp(14))
@@ -193,7 +187,7 @@ class MainActivity : AppCompatActivity() {
                 elevation = dp(10).toFloat()
                 addView(TextView(this@MainActivity).apply { text = "✦  By Eng Ahmed Abdel Moati  ✦"; textSize = 15f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setShadowLayer(10f, 0f, 4f, Color.parseColor("#80FFFFFF")) }) // رمز شيك يمين وشمال الكتابة
             }
-            addView(creditCard); addView(statusText) // زرار واحد بس: Connect Panel + كارت زجاجي
+            addView(creditCard) // الكارت لتحت خالص - مش تحت الزرار
         }
         ipView = ScrollView(this).apply { addView(form); visibility = View.GONE }
 
