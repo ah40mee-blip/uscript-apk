@@ -50,14 +50,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun box(): GradientDrawable = GradientDrawable().apply {
         cornerRadius = dp(14).toFloat()
-        setColor(Color.parseColor("#0D1330"))
-        setStroke(dp(1), Color.parseColor("#2A3560"))
+        setColor(Color.parseColor("#000000")) // خانة IP سودة - تالت حاجة
+        setStroke(dp(1), Color.parseColor("#80FFFFFF")) // حافة زجاجية شفافة
     }
 
     private fun field(hint: String, text: String, isPw: Boolean = false): EditText {
         return EditText(this).apply {
             this.hint = hint; setText(text)
-            setHintTextColor(Color.parseColor("#5A6378")); setTextColor(Color.parseColor("#B0FFFFFF"))
+            setHintTextColor(Color.parseColor("#8A8A8A")); setTextColor(Color.parseColor("#B0FFFFFF"))
             textSize = 16f; gravity = Gravity.CENTER
             if (isPw) inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         // خلفية سودة رخامي مموّجة - ملء الشاشة - من غير كارت ومن غير فريم
         val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#1A1A1A"), Color.parseColor("#0A0A0A"), Color.parseColor("#2A2A2A"), Color.parseColor("#000000"))) }
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)) }
-        val enjoyLogo = premiumLogo(150, 85f).apply { alpha = 0f } // يبدأ مخفي - Fade In الأول
+        val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
         val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني
         val enjoySub = TextView(this).apply { text = "Your Enigma is connected"; textSize = 15f; setTextColor(Color.parseColor("#9AA4C0")); gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(22)); alpha = 0f }
         col.addView(enjoyLogo); col.addView(enjoyText); col.addView(enjoySub)
@@ -109,10 +109,15 @@ class MainActivity : AppCompatActivity() {
         dlg.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)) // الأركان البيضا اتشالت - الخلفية الرخامي مالية الشاشة كلها
         dlg.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT) // ملء الشاشة - مفيش أبيض في الأركان
         dlg.show()
-        // 1) اللوجو Fade In - 800ms
-        enjoyLogo.animate().alpha(1f).setDuration(800).start()
-        // 2) بعد اللوجو - Enjoy Ur Premium Experience Fade In - 800ms
-        enjoyText.animate().alpha(1f).setDuration(800).setStartDelay(800).start()
+        // 1) اللوجو Fade In - 800ms + تكبير خفيف
+        enjoyLogo.animate().alpha(1f).scaleX(1.05f).scaleY(1.05f).setDuration(800).withEndAction { enjoyLogo.animate().scaleX(1f).scaleY(1f).setDuration(600).start() }.start()
+        // 2) بعد اللوجو - Enjoy Ur Premium Experience Fade In - 800ms + الكلام متحرك
+        enjoyText.animate().alpha(1f).translationY(12f).setDuration(800).setStartDelay(800).withEndAction {
+            enjoyText.animate().translationY(0f).setDuration(500).start()
+            // Enjoy متحرك: نبضة + طلوع ونزول بخفة
+            enjoyText.animate().scaleX(1.04f).scaleY(1.04f).setDuration(800).withEndAction { enjoyText.animate().scaleX(1f).scaleY(1f).setDuration(800).start() }.start()
+            enjoyText.animate().translationY(-6f).setDuration(700).withEndAction { enjoyText.animate().translationY(0f).setDuration(700).start() }.start()
+        }.start()
         enjoySub.animate().alpha(1f).setDuration(800).setStartDelay(1200).start()
         // 5 ثواني وبعدها دخول أوتوماتيك على البانل - من غير زراير
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ dlg.dismiss(); try { nativeEnterPanel() } catch (e: Exception) {} }, 5000)
@@ -141,7 +146,7 @@ class MainActivity : AppCompatActivity() {
         val root = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#1A1A1A"), Color.parseColor("#0A0A0A"), Color.parseColor("#2A2A2A"), Color.parseColor("#000000"))) } // خلفية سودة مموّجة رخامي - أول شاشتين
 
         // ===== 1) Splash متحرك =====
-        val splashLogo = premiumLogo(165, 95f)
+        val splashLogo = premiumLogo(200, 115f) // كبر اللوجو شوية - أولاً
         val splashTitle = TextView(this).apply { text = "U-Panel"; textSize = 42f; typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD); letterSpacing = 0.06f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // أسود جلوسي بلمسة فوشيا
         val splashSub = TextView(this).apply { text = "Control Ur Enigma"; textSize = 26f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.04f; setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); setShadowLayer(10f, 0f, 6f, Color.parseColor("#FFFFFF")) } // الكتابة أسود جلوسي بلمسة فوشيا
         val splashCol = LinearLayout(this).apply {
@@ -225,12 +230,21 @@ class MainActivity : AppCompatActivity() {
         root.addView(splashView); root.addView(ipView); root.addView(welcomeView); root.addView(discView); root.addView(webView)
         setContentView(root)
 
-        // أنيميشن الـ Splash
+        // أنيميشن الـ Splash - الكلام متحرك
         splashLogo.alpha = 0f; splashLogo.scaleX = 0.7f; splashLogo.scaleY = 0.7f
         splashTitle.alpha = 0f; splashSub.alpha = 0f
         splashLogo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(700).setInterpolator(OvershootInterpolator(1.3f)).start()
-        splashTitle.animate().alpha(1f).setDuration(700).setStartDelay(150).start()
-        splashSub.animate().alpha(1f).setDuration(700).setStartDelay(300).start()
+        // الكلام متحرك: Fade In + تكبير خفيف + نبضة لمعة مستمرة
+        splashTitle.animate().alpha(1f).scaleX(1.05f).scaleY(1.05f).setDuration(700).setStartDelay(150).withEndAction {
+            splashTitle.animate().scaleX(1f).scaleY(1f).setDuration(600).start()
+            // نبضة مستمرة: U-Panel يكبر ويصغر بخفة طول الـ 5 ثواني
+            splashTitle.animate().scaleX(1.04f).scaleY(1.04f).setDuration(800).withEndAction { splashTitle.animate().scaleX(1f).scaleY(1f).setDuration(800).start() }.start()
+        }.start()
+        splashSub.animate().alpha(1f).translationY(12f).setDuration(700).setStartDelay(300).withEndAction {
+            splashSub.animate().translationY(0f).setDuration(500).start()
+            // Control Ur Enigma متحرك: يطلع وينزل بخفة + لمعة
+            splashSub.animate().translationY(-6f).setDuration(700).withEndAction { splashSub.animate().translationY(0f).setDuration(700).start() }.start()
+        }.start()
         Handler(Looper.getMainLooper()).postDelayed({
             splashView.visibility = View.GONE; ipView.visibility = View.VISIBLE
         }, 5000) // Splash تقعد 5 ثواني
