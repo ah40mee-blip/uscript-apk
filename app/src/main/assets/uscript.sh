@@ -15,7 +15,7 @@
 # V4.0 U-Panel Setting: Device Setting (pinned device) + Lock By Mac + Owner PIN + MAC Lock PIN (separate from Owner PIN, set by the copy user) - lock data INSIDE the script (no external file) - integrity seal - normal + obfuscated copies
 # V4.21: Main menu reordered (ENIGMA UI before TOOLS & MANAGEMENT) - Channel Editor gains Renew/Bouquet/Transponder submenu - U-Panel Streaming (Sharing Servers + IPTV Servers) - Self-Test moved into U-Panel Setting - E-Moati names -> U-Panel names
 # V6.25 (26 Nov): ARABIC - Confirm/Job/Cleanup/Timers/Signal/Plugins pages now use _tr() | LIVE TV transcode: 2s GOP + VBV cap + faster probe - less cutting/buffering
-_SCRIPT_VERSION="V 6.44 - U-PANEL"
+_SCRIPT_VERSION="V 6.45 - U-PANEL"
 # V6.43 (27 Nov): VERSION FIX - _SCRIPT_VERSION was defined as `VAR="..." | # comment`, so bash ran it as a pipeline in a subshell and the variable stayed EMPTY. /version returned {"version": ""} and the ensure-running check *"$_SCRIPT_VERSION"* matched ANYTHING, so a new version never replaced an old server. Now the assignment is on its own line. V6.42 boot fix + V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
 # V6.35 (26 Nov): Disk Slots Formatting is now ONE direct flow: no Disk Setup sub-menu, format (plugin steps + slot-size + storage split + any disk) then OPTIONAL flash-an-image (pick from the list) then FORCED reboot (reboot -f). Wipe Slots (multi-wipe: 7 8 9 or ALL) moved INSIDE Slots. Protection section removed - Rollback guard moved into Slots.
 # V6.42 (27 Nov): BOOT FIX - --web-start-bg no longer runs lock_startup_check: the boot autostart calls that path, and the lock (integrity seal) fails after ANY script edit and asks for Owner PIN with no TTY at boot, so it exited before the server ever started. Server start is not a bypass: every --web-* job and the menu still run lock_startup_check. V6.41 persistent path + slot numbering (SD 6..20, HDD 21..50) unchanged.
@@ -2546,6 +2546,16 @@ class H(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
     def do_GET(self):
+        # V6.45: NEVER drop the connection on a page crash - return a 500 page instead.
+        try:
+            self._do_GET_impl()
+        except Exception as _e:
+            try:
+                import traceback as _tb; _tb.print_exc()
+                self.send_html("<h1>Server error</h1><div class='card'>The page crashed, but the server is still running.<br><span class='small'>" + html.escape(str(_e)) + "</span></div><a href='/'>Back to Panel</a>", code=500)
+            except Exception:
+                pass
+    def _do_GET_impl(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         if u.path == "/login":
@@ -4608,6 +4618,11 @@ class H(BaseHTTPRequestHandler):
                     self.send_html(body); return
                 self._dbg("FORMATTING-SLOTS: fam=%s" % _fam)
                 _disk=(q.get("disk") or [""])[0]; _slots=(q.get("slots") or [""])[0]; _size=(q.get("size") or [""])[0]; _cf=(q.get("confirm") or [""])[0]
+                # V6.45: the form page opens with NO slots/size yet - int('') crashed the
+                # whole request (connection dropped, looked like "server down"). Default to
+                # the form's own defaults (4 slots x 4G) so the preview string never crashes.
+                if not _slots.isdigit(): _slots="4"
+                if _size not in ("2","3","4","5","6","7","8"): _size="4"
                 _flash_img=(q.get("flash_img") or [""])[0]; _flash_slot=(q.get("flash_slot") or [""])[0]
                 _fkind=(q.get("kind") or [""])[0]
                 if _fkind not in ("sd","hdd"):
@@ -4617,7 +4632,7 @@ class H(BaseHTTPRequestHandler):
                     "<a href='/multiboot'>Back to Multiboot</a>")
                     self.send_html(body); return
                 _flash_ok=(not _flash_img) or (_flash_slot.isdigit() and ((6 <= int(_flash_slot) <= 20) if _fkind=="sd" else (21 <= int(_flash_slot) <= 50)))
-                _spec=""; _stor_ok=True; _stor_txt=""
+                _spec=""; _stor_ok=True; _stor_txt=""; _sc=1; _ss=["0","0","0","0"]  # V6.45: _sc/_ss must exist for SD too - preview form uses them
                 if _fkind=="hdd":
                     _sc=(q.get("storage") or ["1"])[0]; _ss=[(q.get("s%d"%_k) or ["0"])[0] for _k in range(1,5)]
                     if not _sc.isdigit() or not 1 <= int(_sc) <= 4: _stor_ok=False
@@ -4798,6 +4813,16 @@ class H(BaseHTTPRequestHandler):
         body += "<p class='small'>Works only on your home WiFi (LAN). Never expose port 8080 to the internet.</p>"
         self.send_html(body)
     def do_POST(self):
+        # V6.45: same guard as do_GET - a crashing form must not kill the connection.
+        try:
+            self._do_POST_impl()
+        except Exception as _e:
+            try:
+                import traceback as _tb; _tb.print_exc()
+                self.send_html("<h1>Server error</h1><div class='card'>The form crashed, but the server is still running.<br><span class='small'>" + html.escape(str(_e)) + "</span></div><a href='/'>Back to Panel</a>", code=500)
+            except Exception:
+                pass
+    def _do_POST_impl(self):
         u = urlparse(self.path)
         if u.path == "/setup-run":
             if not self.authed():
