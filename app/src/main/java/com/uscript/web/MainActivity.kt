@@ -81,11 +81,11 @@ class MainActivity : AppCompatActivity() {
         }
         val mid = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 10), dp(sizeDp - 10)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#1A1A1A"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { shape = GradientDrawable.OVAL }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#080808"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { shape = GradientDrawable.OVAL }
         }
         val inner = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(dp(sizeDp - 26), dp(sizeDp - 26)).apply { gravity = Gravity.CENTER }
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#0A0A0A"))).apply { shape = GradientDrawable.OVAL }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#0A0A0A"), Color.parseColor("#0A0A0A"))).apply { shape = GradientDrawable.OVAL }
         }
         val letter = TextView(this).apply { text = "U"; this.textSize = logoTextSize; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD); elevation = dp(4).toFloat(); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")) }
         val shine = View(this).apply { layoutParams = FrameLayout.LayoutParams(dp(sizeDp / 3), dp(sizeDp / 6)).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; topMargin = dp(10) }; background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#FFFFFF")); alpha = 60 } }
@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
     private fun showConfiguredDialog() {
         val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
         // خلفية سودة رخامي مموّجة - ملء الشاشة - من غير كارت ومن غير فريم
-        val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#1A1A1A"), Color.parseColor("#0A0A0A"), Color.parseColor("#2A2A2A"), Color.parseColor("#000000"))) }
+        val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000")) // خلفية أغمق) }
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)) }
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
         val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         val savedUser = prefs.getString("ssh_user", "root") ?: "root"
         val savedPw = prefs.getString("root_pw", "root") ?: "root"
 
-        val root = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#1A1A1A"), Color.parseColor("#0A0A0A"), Color.parseColor("#2A2A2A"), Color.parseColor("#000000"))) } // خلفية سودة مموّجة رخامي - أول شاشتين
+        val root = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000")) // خلفية أغمق) } // خلفية سودة مموّجة رخامي - أول شاشتين
 
         // ===== 1) Splash متحرك =====
         val splashLogo = premiumLogo(200, 115f) // كبر اللوجو شوية - أولاً
@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         } // بار تخين 28dp - أسود جلوسي الغالب عليه أسود - لمسة أحمر رفيعة بس
         progressFill = View(this).apply {
             layoutParams = FrameLayout.LayoutParams(0, dp(28))
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#0A0A0A"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
         } // الملء أسود جلوسي - لمسة أحمر خفيفة بس على الحافة
         track.addView(progressFill)
         val wCol = LinearLayout(this).apply {
