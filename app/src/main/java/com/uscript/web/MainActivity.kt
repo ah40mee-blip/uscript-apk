@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
     private fun showConfiguredDialog() {
         val dlg = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
         // خلفية سودة رخامي مموّجة - ملء الشاشة - من غير كارت ومن غير فريم
-        val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000")) // خلفية أغمق) }
+        val bg = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(28), dp(28), dp(28), dp(28)) }
         val enjoyLogo = premiumLogo(200, 115f).apply { alpha = 0f } // كبر اللوجو شوية - نفس الأولى // يبدأ مخفي - Fade In الأول
         val enjoyText = TextView(this).apply { text = "Enjoy Ur Premium\nExperience"; textSize = 28f; setTextColor(Color.parseColor("#B0FFFFFF")); gravity = Gravity.CENTER; setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)); letterSpacing = 0.03f; setPadding(0, dp(16), 0, 0); setShadowLayer(12f, 0f, 4f, Color.parseColor("#80FFFFFF")); alpha = 0f } // يبدأ مخفي - Fade In التاني
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         val savedUser = prefs.getString("ssh_user", "root") ?: "root"
         val savedPw = prefs.getString("root_pw", "root") ?: "root"
 
-        val root = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000")) // خلفية أغمق) } // خلفية سودة مموّجة رخامي - أول شاشتين
+        val root = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#000000"), Color.parseColor("#080808"), Color.parseColor("#030303"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))) } // خلفية أغمق // خلفية سودة مموّجة رخامي - أول شاشتين
 
         // ===== 1) Splash متحرك =====
         val splashLogo = premiumLogo(200, 115f) // كبر اللوجو شوية - أولاً
