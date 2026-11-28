@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- U-Panel - الشكل الجديد: اسود -->
+    <style name="Theme_UPanel" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">#050505</item>
+        <item name="colorPrimaryDark">#000000</item>
+        <item name="colorAccent">#C0C0C0</item>
+        <item name="android:windowBackground">#050505</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:statusBarColor">#000000</item>
+        <item name="android:navigationBarColor">#000000</item>
+    </style>
+</resources>
