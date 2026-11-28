@@ -77,13 +77,12 @@ class FileManagerActivity : AppCompatActivity() {
         return list
     }
 
-    // فولدر أسود لامع مش أصفر: خلفية سودا جلوسي + رمز فولدر فضي
+    // فولدر أسود لامع بجد - من غير إيموجي أصفر: مربع أسود جلوسي + حرف F فضي
     private fun folderIcon(): TextView = TextView(this).apply {
-        text = "\uD83D\uDDC2"; textSize = 26f; gravity = Gravity.CENTER; setTextColor(Color.parseColor("#E8E8E8"))
+        text = "▣"; textSize = 28f; gravity = Gravity.CENTER; setTextColor(Color.parseColor("#E8E8E8"))
         background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
         layoutParams = LinearLayout.LayoutParams(dp(56), dp(56))
     }
-
     private fun sftp(): ChannelSftp? {
         return try {
             val jsch = JSch(); val s = jsch.getSession("root", ip, 22)
@@ -105,20 +104,33 @@ class FileManagerActivity : AppCompatActivity() {
         val btnX = Button(this).apply { text = "✕"; textSize = 18f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)); setOnClickListener { finish() } }
         headerRow.addView(header); headerRow.addView(btnX)
         root.addView(headerRow)
+        // فوق: مربعين HDD / FLASH بنفس ستايل السكرين بالظبط
+        val recvRootsTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
+        val btnHDD2 = Button(this).apply { text = "HDD  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "HDD"; recvPath = "/media/hdd/"; refreshReceiver() } }
+        val btnFlash2 = Button(this).apply { text = "FLASH  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
+        recvRootsTop.addView(btnHDD2); recvRootsTop.addView(btnFlash2)
+        root.addView(recvRootsTop)
+        // فوق برضه: INTERNAL / SD CARD تحت HDD/FLASH - نفس المكان الجديد اللي فوق بالأحمر
+        val mobRootsTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) } }
+        for ((label, path) in mobileRoots()) {
+            val b = Button(this).apply { text = label; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
+            mobRootsTop.addView(b)
+        }
+        root.addView(mobRootsTop)
 
         // ===== الصف اللي فوق: الرسيفر =====
         val topRow = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         // اتشال مربع RECEIVER - زي السكرين بالظبط
         recvPathView = TextView(this).apply { text = recvPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         recvList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val recvScroll = ScrollView(this).apply { addView(recvList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
+        val recvScroll = ScrollView(this).apply { addView(recvList); setPadding(dp(4), dp(12), dp(4), dp(4)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
          topRow.addView(recvPathView); topRow.addView(recvScroll)
         root.addView(topRow)
 
         // ===== النص: سهمين بالعرض + مسح =====
-        val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(4), dp(10), dp(4), dp(10)) }
+        val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(2), dp(10), dp(2), dp(10)) }
         fun arrowBtn(txt: String, toReceiver: Boolean): Button {
-            val b = Button(this).apply { text = txt; textSize = 22f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(64), dp(56)).apply { leftMargin = dp(6); rightMargin = dp(6) } }
+            val b = Button(this).apply { text = txt; textSize = 22f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4); rightMargin = dp(4) }; gravity = Gravity.CENTER }
             b.setOnClickListener { if (toReceiver) copyMobToRecv(false) else copyRecvToMob(false) }
             b.setOnLongClickListener { if (toReceiver) copyMobToRecv(true) else copyRecvToMob(true); true }
             return b
@@ -146,7 +158,7 @@ class FileManagerActivity : AppCompatActivity() {
         // اتشال مربع MOBILE - زي السكرين بالظبط
         mobPathView = TextView(this).apply { text = mobPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         mobList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val mobScroll = ScrollView(this).apply { addView(mobList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
+        val mobScroll = ScrollView(this).apply { addView(mobList); setPadding(dp(4), dp(12), dp(4), dp(4)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
          bottomRow.addView(mobPathView); bottomRow.addView(mobScroll)
         root.addView(bottomRow)
 
@@ -157,19 +169,7 @@ class FileManagerActivity : AppCompatActivity() {
         progressBox.addView(progressText); progressBox.addView(progressBar)
         root.addView(progressBox)
 
-        // فوق: مربعين HDD / FLASH بنفس ستايل السكرين بالظبط
-        val recvRootsTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
-        val btnHDD2 = Button(this).apply { text = "HDD  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "HDD"; recvPath = "/media/hdd/"; refreshReceiver() } }
-        val btnFlash2 = Button(this).apply { text = "FLASH  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
-        recvRootsTop.addView(btnHDD2); recvRootsTop.addView(btnFlash2)
-        root.addView(recvRootsTop)
-        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        // تحت: INTERNAL / SD CARD بدل Terminal / Close
-        for ((label, path) in mobileRoots()) {
-            val b = Button(this).apply { text = label; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
-            bottom.addView(b)
-        }
-        root.addView(bottom)
+        // اتنقل INTERNAL/SD CARD لفوق مع HDD/FLASH
 
         setContentView(root)
         refreshReceiver(); refreshMobile()
