@@ -38,6 +38,11 @@ class FileManagerActivity : AppCompatActivity() {
     private var sortBy = "name" // name | size | date
     private var categoryFilter = "" // "" = الكل | images | videos | audio | docs | downloads | apks
     private var isHome = true
+    // ===== أداء File Manager Plus - تعريف المتغيرات =====
+    private var allCache = listOf<Item>()
+    private var shownCount = 100
+    private var lastLoadTime = 0L
+    private var selected = mutableSetOf<String>()
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun pw(): String = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "root") ?: "root"
 
