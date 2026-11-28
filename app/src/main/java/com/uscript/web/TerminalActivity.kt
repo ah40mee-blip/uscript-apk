@@ -100,7 +100,7 @@ class TerminalActivity : AppCompatActivity() {
         savedBox.removeAllViews()
         val list = loadSaved()
         for ((idx, item) in list.withIndex()) {
-            val card = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = glassBg(); setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) } }
+            val card = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = glassBg(); setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10); bottomMargin = dp(2) } }
             val name = TextView(this).apply { text = item.first + "\n" + item.second; textSize = 12f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
             val play = glossyBtnFixed("▶", 52) { sendCmd(item.second) }
             val edit = glossyBtnFixed("✏️", 52) { editSaved(idx, item) }
@@ -131,21 +131,26 @@ class TerminalActivity : AppCompatActivity() {
         val btnReconnect = glossyBtn("RECONNECT") { connect() }
         val btnFiles = glossyBtn("📁 FILES") { val i = android.content.Intent(this@TerminalActivity, FileManagerActivity::class.java); i.putExtra("ip", ip); startActivity(i) }
         rowTop.addView(btnClear); rowTop.addView(btnReconnect); rowTop.addView(btnFiles)
-        // ===== قسم الادخال - متقسم صح: مربع الاوامر صف كامل + SEND جنبه =====
-        val rowInput = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        input = EditText(this).apply { hint = "Type command..."; setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); textSize = 15f; minHeight = dp(48); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); background = glassBg(); setPadding(dp(14), dp(14), dp(14), dp(14)); if (prefill.isNotEmpty()) setText(prefill + " ") }
+        // ===== قسم الادخال منظم: مربع جلوسي واحد يلم الكتابة + SEND + الزراير - بمسافات مش لازقين =====
+        val inputBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = glassBg(); setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10); bottomMargin = dp(10) } }
+        val rowInput = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(10) } }
+        input = EditText(this).apply { hint = "Type command..."; setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); textSize = 15f; minHeight = dp(48); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(8) }; background = glassBg(); setPadding(dp(14), dp(14), dp(14), dp(14)); if (prefill.isNotEmpty()) setText(prefill + " ") }
         val btnSend = glossyBtnFixed("SEND", 86) { sendCmd(input.text.toString()) }
         rowInput.addView(input); rowInput.addView(btnSend)
-        // ===== صف زراير الاكشن =====
+        // ===== صف زراير الاكشن - بمسافات بينهم =====
         val rowActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val btnUp = glossyBtn("↑") { if (history.isNotEmpty()) { histIdx = (histIdx + 1).coerceAtMost(history.size - 1); input.setText(history[histIdx]) } }
         val btnStar = glossyBtn("⭐ SAVE") { val c = input.text.toString(); if (c.isBlank()) return@glossyBtn; val nameIn = EditText(this@TerminalActivity).apply { hint = "Command name" }; android.app.AlertDialog.Builder(this@TerminalActivity).setTitle("Save command").setView(nameIn).setPositiveButton("Save") { _, _ -> val l = loadSaved(); l.add((if (nameIn.text.isBlank()) c else nameIn.text.toString()) to c); saveSaved(l); refreshSaved() }.setNegativeButton("Cancel", null).show() }
         val btnCtrlC = glossyBtn("CTRL+C") { Thread { try { sockOut?.write(byteArrayOf(3)); sockOut?.flush() } catch (e: Exception) {} }.start() }
         rowActions.addView(btnUp); rowActions.addView(btnStar); rowActions.addView(btnCtrlC)
-        val savedTitle = TextView(this).apply { text = "Saved Commands"; textSize = 15f; setTextColor(Color.WHITE) }
-        savedBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val savedTitle = TextView(this).apply { text = "Saved Commands"; textSize = 15f; setTextColor(Color.WHITE); setPadding(dp(2), dp(2), dp(2), dp(8)) }
+        savedBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(2), dp(4), dp(2), dp(4)) }
         val savedScroll = ScrollView(this).apply { addView(savedBox); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(180)) }
-        root.addView(statusView); root.addView(rowTop); root.addView(scroll); root.addView(rowInput); root.addView(rowActions); root.addView(savedTitle); root.addView(savedScroll)
+        inputBox.addView(rowInput); inputBox.addView(rowActions)
+        // ===== الأوامر المتخزنة في مربع لوحده - مش سايحة على بعضها =====
+        val savedBoxOuter = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = glassBg(); setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(4) } }
+        savedBoxOuter.addView(savedTitle); savedBoxOuter.addView(savedScroll)
+        root.addView(statusView); root.addView(rowTop); root.addView(scroll); root.addView(inputBox); root.addView(savedBoxOuter)
         setContentView(root)
         refreshSaved()
         connect()
