@@ -29,7 +29,6 @@
         android:icon="@drawable/ic_app_icon"
         android:roundIcon="@drawable/ic_app_icon"
         android:label="U-Panel"
-        android:roundIcon="@drawable/ic_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.U Panel"
         android:usesCleartextTraffic="true"
