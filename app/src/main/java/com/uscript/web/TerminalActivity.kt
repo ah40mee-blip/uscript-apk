@@ -36,6 +36,27 @@ class TerminalActivity : AppCompatActivity() {
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun glassBg(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#0A0A0A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.parseColor("#80FFFFFF")) }
+    // زرار جلوسي اسود - بيلمع عند الدوس عليه
+    private fun glossyBtn(text: String, weight: Float = 1f, onClick: () -> Unit): Button {
+        return Button(this).apply {
+            this.text = text; textSize = 13f; setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight).apply { leftMargin = dp(4); rightMargin = dp(4) }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#3A3A3A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.parseColor("#E8E8E8")) }
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+            setOnTouchListener { v, e ->
+                when (e.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> { v.alpha = 0.6f; v.scaleX = 0.97f; v.scaleY = 0.97f }
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { v.alpha = 1f; v.scaleX = 1f; v.scaleY = 1f; if (e.action == android.view.MotionEvent.ACTION_UP) onClick() }
+                }
+                true
+            }
+        }
+    }
+    private fun glossyBtnFixed(text: String, widthDp: Int, onClick: () -> Unit): Button {
+        val b = glossyBtn(text, 0f, onClick)
+        b.layoutParams = LinearLayout.LayoutParams(dp(widthDp), LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(4); rightMargin = dp(4) }
+        return b
+    }
     private fun append(text: String) {
         handler.post {
             sb.append(text)
@@ -79,13 +100,13 @@ class TerminalActivity : AppCompatActivity() {
         savedBox.removeAllViews()
         val list = loadSaved()
         for ((idx, item) in list.withIndex()) {
-            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            val card = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = glassBg(); setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) } }
             val name = TextView(this).apply { text = item.first + "\n" + item.second; textSize = 12f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
-            val play = Button(this).apply { text = "▶"; setOnClickListener { sendCmd(item.second) } }
-            val edit = Button(this).apply { text = "✏️"; setOnClickListener { editSaved(idx, item) } }
-            val del = Button(this).apply { text = "🗑️"; setOnClickListener { val l = loadSaved(); l.removeAt(idx); saveSaved(l); refreshSaved() } }
-            row.addView(name); row.addView(play); row.addView(edit); row.addView(del)
-            savedBox.addView(row)
+            val play = glossyBtnFixed("▶", 52) { sendCmd(item.second) }
+            val edit = glossyBtnFixed("✏️", 52) { editSaved(idx, item) }
+            val del = glossyBtnFixed("🗑️", 52) { val l = loadSaved(); l.removeAt(idx); saveSaved(l); refreshSaved() }
+            card.addView(name); card.addView(play); card.addView(edit); card.addView(del)
+            savedBox.addView(card)
         }
     }
     private fun editSaved(idx: Int, item: Pair<String,String>) {
@@ -106,21 +127,25 @@ class TerminalActivity : AppCompatActivity() {
         outView = TextView(this).apply { text = "Connecting...\n"; textSize = 13f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.MONOSPACE }
         scroll = ScrollView(this).apply { addView(outView); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         val rowTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val btnClear = Button(this).apply { text = "Clear"; setOnClickListener { sb.clear(); outView.text = "" } }
-        val btnReconnect = Button(this).apply { text = "Reconnect"; setOnClickListener { connect() } }
-        val btnFiles = Button(this).apply { text = "📁 Files"; setOnClickListener { val i = android.content.Intent(this@TerminalActivity, FileManagerActivity::class.java); i.putExtra("ip", ip); startActivity(i) } }
+        val btnClear = glossyBtn("CLEAR") { sb.clear(); outView.text = "" }
+        val btnReconnect = glossyBtn("RECONNECT") { connect() }
+        val btnFiles = glossyBtn("📁 FILES") { val i = android.content.Intent(this@TerminalActivity, FileManagerActivity::class.java); i.putExtra("ip", ip); startActivity(i) }
         rowTop.addView(btnClear); rowTop.addView(btnReconnect); rowTop.addView(btnFiles)
+        // ===== قسم الادخال - متقسم صح: مربع الاوامر صف كامل + SEND جنبه =====
         val rowInput = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        input = EditText(this).apply { hint = "Type command..."; setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); background = glassBg(); if (prefill.isNotEmpty()) setText(prefill + " ") }
-        val btnSend = Button(this).apply { text = "Send"; setOnClickListener { sendCmd(input.text.toString()) } }
-        val btnUp = Button(this).apply { text = "↑"; setOnClickListener { if (history.isNotEmpty()) { histIdx = (histIdx + 1).coerceAtMost(history.size - 1); input.setText(history[histIdx]) } } }
-        val btnStar = Button(this).apply { text = "⭐"; setOnClickListener { val c = input.text.toString(); if (c.isBlank()) return@setOnClickListener; val nameIn = EditText(this@TerminalActivity).apply { hint = "Command name" }; android.app.AlertDialog.Builder(this@TerminalActivity).setTitle("Save command").setView(nameIn).setPositiveButton("Save") { _, _ -> val l = loadSaved(); l.add((if (nameIn.text.isBlank()) c else nameIn.text.toString()) to c); saveSaved(l); refreshSaved() }.setNegativeButton("Cancel", null).show() } }
-        val btnCtrlC = Button(this).apply { text = "Ctrl+C"; setOnClickListener { Thread { try { sockOut?.write(byteArrayOf(3)); sockOut?.flush() } catch (e: Exception) {} }.start() } }
-        rowInput.addView(input); rowInput.addView(btnSend); rowInput.addView(btnUp); rowInput.addView(btnStar); rowInput.addView(btnCtrlC)
+        input = EditText(this).apply { hint = "Type command..."; setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); textSize = 15f; minHeight = dp(48); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); background = glassBg(); setPadding(dp(14), dp(14), dp(14), dp(14)); if (prefill.isNotEmpty()) setText(prefill + " ") }
+        val btnSend = glossyBtnFixed("SEND", 86) { sendCmd(input.text.toString()) }
+        rowInput.addView(input); rowInput.addView(btnSend)
+        // ===== صف زراير الاكشن =====
+        val rowActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val btnUp = glossyBtn("↑") { if (history.isNotEmpty()) { histIdx = (histIdx + 1).coerceAtMost(history.size - 1); input.setText(history[histIdx]) } }
+        val btnStar = glossyBtn("⭐ SAVE") { val c = input.text.toString(); if (c.isBlank()) return@glossyBtn; val nameIn = EditText(this@TerminalActivity).apply { hint = "Command name" }; android.app.AlertDialog.Builder(this@TerminalActivity).setTitle("Save command").setView(nameIn).setPositiveButton("Save") { _, _ -> val l = loadSaved(); l.add((if (nameIn.text.isBlank()) c else nameIn.text.toString()) to c); saveSaved(l); refreshSaved() }.setNegativeButton("Cancel", null).show() }
+        val btnCtrlC = glossyBtn("CTRL+C") { Thread { try { sockOut?.write(byteArrayOf(3)); sockOut?.flush() } catch (e: Exception) {} }.start() }
+        rowActions.addView(btnUp); rowActions.addView(btnStar); rowActions.addView(btnCtrlC)
         val savedTitle = TextView(this).apply { text = "Saved Commands"; textSize = 15f; setTextColor(Color.WHITE) }
         savedBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val savedScroll = ScrollView(this).apply { addView(savedBox); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(180)) }
-        root.addView(statusView); root.addView(rowTop); root.addView(scroll); root.addView(rowInput); root.addView(savedTitle); root.addView(savedScroll)
+        root.addView(statusView); root.addView(rowTop); root.addView(scroll); root.addView(rowInput); root.addView(rowActions); root.addView(savedTitle); root.addView(savedScroll)
         setContentView(root)
         refreshSaved()
         connect()
@@ -166,6 +191,7 @@ class TerminalActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) { append("\n[Disconnected]\n") }
         }.start()
+    }
     }
     override fun onDestroy() { try { socket?.close() } catch (e: Exception) {}; super.onDestroy() }
 }

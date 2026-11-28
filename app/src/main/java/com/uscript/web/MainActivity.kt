@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var welcomeConnecting: TextView
     private lateinit var progressFill: View
     private var baseUrl = ""
-    private var isInstalling = false
     private var barAnim: android.animation.ValueAnimator? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
@@ -75,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         return Button(this).apply {
             this.text = text; textSize = 16f; setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) }
-            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#E8E8E8")) }
+            background = GradientDrawable().apply { cornerRadius = dp(16).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(1), Color.parseColor("#666666")) }
             setPadding(dp(16), dp(18), dp(16), dp(18)); setOnClickListener { onClick() }
         }
     }
@@ -83,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         return Button(this).apply {
             this.text = text; textSize = 14f; setTextColor(Color.parseColor("#E0E0E0"))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(12) }
-            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#C0C0C0")) }
+            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#111111")); setStroke(dp(1), Color.parseColor("#444444")) }
             setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { onClick() }
         }
     }
@@ -92,10 +91,6 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER }
             setImageResource(R.drawable.ic_app_icon)
             scaleType = ImageView.ScaleType.CENTER_CROP
-            clipToOutline = true
-            outlineProvider = object : android.view.ViewOutlineProvider() {
-                override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setOval(0, 0, v.width, v.height) }
-            }
         }
     }
 
@@ -133,11 +128,11 @@ class MainActivity : AppCompatActivity() {
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT") { onConnectClicked() }
         configureBtn = btn("Connect to your Enigma") { onConfigureClicked() }
-        enterPanelBtn = btn("Enter U-Panel") { onEnterPanelClicked() }
+        enterPanelBtn = btn("Enter U-Panel") { onEnterPanelClicked() }.apply { visibility = View.GONE }
         terminalBtn = btnSmall("Terminal") { onTerminalClicked() }
         fileManagerBtn = btnSmall("File Manager") { onFileManagerClicked() }
         val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; addView(terminalBtn); addView(fileManagerBtn) }
-        pinField = field("PIN", "").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
+        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(30), dp(20), dp(20))
             addView(logoView(90)); addView(title); addView(sub); addView(ipField)
@@ -174,10 +169,7 @@ class MainActivity : AppCompatActivity() {
         // ===== 5) WebView البانل =====
         webView = WebView(this).apply {
             visibility = View.GONE
-            setBackgroundColor(android.graphics.Color.BLACK)
             settings.javaScriptEnabled = true; settings.domStorageEnabled = true
-            settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) { super.onPageFinished(view, url) }
             }
@@ -213,26 +205,6 @@ class MainActivity : AppCompatActivity() {
     private fun onConfigureClicked() {
         val ip = ipField.text.toString().trim()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP first"; return }
-        // إصلاح زرار البانل: لو السيرفر شغال افتح على طول - متستناش التثبيت
-        statusText.text = "Checking server..."
-        Thread {
-            var up = false
-            try {
-                val c = java.net.URL("http://$ip:8080/").openConnection() as java.net.HttpURLConnection
-                c.connectTimeout = 2000; c.readTimeout = 2000; c.connect()
-                if (c.responseCode in 200..499) up = true
-                c.disconnect()
-            } catch (e: Exception) {}
-            if (up) {
-                runOnUiThread { baseUrl = "http://$ip:8080/"; showEnjoyThenEnter() }
-                return@Thread
-            }
-            runOnUiThread { doInstall(ip) }
-        }.start()
-    }
-    private fun doInstall(ip: String) {
-        if (isInstalling) return
-        isInstalling = true
         getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("ip", ip).putString("port", "8080").apply()
         welcomeView.visibility = View.VISIBLE; ipView.visibility = View.GONE
         welcomeTitle.text = "U-Panel"; welcomeConnecting.text = "Connecting..."
@@ -242,55 +214,25 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread { welcomeConnecting.text = msg }
             }
             runOnUiThread {
-                isInstalling = false
                 barAnim?.cancel()
                 if (res.first) {
                     baseUrl = "http://$ip:8080/"
                     statusText.setTextColor(Color.parseColor("#4ADE80")); statusText.text = "U-Panel is Configured"
                     Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
-                    waitForServer(ip) { showEnjoyThenEnter() }
+                    showEnjoyThenEnter()
                 } else {
-                    // التثبيت فشل بس السيرفر ممكن يكون شغال - جرب افتح البانل بدل ما تقف
-                    statusText.text = "Install failed, trying panel anyway..."
-                    welcomeView.visibility = View.VISIBLE
-                    waitForServer(ip) {
-                        baseUrl = "http://$ip:8080/"
-                        showEnjoyThenEnter()
-                    }
+                    welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE
+                    statusText.setTextColor(Color.parseColor("#FF6B6B")); statusText.text = "Configure failed: ${res.second}"
                 }
-            }
-        }.start()
-    }
-    // إصلاح الشاشة السودا: متفتحش البانل غير لما السيرفر يرد HTTP 200
-    private fun waitForServer(ip: String, onReady: () -> Unit) {
-        welcomeConnecting.text = "Waiting for server..."
-        Thread {
-            var ok = false
-            for (i in 1..30) {
-                try {
-                    val c = java.net.URL("http://$ip:8080/").openConnection() as java.net.HttpURLConnection
-                    c.connectTimeout = 2000; c.readTimeout = 2000; c.requestMethod = "GET"; c.connect()
-                    if (c.responseCode in 200..499) { ok = true; c.disconnect(); break }
-                    c.disconnect()
-                } catch (e: Exception) { Thread.sleep(2000) }
-            }
-            runOnUiThread {
-                if (ok) onReady()
-                else { welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE; statusText.setTextColor(Color.parseColor("#FF6B6B")); statusText.text = "Server did not respond on 8080 - try Connect again" }
             }
         }.start()
     }
     private fun onEnterPanelClicked() {
         if (baseUrl.isEmpty()) { val ip = ipField.text.toString().trim(); if (ip.isEmpty()) return; baseUrl = "http://$ip:8080/" }
-        val ip = ipField.text.toString().trim()
-        welcomeView.visibility = View.VISIBLE; ipView.visibility = View.GONE
-        welcomeConnecting.text = "Loading panel..."
-        waitForServer(ip) {
-            welcomeView.visibility = View.GONE; ipView.visibility = View.GONE
-            webView.visibility = View.VISIBLE
-            try { webView.clearCache(true) } catch (e: Exception) {}
-            webView.loadUrl(baseUrl)
-        }
+        welcomeView.visibility = View.GONE; ipView.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        try { webView.clearCache(true) } catch (e: Exception) {}
+        webView.loadUrl(baseUrl)
     }
     private fun onTerminalClicked() {
         val ip = ipField.text.toString().trim()

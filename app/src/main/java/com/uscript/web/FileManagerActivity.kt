@@ -67,15 +67,35 @@ class FileManagerActivity : AppCompatActivity() {
     private fun showItems(items: List<Item>) {
         listBox.removeAllViews()
         pathView.text = if (mode == "RECEIVER") "Receiver: $recvPath" else "Mobile: $mobPath"
+        // ===== قسم الفولدرات - كروت زجاجية منظمة =====
         for (item in items) {
-            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(10), dp(8), dp(10)) }
-            val tv = TextView(this).apply { text = (if (item.isDir) "📁 " else "📄 ") + item.name + (if (!item.isDir) "  -  ${item.size / 1024} KB" else ""); textSize = 14f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
-            tv.setOnClickListener { if (item.isDir) { if (mode == "RECEIVER") recvPath = item.path + "/" else mobPath = item.path; refresh() } else { openFile(item) } }
-            tv.setOnLongClickListener { showMenu(item); true }
-            row.addView(tv)
-            listBox.addView(row)
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(1), Color.parseColor("#E8E8E8")) }
+                setPadding(dp(12), dp(12), dp(12), dp(12))
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6); leftMargin = dp(8); rightMargin = dp(8) }
+            }
+            val icon = TextView(this).apply { text = if (item.isDir) "📁" else "📄"; textSize = 22f; gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)) }
+            val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+            val nameTv = TextView(this).apply { text = item.name; textSize = 15f; setTextColor(Color.WHITE) }
+            val sizeTv = TextView(this).apply { text = if (item.isDir) "Folder" else "${item.size / 1024} KB"; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")) }
+            col.addView(nameTv); col.addView(sizeTv)
+            val arrow = TextView(this).apply { text = "›"; textSize = 24f; setTextColor(Color.parseColor("#AAAAAA")) }
+            card.addView(icon); card.addView(col); card.addView(arrow)
+            card.setOnClickListener { if (item.isDir) { if (mode == "RECEIVER") recvPath = item.path + "/" else mobPath = item.path; refresh() } else { openFile(item) } }
+            card.setOnLongClickListener { showMenu(item); true }
+            // لمعة عند الدوس
+            card.setOnTouchListener { v, e ->
+                when (e.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> v.alpha = 0.6f
+                    android.view.MotionEvent.ACTION_UP -> { v.alpha = 1f; v.performClick() }
+                    android.view.MotionEvent.ACTION_CANCEL -> v.alpha = 1f
+                }
+                true
+            }
+            listBox.addView(card)
         }
-        if (items.isEmpty()) listBox.addView(TextView(this).apply { text = "Empty folder"; setTextColor(Color.GRAY) })
+        if (items.isEmpty()) listBox.addView(TextView(this).apply { text = "Empty folder"; setTextColor(Color.GRAY); gravity = Gravity.CENTER })
     }
     private fun showMenu(it: Item) {
         val isApk = it.name.lowercase().endsWith(".apk")
