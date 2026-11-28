@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         terminalBtn = btnSmall("Terminal") { onTerminalClicked() }
         fileManagerBtn = btnSmall("File Manager") { onFileManagerClicked() }
         val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; addView(terminalBtn); addView(fileManagerBtn) }
-        pinField = field("PIN").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
+        pinField = field("PIN", "").apply { visibility = View.GONE; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(30), dp(20), dp(20))
             addView(logoView(90)); addView(title); addView(sub); addView(ipField)

@@ -67,11 +67,11 @@ class FileManagerActivity : AppCompatActivity() {
     private fun showItems(items: List<Item>) {
         listBox.removeAllViews()
         pathView.text = if (mode == "RECEIVER") "Receiver: $recvPath" else "Mobile: $mobPath"
-        for (it in items) {
+        for (item in items) {
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(10), dp(8), dp(10)) }
-            val tv = TextView(this).apply { text = (if (it.isDir) "📁 " else "📄 ") + it.name + (if (!it.isDir) "  -  ${it.size / 1024} KB" else ""); textSize = 14f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
-            tv.setOnClickListener { if (it.isDir) { if (mode == "RECEIVER") recvPath = it.path + "/" else mobPath = it.path; refresh() } else { openFile(it) } }
-            tv.setOnLongClickListener { showMenu(it); true }
+            val tv = TextView(this).apply { text = (if (item.isDir) "📁 " else "📄 ") + item.name + (if (!item.isDir) "  -  ${item.size / 1024} KB" else ""); textSize = 14f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+            tv.setOnClickListener { if (item.isDir) { if (mode == "RECEIVER") recvPath = item.path + "/" else mobPath = item.path; refresh() } else { openFile(item) } }
+            tv.setOnLongClickListener { showMenu(item); true }
             row.addView(tv)
             listBox.addView(row)
         }
