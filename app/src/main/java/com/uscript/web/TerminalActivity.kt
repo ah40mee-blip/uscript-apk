@@ -192,6 +192,5 @@ class TerminalActivity : AppCompatActivity() {
             } catch (e: Exception) { append("\n[Disconnected]\n") }
         }.start()
     }
-    }
     override fun onDestroy() { try { socket?.close() } catch (e: Exception) {}; super.onDestroy() }
 }
