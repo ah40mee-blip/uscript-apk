@@ -1,6 +1,9 @@
 // U-Panel FileManager - صفين | فوق رسيفر / تحت موبايل | الموبايل يقرا الداخلية + الخارجية كلها
 package com.uscript.web
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
@@ -116,9 +119,10 @@ class FileManagerActivity : AppCompatActivity() {
         root.addView(topRow)
 
         // ===== النص: سهمين بالعرض + مسح =====
-        val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(4), dp(10), dp(4), dp(10)) }
+        // مربع أسود جلوسي بعرض الشاشة فيه الأربع زراير
+        val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; background = glossyBg(); setPadding(dp(6), dp(8), dp(6), dp(8)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8); bottomMargin = dp(8) } }
         fun arrowBtn(txt: String, toReceiver: Boolean): Button {
-            val b = Button(this).apply { text = txt; textSize = 20f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(56), dp(48)).apply { leftMargin = dp(5); rightMargin = dp(5) } }
+            val b = Button(this).apply { text = txt; textSize = 20f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(4); rightMargin = dp(4) } }
             b.setOnClickListener { if (toReceiver) copyMobToRecv(false) else copyRecvToMob(false) }
             b.setOnLongClickListener { if (toReceiver) copyMobToRecv(true) else copyRecvToMob(true); true }
             return b
@@ -129,11 +133,23 @@ class FileManagerActivity : AppCompatActivity() {
         val btnDel = Button(this).apply {
             text = "\uD83D\uDDD1\uFE0F"; textSize = 20f; setTextColor(Color.WHITE)
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#7A1A1A"), Color.parseColor("#330000"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#FF8888")) }
-            layoutParams = LinearLayout.LayoutParams(dp(56), dp(48)).apply { leftMargin = dp(5) }
+            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }
             setOnClickListener { deleteSelected() }
         }
-        val midLabel = TextView(this).apply { text = "1 tap = Copy\nLong = Move"; textSize = 10f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        mid.addView(btnUp); mid.addView(btnDown); mid.addView(btnDel); mid.addView(midLabel)
+        // زرار نسخ مسار ملفات الرسيفر - مكان الكتابة اللي كانت على يمين المسح
+        val btnCopyPath = Button(this).apply {
+            text = "\uD83D\uDCCB Path"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg()
+            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }
+            setOnClickListener {
+                val paths = if (selectedRecv.isNotEmpty()) selectedRecv.toList() else listOf(recvPath)
+                val text = paths.joinToString("\n")
+                val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("recv_path", text))
+                Toast.makeText(this@FileManagerActivity, "تم نسخ المسار - الصقه في التيرمينال", Toast.LENGTH_SHORT).show()
+            }
+        }
+        // الباث على الشمال جنب السهم: [Path] [⬆] [⬇] [🗑]
+        mid.addView(btnCopyPath); mid.addView(btnUp); mid.addView(btnDown); mid.addView(btnDel)
         root.addView(mid)
 
         // ===== الصف اللي تحت: الموبايل - الداخلية + الخارجية =====
