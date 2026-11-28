@@ -127,6 +127,8 @@ class FileManagerActivity : AppCompatActivity() {
             listBox.addView(card)
         }
         if (items.isEmpty()) listBox.addView(TextView(this).apply { text = "Empty folder"; setTextColor(Color.GRAY); gravity = Gravity.CENTER })
+        addLoadMore(filtered.size)
+
     }
     private fun showMenu(it: Item) {
         val isApk = it.name.lowercase().endsWith(".apk")
@@ -151,6 +153,18 @@ class FileManagerActivity : AppCompatActivity() {
         }.show()
     }
     private fun copy(s: String) { (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("path", s)); Toast.makeText(this, "Copied: $s", Toast.LENGTH_SHORT).show() }
+    // ===== Load More + تحديد متعدد - زي File Manager Plus =====
+    private fun addLoadMore(total: Int) {
+        if (shownCount < total) {
+            val btn = Button(this).apply {
+                text = "Load More  (${total - shownCount} remaining)"
+                setTextColor(Color.WHITE); textSize = 14f
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#E8E8E8")) }
+                setOnClickListener { shownCount += 100; showItems(allCache) }
+            }
+            listBox.addView(btn)
+        }
+    }
     private fun refresh() { if (mode == "RECEIVER") listReceiver() else listMobile() }
     private fun downloadFromReceiver(it: Item) {
         statusView.text = "Downloading ${it.name} ..."
