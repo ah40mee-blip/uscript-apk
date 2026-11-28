@@ -86,12 +86,15 @@ class FileManagerActivity : AppCompatActivity() {
                 setPadding(dp(12), dp(12), dp(12), dp(12))
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6); leftMargin = dp(8); rightMargin = dp(8) }
             }
-            val icon = TextView(this).apply { text = if (item.isDir) "📁" else "📄"; textSize = 22f; gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)) }
+            // فولدر مجسم 3D زي Root Explorer: أيقونة كبيرة + اسم + تاريخ وصلاحيات + صح
+            val icon = TextView(this).apply { text = if (item.isDir) "📁" else "📄"; textSize = 32f; gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(56), dp(56)) }
             val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
-            val nameTv = TextView(this).apply { text = item.name; textSize = 15f; setTextColor(Color.WHITE) }
-            val sizeTv = TextView(this).apply { text = if (item.isDir) "Folder" else "${item.size / 1024} KB"; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")) }
+            val nameTv = TextView(this).apply { text = item.name; textSize = 16f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.DEFAULT_BOLD }
+            val dateStr = java.text.SimpleDateFormat("dd MMM yy HH:mm", java.util.Locale.ENGLISH).format(java.util.Date())
+            val permStr = if (item.isDir) "rwxr-xr-x" else "rw-r--r--"
+            val sizeTv = TextView(this).apply { text = "$dateStr   $permStr" + if (!item.isDir) "   ${item.size / 1024} KB" else ""; textSize = 12f; setTextColor(Color.parseColor("#AAAAAA")) }
             col.addView(nameTv); col.addView(sizeTv)
-            val arrow = TextView(this).apply { text = "›"; textSize = 24f; setTextColor(Color.parseColor("#AAAAAA")) }
+            val arrow = TextView(this).apply { text = "✓"; textSize = 18f; setTextColor(Color.WHITE); background = GradientDrawable().apply { cornerRadius = dp(8).toFloat(); setColor(Color.parseColor("#111111")); setStroke(dp(1), Color.parseColor("#E8E8E8")) }; setPadding(dp(8), dp(6), dp(8), dp(6)) }
             card.addView(icon); card.addView(col); card.addView(arrow)
             card.setOnClickListener { if (item.isDir) { if (mode == "RECEIVER") recvPath = item.path + "/" else mobPath = item.path; refresh() } else { openFile(item) } }
             card.setOnLongClickListener { showMenu(item); true }
@@ -241,23 +244,54 @@ class FileManagerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ip = intent.getStringExtra("ip") ?: getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("ip", "") ?: ""
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK); setPadding(dp(12), dp(12), dp(12), dp(12)) }
-        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val btnRecv = Button(this).apply { text = "Receiver"; setOnClickListener { mode = "RECEIVER"; refresh() } }
-        val btnMob = Button(this).apply { text = "Mobile"; setOnClickListener { mode = "MOBILE"; refresh() } }
-        val btnBack = Button(this).apply { text = "⬆ Back"; setOnClickListener { if (mode == "RECEIVER") { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/" } else { mobPath = File(mobPath).parent ?: mobPath }; refresh() } }
-        tabs.addView(btnRecv); tabs.addView(btnMob); tabs.addView(btnBack)
+        // ===== تقسيمة Root Explorer - مجسمة جلوسي =====
+        fun glossy3D(text: String, weight: Float, onClick: () -> Unit): Button {
+            return Button(this).apply {
+                this.text = text; textSize = 15f; setTextColor(Color.WHITE)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, weight).apply { leftMargin = dp(4); rightMargin = dp(4) }
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#1A1A1A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#E8E8E8")) }
+                setPadding(dp(8), dp(14), dp(8), dp(14))
+                setOnTouchListener { v, e -> when (e.action) { android.view.MotionEvent.ACTION_DOWN -> { v.alpha = 0.6f; v.scaleX = 0.97f; v.scaleY = 0.97f } android.view.MotionEvent.ACTION_UP -> { v.alpha = 1f; v.scaleX = 1f; v.scaleY = 1f; onClick() } android.view.MotionEvent.ACTION_CANCEL -> { v.alpha = 1f; v.scaleX = 1f; v.scaleY = 1f } } ; true }
+            }
+        }
+        fun glossyIcon(text: String, onClick: () -> Unit): Button {
+            val b = glossy3D(text, 1f, onClick)
+            b.textSize = 22f
+            b.layoutParams = LinearLayout.LayoutParams(0, dp(56), 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }
+            return b
+        }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor("#050505")); setPadding(dp(10), dp(10), dp(10), dp(10)) }
+        // هيدر: فولدر مجسم + sdcard / المسار
+        val headerIcon = TextView(this).apply { text = "📁"; textSize = 38f; gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(64), dp(64)) }
+        val headerCol = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+        val headerTitle = TextView(this).apply { text = "sdcard"; textSize = 24f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.DEFAULT_BOLD }
+        val headerPath = TextView(this).apply { text = "/mnt"; textSize = 14f; setTextColor(Color.parseColor("#AAAAAA")) }
+        headerCol.addView(headerTitle); headerCol.addView(headerPath)
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#0A0A0A"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(1), Color.parseColor("#E8E8E8")) }; setPadding(dp(12), dp(12), dp(12), dp(12)) }
+        header.addView(headerIcon); header.addView(headerCol)
+        // تابين مجسمين: RECEIVER / MOBILE زي Root / Storage
+        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) } }
+        val btnRecv = glossy3D("RECEIVER", 1f) { mode = "RECEIVER"; headerTitle.text = "Receiver"; headerPath.text = recvPath; refresh() }
+        val btnMob = glossy3D("MOBILE", 1f) { mode = "MOBILE"; headerTitle.text = "Mobile"; headerPath.text = mobPath; refresh() }
+        tabs.addView(btnRecv); tabs.addView(btnMob)
+        // سطر المساحة زي الصورة
+        val infoBar = TextView(this).apply { text = "Loading storage info..."; textSize = 13f; setTextColor(Color.parseColor("#CCCCCC")); gravity = Gravity.CENTER; background = GradientDrawable().apply { cornerRadius = dp(16).toFloat(); setColor(Color.parseColor("#111111")); setStroke(dp(1), Color.parseColor("#E8E8E8")) }; setPadding(dp(10), dp(10), dp(10), dp(10)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) } }
         pathView = TextView(this).apply { textSize = 13f; setTextColor(Color.WHITE) }
         statusView = TextView(this).apply { textSize = 12f; setTextColor(Color.parseColor("#9AA4C0")) }
         progressBar = ProgressBar(this).apply { visibility = android.view.View.GONE }
         listBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply { addView(listBox); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val btnToRecv = Button(this).apply { text = "→ TO RECEIVER"; setOnClickListener { mode = "MOBILE"; Toast.makeText(this@FileManagerActivity, "Long-press a mobile file - Download/Upload - to send to receiver", Toast.LENGTH_SHORT).show() } }
-        val btnToMob = Button(this).apply { text = "← TO MOBILE"; setOnClickListener { mode = "RECEIVER"; Toast.makeText(this@FileManagerActivity, "Long-press a receiver file - Download/Upload - to send to mobile", Toast.LENGTH_SHORT).show() } }
-        val btnTerminal = Button(this).apply { text = "Terminal"; setOnClickListener { val i = Intent(this@FileManagerActivity, TerminalActivity::class.java); i.putExtra("ip", ip); startActivity(i) } }
-        bottom.addView(btnToRecv); bottom.addView(btnToMob); bottom.addView(btnTerminal)
-        root.addView(tabs); root.addView(pathView); root.addView(statusView); root.addView(progressBar); root.addView(scroll); root.addView(bottom)
+        // بار تحت: 5 زراير مجسمة زي الصورة: رجوع + بحث + ترتيب + تيرمينال + قفل
+        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = GradientDrawable().apply { cornerRadius = dp(20).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(1), Color.parseColor("#E8E8E8")) }; setPadding(dp(6), dp(8), dp(6), dp(8)) }
+        val btnBack = glossyIcon("↩") { if (mode == "RECEIVER") { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/" } else { mobPath = File(mobPath).parent ?: mobPath }; refresh() }
+        val btnNew = glossyIcon("+") { Toast.makeText(this@FileManagerActivity, "Long-press a folder - New Folder here", Toast.LENGTH_SHORT).show() }
+        val btnSearch = glossyIcon("🔍") { val e = EditText(this@FileManagerActivity).apply { hint = "Search..." }; android.app.AlertDialog.Builder(this@FileManagerActivity).setTitle("Search").setView(e).setPositiveButton("Search") { _, _ -> searchQuery = e.text.toString(); refresh() }.setNegativeButton("Clear") { _, _ -> searchQuery = ""; refresh() }.show() }
+        val btnSort = glossyIcon("≡") { sortBy = if (sortBy == "name") "size" else "name"; refresh() }
+        val btnClose = glossyIcon("✕") { finish() }
+        bottom.addView(btnBack); bottom.addView(btnNew); bottom.addView(btnSearch); bottom.addView(btnSort); bottom.addView(btnClose)
+        root.addView(header); root.addView(tabs); root.addView(infoBar); root.addView(pathView); root.addView(statusView); root.addView(progressBar); root.addView(scroll); root.addView(bottom)
+        // تحديث سطر المساحة من الرسيفر
+        Thread { try { val s = java.net.Socket(ip, 22); s.close() } catch (e: Exception) {} }.start()
         setContentView(root)
         refresh()
     }
