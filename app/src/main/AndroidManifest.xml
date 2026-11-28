@@ -30,7 +30,7 @@
         android:roundIcon="@drawable/ic_app_icon"
         android:label="U-Panel"
         android:supportsRtl="true"
-        android:theme="@style/Theme.U Panel"
+        android:theme="@style/Theme_UPanel"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
