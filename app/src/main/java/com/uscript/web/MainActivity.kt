@@ -92,6 +92,10 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply { gravity = Gravity.CENTER }
             setImageResource(R.drawable.ic_app_icon)
             scaleType = ImageView.ScaleType.CENTER_CROP
+            clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setOval(0, 0, v.width, v.height) }
+            }
         }
     }
 
@@ -228,8 +232,13 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "U-Panel is Configured", Toast.LENGTH_LONG).show()
                     waitForServer(ip) { showEnjoyThenEnter() }
                 } else {
-                    welcomeView.visibility = View.GONE; ipView.visibility = View.VISIBLE
-                    statusText.setTextColor(Color.parseColor("#FF6B6B")); statusText.text = "Configure failed: ${res.second}"
+                    // التثبيت فشل بس السيرفر ممكن يكون شغال - جرب افتح البانل بدل ما تقف
+                    statusText.text = "Install failed, trying panel anyway..."
+                    welcomeView.visibility = View.VISIBLE
+                    waitForServer(ip) {
+                        baseUrl = "http://$ip:8080/"
+                        showEnjoyThenEnter()
+                    }
                 }
             }
         }.start()
