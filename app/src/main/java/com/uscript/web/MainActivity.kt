@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         return Button(this).apply {
             this.text = text; textSize = 16f; setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) }
-            background = GradientDrawable().apply { cornerRadius = dp(16).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(1), Color.parseColor("#666666")) }
+            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#E8E8E8")) }
             setPadding(dp(16), dp(18), dp(16), dp(18)); setOnClickListener { onClick() }
         }
     }
@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         return Button(this).apply {
             this.text = text; textSize = 14f; setTextColor(Color.parseColor("#E0E0E0"))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(6); rightMargin = dp(6); topMargin = dp(12) }
-            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#111111")); setStroke(dp(1), Color.parseColor("#444444")) }
+            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.parseColor("#0A0A0A")); setStroke(dp(2), Color.parseColor("#C0C0C0")) }
             setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { onClick() }
         }
     }
@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         statusText = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         connectBtn = btn("CONNECT") { onConnectClicked() }
         configureBtn = btn("Connect to your Enigma") { onConfigureClicked() }
-        enterPanelBtn = btn("Enter U-Panel") { onEnterPanelClicked() }.apply { visibility = View.GONE }
+        enterPanelBtn = btn("Enter U-Panel") { onEnterPanelClicked() }
         terminalBtn = btnSmall("Terminal") { onTerminalClicked() }
         fileManagerBtn = btnSmall("File Manager") { onFileManagerClicked() }
         val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; addView(terminalBtn); addView(fileManagerBtn) }
@@ -211,10 +211,28 @@ class MainActivity : AppCompatActivity() {
     }
     private fun onConnectClicked() { onConfigureClicked() }
     private fun onConfigureClicked() {
-        if (isInstalling) return // منع الضغط مرتين - هو ده اللي كان بيعيد التثبيت ويعمل ريستارت
-        isInstalling = true
         val ip = ipField.text.toString().trim()
         if (ip.isEmpty()) { statusText.text = "Please enter the receiver IP first"; return }
+        // إصلاح زرار البانل: لو السيرفر شغال افتح على طول - متستناش التثبيت
+        statusText.text = "Checking server..."
+        Thread {
+            var up = false
+            try {
+                val c = java.net.URL("http://$ip:8080/").openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 2000; c.readTimeout = 2000; c.connect()
+                if (c.responseCode in 200..499) up = true
+                c.disconnect()
+            } catch (e: Exception) {}
+            if (up) {
+                runOnUiThread { baseUrl = "http://$ip:8080/"; showEnjoyThenEnter() }
+                return@Thread
+            }
+            runOnUiThread { doInstall(ip) }
+        }.start()
+    }
+    private fun doInstall(ip: String) {
+        if (isInstalling) return
+        isInstalling = true
         getSharedPreferences("uscript_prefs", MODE_PRIVATE).edit().putString("ip", ip).putString("port", "8080").apply()
         welcomeView.visibility = View.VISIBLE; ipView.visibility = View.GONE
         welcomeTitle.text = "U-Panel"; welcomeConnecting.text = "Connecting..."
