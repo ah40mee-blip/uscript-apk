@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- كاش - الملفات اللي بتنزل من الرسيفر عشان تتفتح بتطبيق خارجي -->
+    <cache-path name="cache" path="." />
+
+    <!-- ملفات خارجية - للـ APK والملفات اللي بتتفتح -->
+    <external-path name="external" path="." />
+
+    <!-- مجلد التنزيلات -->
+    <external-path name="download" path="Download/" />
+
+    <!-- ملفات التطبيق الداخلية -->
+    <files-path name="files" path="." />
+
+    <!-- التخزين الخارجي الخاص بالتطبيق -->
+    <external-files-path name="external_files" path="." />
+</paths>
