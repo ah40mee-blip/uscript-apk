@@ -41,8 +41,8 @@ class FileManagerActivity : AppCompatActivity() {
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun pw(): String = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "root") ?: "root"
-    private fun glossyBg(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#E8E8E8")) }
-    private fun glossyCard(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#2A2A2A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(1), Color.parseColor("#E8E8E8")) }
+    private fun glossyBg(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#3A3A3A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
+    private fun glossyCard(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#3A3A3A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
 
     // ===== ذاكرة الموبايل: الداخلية + الخارجية كلها =====
     private fun mobileRoots(): List<Pair<String,String>> {
@@ -77,9 +77,10 @@ class FileManagerActivity : AppCompatActivity() {
         return list
     }
 
+    // فولدر أسود لامع مش أصفر: خلفية سودا جلوسي + رمز فولدر فضي
     private fun folderIcon(): TextView = TextView(this).apply {
-        text = "\uD83D\uDCC1"; textSize = 30f; gravity = Gravity.CENTER
-        background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#5A5A5A"), Color.parseColor("#1A1A1A"), Color.parseColor("#000000"))).apply { cornerRadius = dp(14).toFloat(); setStroke(dp(1), Color.parseColor("#E8E8E8")) }
+        text = "\uD83D\uDDC2"; textSize = 26f; gravity = Gravity.CENTER; setTextColor(Color.parseColor("#E8E8E8"))
+        background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
         layoutParams = LinearLayout.LayoutParams(dp(56), dp(56))
     }
 
@@ -98,21 +99,20 @@ class FileManagerActivity : AppCompatActivity() {
         mobPath = Environment.getExternalStorageDirectory().absolutePath
 
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor("#050505")); setPadding(dp(8), dp(8), dp(8), dp(8)) }
-        val header = TextView(this).apply { text = "U-Panel  •  File Manager"; textSize = 18f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = android.graphics.Typeface.DEFAULT_BOLD }
-        root.addView(header)
+        // هيدر + مربع X صغير في الركن اليمين للخروج
+        val headerRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val header = TextView(this).apply { text = "U-Panel  •  File Manager"; textSize = 18f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = android.graphics.Typeface.DEFAULT_BOLD; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+        val btnX = Button(this).apply { text = "✕"; textSize = 18f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)); setOnClickListener { finish() } }
+        headerRow.addView(header); headerRow.addView(btnX)
+        root.addView(headerRow)
 
         // ===== الصف اللي فوق: الرسيفر =====
         val topRow = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         val recvHeader = TextView(this).apply { text = "RECEIVER  •  HDD / FLASH"; textSize = 15f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; background = glossyBg(); setPadding(dp(8), dp(10), dp(8), dp(10)) }
-        val recvRoots = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val btnHDD = Button(this).apply { text = "HDD"; setTextColor(Color.WHITE); background = glossyCard(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { recvRoot = "HDD"; recvPath = "/media/hdd/"; refreshReceiver() } }
-        val btnFlash = Button(this).apply { text = "FLASH  ( / )"; setTextColor(Color.WHITE); background = glossyCard(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
-        recvRoots.addView(btnHDD); recvRoots.addView(btnFlash)
         recvPathView = TextView(this).apply { text = recvPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        val recvBack = Button(this).apply { text = "⬆ Back"; setTextColor(Color.WHITE); background = glossyCard(); setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
         recvList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val recvScroll = ScrollView(this).apply { addView(recvList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-        topRow.addView(recvHeader); topRow.addView(recvRoots); topRow.addView(recvPathView); topRow.addView(recvBack); topRow.addView(recvScroll)
+        topRow.addView(recvHeader); topRow.addView(recvPathView); topRow.addView(recvScroll)
         root.addView(topRow)
 
         // ===== النص: سهمين بالعرض + مسح =====
@@ -124,6 +124,8 @@ class FileManagerActivity : AppCompatActivity() {
             return b
         }
         // ⬆ = موبايل -> رسيفر (من تحت لفوق) | ⬇ = رسيفر -> موبايل (من فوق لتحت)
+        // BACK رسيفر على شمال السهم اللي باصص لفوق
+        val btnBackRecv = Button(this).apply { text = "⬆ BACK"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4); rightMargin = dp(4) }; setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
         val btnUp = arrowBtn("⬆", true)
         val btnDown = arrowBtn("⬇", false)
         val btnDel = Button(this).apply {
@@ -133,23 +135,19 @@ class FileManagerActivity : AppCompatActivity() {
             setOnClickListener { deleteSelected() }
         }
         val midLabel = TextView(this).apply { text = "1 tap = Copy\nLong = Move"; textSize = 10f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        mid.addView(btnUp); mid.addView(btnDown); mid.addView(btnDel); mid.addView(midLabel)
+        // BACK موبايل على يمين زرار المسح
+        // BACK اللي على اليمين يبص يمين
+        val btnBackMob = Button(this).apply { text = "BACK ➡"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4) }; setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
+        mid.addView(btnBackRecv); mid.addView(btnUp); mid.addView(btnDown); mid.addView(btnDel); mid.addView(btnBackMob)
         root.addView(mid)
 
         // ===== الصف اللي تحت: الموبايل - الداخلية + الخارجية =====
         val bottomRow = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         val mobHeader = TextView(this).apply { text = "MOBILE  •  Internal + SD Card"; textSize = 15f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; background = glossyBg(); setPadding(dp(8), dp(10), dp(8), dp(10)) }
-        val mobRoots = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        // زرار لكل ذاكرة موجودة فعلا: الداخلية + كل SD
-        for ((label, path) in mobileRoots()) {
-            val b = Button(this).apply { text = label; setTextColor(Color.WHITE); background = glossyCard(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
-            mobRoots.addView(b)
-        }
         mobPathView = TextView(this).apply { text = mobPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        val mobBack = Button(this).apply { text = "⬆ Back"; setTextColor(Color.WHITE); background = glossyCard(); setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
         mobList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val mobScroll = ScrollView(this).apply { addView(mobList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-        bottomRow.addView(mobHeader); bottomRow.addView(mobRoots); bottomRow.addView(mobPathView); bottomRow.addView(mobBack); bottomRow.addView(mobScroll)
+        bottomRow.addView(mobHeader); bottomRow.addView(mobPathView); bottomRow.addView(mobScroll)
         root.addView(bottomRow)
 
         // ===== بار النقل =====
@@ -159,10 +157,18 @@ class FileManagerActivity : AppCompatActivity() {
         progressBox.addView(progressText); progressBox.addView(progressBar)
         root.addView(progressBox)
 
+        // تحت الفايل مانجر: مربعين - هارد الرسيفر + فلاشة الرسيفر
+        val recvRootsBottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
+        val btnHDD2 = Button(this).apply { text = "HDD  •  Receiver"; textSize = 13f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(4) }; setOnClickListener { recvRoot = "HDD"; recvPath = "/media/hdd/"; refreshReceiver() } }
+        val btnFlash2 = Button(this).apply { text = "FLASH  •  Receiver"; textSize = 13f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4) }; setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
+        recvRootsBottom.addView(btnHDD2); recvRootsBottom.addView(btnFlash2)
+        root.addView(recvRootsBottom)
         val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val btnTerm = Button(this).apply { text = "Terminal"; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { val i = Intent(this@FileManagerActivity, TerminalActivity::class.java); i.putExtra("ip", ip); startActivity(i) } }
-        val btnClose = Button(this).apply { text = "✕ Close"; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { finish() } }
-        bottom.addView(btnTerm); bottom.addView(btnClose)
+        // تحت: INTERNAL / SD CARD بدل Terminal / Close
+        for ((label, path) in mobileRoots()) {
+            val b = Button(this).apply { text = label; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
+            bottom.addView(b)
+        }
         root.addView(bottom)
 
         setContentView(root)
