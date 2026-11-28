@@ -108,15 +108,25 @@ object ScriptInstaller {
                         val r = o.toString(); try { ch.disconnect() } catch (e: Exception) {}; return r
                     }
                     onProgress("جاري تشغيل السيرفر...")
-                    exec2("chmod +x /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; cp /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo STARTED", 4000)
-                    // إعادة تشغيل السيرفر - الرسيفر نفسه مش هيطفي، السيرفر بس هيقوم من جديد
-                    exec2("sh /tmp/uscript.sh restart-server < /dev/null 2>/dev/null; sh /etc/uscript.sh restart-server < /dev/null 2>/dev/null; echo RESTARTED", 4000)
-                    // لو restart-server مش موجود في السكربت - اعمل reboot كامل كبديل آمن
-                    val check = exec2("ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK", 2000)
-                    if (!check.contains("8080")) { exec2("sync; reboot", 1500) }
+                    // إصلاح الريستارت: لو 8080 شغال أصلا - متلمسش السيرفر خالص
+                    // restart-server كان بيقتل Enigma وبيعمل ريستارت للجهاز كله أثناء تشغيل البانل
+                    val alreadyUp = exec2("ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK", 2000)
+                    if (!alreadyUp.contains("8080")) {
+                        exec2("chmod +x /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; cp /tmp/uscript.sh /etc/uscript.sh 2>/dev/null; sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo STARTED", 4000)
+                    } else {
+                        onProgress("السيرفر شغال بالفعل - مش هنعيد تشغيله")
+                    }
+                    // ممنوع reboot للرسيفر كله - هو ده اللي كان بيعمل ريستارت والبانل مبتظهرش
+                    var check = exec2("ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK", 2000)
+                    var tries = 0
+                    while (!check.contains("8080") && tries < 2) {
+                        tries++
+                        exec2("sh /tmp/uscript.sh start < /dev/null 2>/dev/null; echo START_AGAIN", 4000)
+                        check = exec2("ss -tlnp 2>/dev/null | grep 8080; netstat -tlnp 2>/dev/null | grep 8080; echo CHECK", 2000)
+                    }
                 } finally { try { s2.disconnect() } catch (e: Exception) {} }
             } catch (e: Exception) { /* لو فشل الـ start - الـ MainActivity هيستنى السيرفر 90 ثانية وهيحاول تاني */ }
-            onProgress("تم التثبيت + تشغيل السيرفر + إعادة تشغيل السيرفر")
+            onProgress("تم التثبيت + تشغيل السيرفر - من غير إعادة تشغيل")
             return true to ""
         } catch (e: Exception) {
             e.printStackTrace()

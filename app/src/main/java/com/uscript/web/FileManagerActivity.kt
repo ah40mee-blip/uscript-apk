@@ -1,3 +1,4 @@
+// U-Panel NEW LOOK: اسود رخامي جلوسي + U رمادي معدني + كروت زجاجية - مفيش وردي/احمر
 package com.uscript.web
 
 import android.content.Intent
@@ -77,9 +78,15 @@ class FileManagerActivity : AppCompatActivity() {
         if (items.isEmpty()) listBox.addView(TextView(this).apply { text = "Empty folder"; setTextColor(Color.GRAY) })
     }
     private fun showMenu(it: Item) {
-        val opts = arrayOf("Copy Path", "Copy Name", "Copy Extension", "Send to Terminal", "Download / Upload", "Open With", "Rename", "Delete", "New Folder here")
+        val isApk = it.name.lowercase().endsWith(".apk")
+        val opts = if (isApk) arrayOf("Install App", "Copy Path", "Copy Name", "Copy Extension", "Send to Terminal", "Download / Upload", "Open With", "Rename", "Delete", "New Folder here") else arrayOf("Copy Path", "Copy Name", "Copy Extension", "Send to Terminal", "Download / Upload", "Open With", "Rename", "Delete", "New Folder here")
         android.app.AlertDialog.Builder(this).setTitle(it.name).setItems(opts) { _, which ->
-            when (which) {
+            var w = which
+            if (isApk) {
+                if (w == 0) { installApk(it); return@setItems }
+                w -= 1
+            }
+            when (w) {
                 0 -> copy(it.path)
                 1 -> copy(it.name)
                 2 -> copy(if (it.name.contains(".")) "." + it.name.substringAfterLast(".") else "")
@@ -128,7 +135,30 @@ class FileManagerActivity : AppCompatActivity() {
                     handler.post { openExternal(dest) }
                 } catch (e: Exception) { handler.post { statusView.text = "Open failed: ${e.message}" } }
             }.start()
-        } else openExternal(File(it.path))
+        } else {
+            if (it.name.lowercase().endsWith(".apk")) doInstall(File(it.path)) else openExternal(File(it.path))
+        }
+    }
+    private fun installApk(it: Item) {
+        // APK على الرسيفر: نزله الأول في cache وبعدين ثبته - النظام هو اللي يطلب إذن التثبيت
+        if (mode == "RECEIVER") {
+            statusView.text = "Downloading APK..."
+            Thread {
+                try {
+                    val ch = sftp() ?: throw Exception("SFTP failed")
+                    val dest = File(cacheDir, it.name)
+                    try { ch.get(it.path, dest.absolutePath) } finally { try { ch.session.disconnect() } catch (e: Exception) {} }
+                    handler.post { doInstall(dest) }
+                } catch (e: Exception) { handler.post { statusView.text = "APK download failed: ${e.message}" } }
+            }.start()
+        } else doInstall(File(it.path))
+    }
+    private fun doInstall(file: File) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val i = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(i)
+        } catch (e: Exception) { Toast.makeText(this, "Install failed: ${e.message} - allow Install unknown apps for U-Panel", Toast.LENGTH_LONG).show() }
     }
     private fun openExternal(file: File) {
         try {

@@ -1,3 +1,4 @@
+// U-Panel NEW LOOK: اسود رخامي جلوسي + U رمادي معدني + كروت زجاجية - مفيش وردي/احمر
 package com.uscript.web
 
 import android.content.Context
