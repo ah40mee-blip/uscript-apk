@@ -109,7 +109,7 @@ class FileManagerActivity : AppCompatActivity() {
         val btnFlash = Button(this).apply { text = "FLASH  ( / )"; setTextColor(Color.WHITE); background = glossyCard(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f); setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
         recvRoots.addView(btnHDD); recvRoots.addView(btnFlash)
         recvPathView = TextView(this).apply { text = recvPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        val recvBack = Button(this).apply { text = "⬆ Back"; setTextColor(Color.WHITE); background = glossyCard(); setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
+        val recvBack = Button(this).apply { text = "⬆ Back"; textSize = 13f; setTextColor(Color.WHITE); background = glossyCard(); setPadding(dp(8), dp(6), dp(8), dp(6)); setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
         recvList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val recvScroll = ScrollView(this).apply { addView(recvList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         topRow.addView(recvHeader); topRow.addView(recvRoots); topRow.addView(recvPathView); topRow.addView(recvBack); topRow.addView(recvScroll)
@@ -118,7 +118,7 @@ class FileManagerActivity : AppCompatActivity() {
         // ===== النص: سهمين بالعرض + مسح =====
         val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(4), dp(10), dp(4), dp(10)) }
         fun arrowBtn(txt: String, toReceiver: Boolean): Button {
-            val b = Button(this).apply { text = txt; textSize = 22f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(64), dp(56)).apply { leftMargin = dp(6); rightMargin = dp(6) } }
+            val b = Button(this).apply { text = txt; textSize = 20f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(56), dp(48)).apply { leftMargin = dp(5); rightMargin = dp(5) } }
             b.setOnClickListener { if (toReceiver) copyMobToRecv(false) else copyRecvToMob(false) }
             b.setOnLongClickListener { if (toReceiver) copyMobToRecv(true) else copyRecvToMob(true); true }
             return b
@@ -127,9 +127,9 @@ class FileManagerActivity : AppCompatActivity() {
         val btnUp = arrowBtn("⬆", true)
         val btnDown = arrowBtn("⬇", false)
         val btnDel = Button(this).apply {
-            text = "\uD83D\uDDD1\uFE0F"; textSize = 22f; setTextColor(Color.WHITE)
+            text = "\uD83D\uDDD1\uFE0F"; textSize = 20f; setTextColor(Color.WHITE)
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#7A1A1A"), Color.parseColor("#330000"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#FF8888")) }
-            layoutParams = LinearLayout.LayoutParams(dp(64), dp(56)).apply { leftMargin = dp(6) }
+            layoutParams = LinearLayout.LayoutParams(dp(56), dp(48)).apply { leftMargin = dp(5) }
             setOnClickListener { deleteSelected() }
         }
         val midLabel = TextView(this).apply { text = "1 tap = Copy\nLong = Move"; textSize = 10f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
@@ -146,7 +146,7 @@ class FileManagerActivity : AppCompatActivity() {
             mobRoots.addView(b)
         }
         mobPathView = TextView(this).apply { text = mobPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        val mobBack = Button(this).apply { text = "⬆ Back"; setTextColor(Color.WHITE); background = glossyCard(); setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
+        val mobBack = Button(this).apply { text = "⬆ Back"; textSize = 13f; setTextColor(Color.WHITE); background = glossyCard(); setPadding(dp(8), dp(6), dp(8), dp(6)); setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
         mobList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val mobScroll = ScrollView(this).apply { addView(mobList); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
         bottomRow.addView(mobHeader); bottomRow.addView(mobRoots); bottomRow.addView(mobPathView); bottomRow.addView(mobBack); bottomRow.addView(mobScroll)
@@ -184,7 +184,11 @@ class FileManagerActivity : AppCompatActivity() {
                 c?.let {
                     try {
                         @Suppress("UNCHECKED_CAST")
-                        val v = it.ls(recvPath) as Vector<ChannelSftp.LsEntry>
+                        var v = it.ls(recvPath) as Vector<ChannelSftp.LsEntry>
+                        // لو /media/hdd/ رجع فاضي، جرب من غير / في الآخر - بعض الصور بتفرق
+                        if (v.size <= 2 && recvPath == "/media/hdd/") {
+                            try { v = it.ls("/media/hdd") as Vector<ChannelSftp.LsEntry> } catch (e3: Exception) {}
+                        }
                         for (e in v) { if (e.filename == "." || e.filename == "..") continue; items.add(Item(e.filename, recvPath.trimEnd('/') + "/" + e.filename, e.attrs.isDir, e.attrs.size)) }
                     } catch (e2: Exception) { err = "ls failed: " + (e2.message ?: "") }
                     try { it.disconnect() } catch (ex: Exception) {}
@@ -285,7 +289,7 @@ class FileManagerActivity : AppCompatActivity() {
         if (selectedRecv.isEmpty() && selectedMob.isEmpty()) { Toast.makeText(this, "اختار ملف بدوسة طويلة الأول", Toast.LENGTH_SHORT).show(); return }
         android.app.AlertDialog.Builder(this).setTitle("Delete?").setMessage("Delete ${selectedRecv.size + selectedMob.size} items?").setPositiveButton("Yes") { _, _ ->
             Thread {
-                for (p in selectedRecv.toList()) { try { val c = sftp(); c?.let { try { it.rm(p) } catch (e: Exception) { try { it.rmdir(p) } catch (ex: Exception) {} }; try { it.session.disconnect() } catch (ex: Exception) {}; try { it.disconnect() } catch (ex: Exception) {} } } catch (e: Exception) {} }
+                for (p in selectedRecv.toList()) { try { val c = sftp(); c?.let { try { it.rm(p) } catch (e: Exception) { try { it.rmdir(p) } catch (ex: Exception) {} }; try { it.disconnect() } catch (ex: Exception) {}; try { it.session.disconnect() } catch (ex: Exception) {} } } catch (e: Exception) {} }
                 for (p in selectedMob.toList()) { try { File(p).deleteRecursively() } catch (e: Exception) {} }
                 handler.post { selectedRecv.clear(); selectedMob.clear(); refreshMobile(); refreshReceiver() }
             }.start()
