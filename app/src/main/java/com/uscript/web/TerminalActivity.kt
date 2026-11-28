@@ -160,7 +160,7 @@ class TerminalActivity : AppCompatActivity() {
             for ((u, p) in attempts) {
                 try {
                     socket?.close()
-                    val s = Socket(ip, 23); s.soTimeout = 8000
+                    val s = Socket(ip, 23); s.soTimeout = 0; s.keepAlive = true
                     socket = s; sockIn = s.getInputStream(); sockOut = s.getOutputStream()
                     Thread.sleep(800)
                     // drain banner
@@ -173,7 +173,7 @@ class TerminalActivity : AppCompatActivity() {
             }
             handler.post { statusView.text = if (ok) "● Connected $ip:23 root" else "● Failed: $lastErr" }
             if (!ok) { append("\n[Cannot connect to $ip:23 - check receiver and WiFi]\n"); return@Thread }
-            append("Connected.\nroot@enigma2:~# ")
+            startKeepAlive(); append("Connected.\nroot@enigma2:~# ")
             // read loop - strip Telnet IAC
             val buf = ByteArray(4096)
             try {
@@ -189,8 +189,26 @@ class TerminalActivity : AppCompatActivity() {
                     }
                     if (out.isNotEmpty()) append(out.toString())
                 }
-            } catch (e: Exception) { append("\n[Disconnected]\n") }
+            } catch (e: Exception) {
+                append("\n[Disconnected - reconnecting...]\n")
+                // إعادة اتصال تلقائية 3 مرات
+                var tries = 0
+                while (tries < 3 && !connected) {
+                    tries++
+                    try { Thread.sleep(2000); connect(); if (connected) { append("\n[Reconnected]\n"); break } } catch (ex: Exception) {}
+                }
+            }
         }.start()
     }
-    override fun onDestroy() { try { socket?.close() } catch (e: Exception) {}; super.onDestroy() }
+    private var keepAliveJob: Thread? = null
+    private fun startKeepAlive() {
+        keepAliveJob?.interrupt()
+        keepAliveJob = Thread {
+            while (!Thread.currentThread().isInterrupted) {
+                try { Thread.sleep(30000); sockOut?.write(byteArrayOf(0)); sockOut?.flush() } catch (e: Exception) { break }
+            }
+        }
+        keepAliveJob?.start()
+    }
+    override fun onDestroy() { try { keepAliveJob?.interrupt(); socket?.close() } catch (e: Exception) {}; super.onDestroy() }
 }

@@ -30,8 +30,12 @@ class FileManagerActivity : AppCompatActivity() {
     private lateinit var pathView: TextView
     private lateinit var listBox: LinearLayout
     private lateinit var statusView: TextView
+    private lateinit var searchField: EditText
     private lateinit var progressBar: ProgressBar
     private val handler = Handler(Looper.getMainLooper())
+    private var cache = mutableMapOf<String, List<Item>>()
+    private var searchQuery = ""
+    private var sortBy = "name" // name | size | date
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun pw(): String = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "root") ?: "root"
 
@@ -66,6 +70,13 @@ class FileManagerActivity : AppCompatActivity() {
     }
     private fun showItems(items: List<Item>) {
         listBox.removeAllViews()
+        // ===== بحث + ترتيب - أداء أسرع =====
+        var filtered = if (searchQuery.isEmpty()) items else items.filter { it.name.lowercase().contains(searchQuery.lowercase()) }
+        filtered = when (sortBy) {
+            "size" -> filtered.sortedByDescending { it.size }
+            else -> filtered.sortedWith(compareByDescending<Item> { it.isDir }.thenBy { it.name.lowercase() })
+        }
+        val items = filtered
         pathView.text = if (mode == "RECEIVER") "Receiver: $recvPath" else "Mobile: $mobPath"
         // ===== قسم الفولدرات - كروت زجاجية منظمة =====
         for (item in items) {
