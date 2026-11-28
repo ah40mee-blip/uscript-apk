@@ -36,6 +36,8 @@ class FileManagerActivity : AppCompatActivity() {
     private var cache = mutableMapOf<String, List<Item>>()
     private var searchQuery = ""
     private var sortBy = "name" // name | size | date
+    private var categoryFilter = "" // "" = الكل | images | videos | audio | docs | downloads | apks
+    private var isHome = true
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun pw(): String = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "root") ?: "root"
 
@@ -71,7 +73,22 @@ class FileManagerActivity : AppCompatActivity() {
     private fun showItems(items: List<Item>) {
         listBox.removeAllViews()
         // ===== بحث + ترتيب - أداء أسرع =====
-        var filtered = if (searchQuery.isEmpty()) items else items.filter { it.name.lowercase().contains(searchQuery.lowercase()) }
+        // ===== منطق File Manager Plus: فلترة بالتصنيف =====
+        var filtered = items
+        if (categoryFilter.isNotEmpty()) {
+            filtered = filtered.filter { it.name.lowercase().let { n ->
+                when (categoryFilter) {
+                    "images" -> n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".png") || n.endsWith(".webp") || n.endsWith(".gif")
+                    "videos" -> n.endsWith(".mp4") || n.endsWith(".mkv") || n.endsWith(".avi") || n.endsWith(".ts") || n.endsWith(".mov")
+                    "audio" -> n.endsWith(".mp3") || n.endsWith(".flac") || n.endsWith(".wav") || n.endsWith(".aac") || n.endsWith(".m4a")
+                    "docs" -> n.endsWith(".pdf") || n.endsWith(".txt") || n.endsWith(".doc") || n.endsWith(".docx") || n.endsWith(".xls") || n.endsWith(".xlsx")
+                    "apks" -> n.endsWith(".apk")
+                    "downloads" -> true
+                    else -> true
+                }
+            }}
+        }
+        filtered = if (searchQuery.isEmpty()) filtered else filtered.filter { it.name.lowercase().contains(searchQuery.lowercase()) }
         filtered = when (sortBy) {
             "size" -> filtered.sortedByDescending { it.size }
             else -> filtered.sortedWith(compareByDescending<Item> { it.isDir }.thenBy { it.name.lowercase() })
@@ -289,7 +306,23 @@ class FileManagerActivity : AppCompatActivity() {
         val btnSort = glossyIcon("≡") { sortBy = if (sortBy == "name") "size" else "name"; refresh() }
         val btnClose = glossyIcon("✕") { finish() }
         bottom.addView(btnBack); bottom.addView(btnNew); bottom.addView(btnSearch); bottom.addView(btnSort); bottom.addView(btnClose)
-        root.addView(header); root.addView(tabs); root.addView(infoBar); root.addView(pathView); root.addView(statusView); root.addView(progressBar); root.addView(scroll); root.addView(bottom)
+        // ===== شبكة تصنيفات File Manager Plus =====
+        fun catBtn(title: String, icon: String, cat: String): Button {
+            val b = glossy3D(icon + "\n" + title, 1f) {
+                categoryFilter = cat; isHome = false
+                headerTitle.text = title; headerPath.text = if (mode == "RECEIVER") recvPath else mobPath
+                refresh()
+            }
+            b.textSize = 13f
+            b.layoutParams = LinearLayout.LayoutParams(0, dp(72), 1f).apply { leftMargin = dp(4); rightMargin = dp(4); bottomMargin = dp(8) }
+            return b
+        }
+        val catRow1 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        catRow1.addView(catBtn("Images", "🖼️", "images")); catRow1.addView(catBtn("Videos", "🎬", "videos")); catRow1.addView(catBtn("Audio", "🎵", "audio"))
+        val catRow2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        catRow2.addView(catBtn("Docs", "📄", "docs")); catRow2.addView(catBtn("APKs", "📦", "apks")); catRow2.addView(catBtn("All Files", "📁", ""))
+        val catAll = glossy3D("🏠  Home  •  All Files", 1f) { categoryFilter = ""; isHome = true; refresh() }
+        root.addView(header); root.addView(tabs); root.addView(infoBar); root.addView(catRow1); root.addView(catRow2); root.addView(catAll); root.addView(pathView); root.addView(statusView); root.addView(progressBar); root.addView(scroll); root.addView(bottom)
         // تحديث سطر المساحة من الرسيفر
         Thread { try { val s = java.net.Socket(ip, 22); s.close() } catch (e: Exception) {} }.start()
         setContentView(root)
