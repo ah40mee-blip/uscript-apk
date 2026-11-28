@@ -1,4 +1,4 @@
-// U-Panel FileManager - صفين | فوق رسيفر / تحت موبايل | الموبايل يقرا الداخلية + الخارجية كلها
+// U-Panel FileManager - نهائي: HDD/FLASH فوق | INTERNAL/SD تحت | ستايل جلوسي أسود
 package com.uscript.web
 
 import android.content.Intent
@@ -36,48 +36,31 @@ class FileManagerActivity : AppCompatActivity() {
     private var selectedMob = mutableSetOf<String>()
     private var recvItems = listOf<Item>()
     private var mobItems = listOf<Item>()
-
     data class Item(val name: String, val path: String, val isDir: Boolean, val size: Long)
-
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun pw(): String = getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("root_pw", "root") ?: "root"
     private fun glossyBg(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#3A3A3A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
     private fun glossyCard(): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#3A3A3A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
-
-    // ===== ذاكرة الموبايل: الداخلية + الخارجية كلها =====
     private fun mobileRoots(): List<Pair<String,String>> {
         val list = mutableListOf<Pair<String,String>>()
-        // الداخلية
         list.add("INTERNAL" to Environment.getExternalStorageDirectory().absolutePath)
-        // الخارجية: كل الـ SD / USB اللي في /storage + getExternalFilesDirs
         try {
             val dirs = getExternalFilesDirs(null)
             for (d in dirs) {
                 if (d == null) continue
                 val p = d.absolutePath
-                // /storage/XXXX-XXXX/Android/data/... -> الجذر /storage/XXXX-XXXX
                 if (p.contains("/Android/data")) {
                     val root = p.substringBefore("/Android/data")
-                    if (!list.any { it.second == root } && root != Environment.getExternalStorageDirectory().absolutePath) {
-                        val label = if (root.contains("emulated")) "INTERNAL" else "SD CARD"
-                        list.add(label to root)
-                    }
+                    if (!list.any { it.second == root } && root != Environment.getExternalStorageDirectory().absolutePath) list.add("SD CARD" to root)
                 }
             }
         } catch (e: Exception) {}
-        // سكان /storage يدوي لو فيه SD مش ظاهر
         try {
             val st = File("/storage")
-            st.listFiles()?.forEach {
-                if (it.isDirectory && it.name != "emulated" && it.name != "self" && !list.any { x -> x.second == it.absolutePath }) {
-                    list.add("SD CARD" to it.absolutePath)
-                }
-            }
+            st.listFiles()?.forEach { if (it.isDirectory && it.name != "emulated" && it.name != "self" && !list.any { x -> x.second == it.absolutePath }) list.add("SD CARD" to it.absolutePath) }
         } catch (e: Exception) {}
         return list
     }
-
-    // فولدر أسود لامع بجد - من غير إيموجي أصفر: مربع أسود جلوسي + حرف F فضي
     private fun folderIcon(): TextView = TextView(this).apply {
         text = "▣"; textSize = 28f; gravity = Gravity.CENTER; setTextColor(Color.parseColor("#E8E8E8"))
         background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#4A4A4A"), Color.parseColor("#111111"), Color.parseColor("#000000"))).apply { cornerRadius = dp(16).toFloat(); setStroke(dp(1), Color.parseColor("#C0C0C0")) }
@@ -90,95 +73,67 @@ class FileManagerActivity : AppCompatActivity() {
             val c = s.openChannel("sftp") as ChannelSftp; c.connect(10000); c
         } catch (e: Exception) { null }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ip = intent.getStringExtra("ip") ?: getSharedPreferences("uscript_prefs", MODE_PRIVATE).getString("ip", "") ?: ""
-        // أول مسار للموبايل = جذر الداخلية مش Download
         mobPath = Environment.getExternalStorageDirectory().absolutePath
-
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor("#050505")); setPadding(dp(8), dp(8), dp(8), dp(8)) }
-        // هيدر + مربع X صغير في الركن اليمين للخروج
+        // هيدر + X في الركن اليمين
         val headerRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val header = TextView(this).apply { text = "U-Panel  •  File Manager"; textSize = 18f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = android.graphics.Typeface.DEFAULT_BOLD; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
         val btnX = Button(this).apply { text = "✕"; textSize = 18f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)); setOnClickListener { finish() } }
-        headerRow.addView(header); headerRow.addView(btnX)
-        root.addView(headerRow)
-        // فوق: مربعين HDD / FLASH بنفس ستايل السكرين بالظبط
+        headerRow.addView(header); headerRow.addView(btnX); root.addView(headerRow)
+        // فوق: HDD / FLASH - يفضلوا مكانهم
         val recvRootsTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
         val btnHDD2 = Button(this).apply { text = "HDD  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "HDD"; recvPath = "/media/hdd/"; refreshReceiver() } }
         val btnFlash2 = Button(this).apply { text = "FLASH  •  RECEIVER"; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { recvRoot = "FLASH"; recvPath = "/"; refreshReceiver() } }
-        recvRootsTop.addView(btnHDD2); recvRootsTop.addView(btnFlash2)
-        root.addView(recvRootsTop)
-        // فوق برضه: INTERNAL / SD CARD تحت HDD/FLASH - نفس المكان الجديد اللي فوق بالأحمر
-        val mobRootsTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) } }
-        for ((label, path) in mobileRoots()) {
-            val b = Button(this).apply { text = label; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
-            mobRootsTop.addView(b)
-        }
-        root.addView(mobRootsTop)
-
-        // ===== الصف اللي فوق: الرسيفر =====
+        recvRootsTop.addView(btnHDD2); recvRootsTop.addView(btnFlash2); root.addView(recvRootsTop)
+        // الصف فوق: الرسيفر
         val topRow = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-        // اتشال مربع RECEIVER - زي السكرين بالظبط
         recvPathView = TextView(this).apply { text = recvPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         recvList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val recvScroll = ScrollView(this).apply { addView(recvList); setPadding(dp(4), dp(12), dp(4), dp(4)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-         topRow.addView(recvPathView); topRow.addView(recvScroll)
-        root.addView(topRow)
-
-        // ===== النص: سهمين بالعرض + مسح =====
+        topRow.addView(recvPathView); topRow.addView(recvScroll); root.addView(topRow)
+        // النص: [BACK رسيفر] [⬆] [⬇] [🗑] [BACK موبايل يمين]
         val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(dp(2), dp(10), dp(2), dp(10)) }
         fun arrowBtn(txt: String, toReceiver: Boolean): Button {
-            val b = Button(this).apply { text = txt; textSize = 22f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4); rightMargin = dp(4) }; gravity = Gravity.CENTER }
+            // سهم مجسم: جرادينت 4 درجات + لمعة فوق + بوردر أبيض أتقل + ظل
+            val arrowBg = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#7A7A7A"), Color.parseColor("#3A3A3A"), Color.parseColor("#141414"), Color.parseColor("#000000"))).apply { cornerRadius = dp(28).toFloat(); setStroke(dp(2), Color.parseColor("#FFFFFF")) }
+            val b = Button(this).apply { text = txt; textSize = 30f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.DEFAULT_BOLD; background = arrowBg; elevation = dp(8).toFloat(); layoutParams = LinearLayout.LayoutParams(dp(88), dp(68)).apply { leftMargin = dp(4); rightMargin = dp(4) } }
             b.setOnClickListener { if (toReceiver) copyMobToRecv(false) else copyRecvToMob(false) }
             b.setOnLongClickListener { if (toReceiver) copyMobToRecv(true) else copyRecvToMob(true); true }
             return b
         }
-        // ⬆ = موبايل -> رسيفر (من تحت لفوق) | ⬇ = رسيفر -> موبايل (من فوق لتحت)
-        // BACK رسيفر على شمال السهم اللي باصص لفوق
-        val btnBackRecv = Button(this).apply { text = "⬆ BACK"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4); rightMargin = dp(4) }; setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
-        val btnUp = arrowBtn("⬆", true)
-        val btnDown = arrowBtn("⬇", false)
-        val btnDel = Button(this).apply {
-            text = "\uD83D\uDDD1\uFE0F"; textSize = 22f; setTextColor(Color.WHITE)
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#7A1A1A"), Color.parseColor("#330000"), Color.parseColor("#000000"))).apply { cornerRadius = dp(20).toFloat(); setStroke(dp(2), Color.parseColor("#FF8888")) }
-            layoutParams = LinearLayout.LayoutParams(dp(64), dp(56)).apply { leftMargin = dp(6) }
-            setOnClickListener { deleteSelected() }
-        }
-        val midLabel = TextView(this).apply { text = "1 tap = Copy\nLong = Move"; textSize = 10f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
-        // BACK موبايل على يمين زرار المسح
-        // BACK اللي على اليمين يبص يمين
-        val btnBackMob = Button(this).apply { text = "BACK ➡"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(72), dp(56)).apply { leftMargin = dp(4) }; setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
-        mid.addView(btnBackRecv); mid.addView(btnUp); mid.addView(btnDown); mid.addView(btnDel); mid.addView(btnBackMob)
-        root.addView(mid)
-
-        // ===== الصف اللي تحت: الموبايل - الداخلية + الخارجية =====
+        val btnBackRecv = Button(this).apply { text = "⬆ BACK"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(78), dp(68)).apply { leftMargin = dp(4); rightMargin = dp(4) }; setOnClickListener { recvPath = recvPath.trimEnd('/').substringBeforeLast("/", "/") + "/"; if (recvPath.isEmpty()) recvPath = "/"; refreshReceiver() } }
+        val btnUp = arrowBtn("⬆", true); val btnDown = arrowBtn("⬇", false)
+        val btnDel = Button(this).apply { text = "\uD83D\uDDD1\uFE0F"; textSize = 22f; setTextColor(Color.WHITE); background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#7A1A1A"), Color.parseColor("#330000"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(2), Color.parseColor("#FF8888")) }; layoutParams = LinearLayout.LayoutParams(dp(88), dp(68)).apply { leftMargin = dp(4); rightMargin = dp(4) }; setOnClickListener { deleteSelected() } }
+        val btnBackMob = Button(this).apply { text = "BACK ➡"; textSize = 12f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(dp(78), dp(68)).apply { leftMargin = dp(4) }; setOnClickListener { mobPath = File(mobPath).parent ?: mobPath; refreshMobile() } }
+        // المسح في النص بالظبط: [BACK] [⬆] [🗑] [⬇] [BACK ➡]
+        mid.addView(btnBackRecv); mid.addView(btnUp); mid.addView(btnDel); mid.addView(btnDown); mid.addView(btnBackMob); root.addView(mid)
+        // الصف تحت: الموبايل
         val bottomRow = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-        // اتشال مربع MOBILE - زي السكرين بالظبط
         mobPathView = TextView(this).apply { text = mobPath; textSize = 11f; setTextColor(Color.parseColor("#AAAAAA")); gravity = Gravity.CENTER }
         mobList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val mobScroll = ScrollView(this).apply { addView(mobList); setPadding(dp(4), dp(12), dp(4), dp(4)); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f) }
-         bottomRow.addView(mobPathView); bottomRow.addView(mobScroll)
-        root.addView(bottomRow)
-
-        // ===== بار النقل =====
+        bottomRow.addView(mobPathView); bottomRow.addView(mobScroll); root.addView(bottomRow)
+        // تحت: INTERNAL / SD CARD - اتنقلوا من فوق لتحت
+        val mobRootsBottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
+        for ((label, path) in mobileRoots()) {
+            val b = Button(this).apply { text = label; textSize = 15f; setTextColor(Color.WHITE); background = glossyBg(); layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(4); rightMargin = dp(4) }; setPadding(dp(8), dp(14), dp(8), dp(14)); setOnClickListener { mobRoot = label; mobPath = path; refreshMobile() } }
+            mobRootsBottom.addView(b)
+        }
+        root.addView(mobRootsBottom)
+        // بار النقل
         progressBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = glossyCard(); setPadding(dp(10), dp(10), dp(10), dp(10)); visibility = android.view.View.GONE }
         progressText = TextView(this).apply { text = "Transferring... 0%"; textSize = 13f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
         progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progress = 0; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(22)) }
-        progressBox.addView(progressText); progressBox.addView(progressBar)
-        root.addView(progressBox)
-
-        // اتنقل INTERNAL/SD CARD لفوق مع HDD/FLASH
-
+        progressBox.addView(progressText); progressBox.addView(progressBar); root.addView(progressBox)
         setContentView(root)
         refreshReceiver(); refreshMobile()
     }
-
     private fun showProgress(show: Boolean, pct: Int = 0, label: String = "") {
         handler.post { progressBox.visibility = if (show) android.view.View.VISIBLE else android.view.View.GONE; progressBar.progress = pct; if (label.isNotEmpty()) progressText.text = label }
     }
-
     private fun refreshReceiver() {
         recvPathView.text = recvPath
         Thread {
@@ -194,7 +149,6 @@ class FileManagerActivity : AppCompatActivity() {
             handler.post { drawColumn(recvList, recvItems, selectedRecv, true) }
         }.start()
     }
-
     private fun refreshMobile() {
         mobPathView.text = mobPath
         Thread {
@@ -205,7 +159,6 @@ class FileManagerActivity : AppCompatActivity() {
             handler.post { drawColumn(mobList, mobItems, selectedMob, false) }
         }.start()
     }
-
     private fun drawColumn(box: LinearLayout, items: List<Item>, selected: MutableSet<String>, isRecv: Boolean) {
         box.removeAllViews()
         if (items.isEmpty()) { box.addView(TextView(this).apply { text = "Empty folder"; setTextColor(Color.GRAY); gravity = Gravity.CENTER }); return }
@@ -213,7 +166,7 @@ class FileManagerActivity : AppCompatActivity() {
             val isSel = selected.contains(item.path)
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                background = if (isSel) GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#5A5A5A"), Color.parseColor("#222222"), Color.parseColor("#000000"))).apply { cornerRadius = dp(18).toFloat(); setStroke(dp(3), Color.parseColor("#FFFFFF")) } else glossyCard()
+                background = if (isSel) GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.parseColor("#5A5A5A"), Color.parseColor("#222222"), Color.parseColor("#000000"))).apply { cornerRadius = dp(24).toFloat(); setStroke(dp(3), Color.parseColor("#FFFFFF")) } else glossyCard()
                 setPadding(dp(10), dp(10), dp(10), dp(10))
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6); leftMargin = dp(4); rightMargin = dp(4) }
             }
@@ -229,7 +182,6 @@ class FileManagerActivity : AppCompatActivity() {
             box.addView(card)
         }
     }
-
     private fun copyMobToRecv(move: Boolean) {
         if (selectedMob.isEmpty()) { Toast.makeText(this, "اختار ملفات من الموبايل بدوسة طويلة الأول", Toast.LENGTH_SHORT).show(); return }
         val list = selectedMob.toList()
@@ -251,7 +203,6 @@ class FileManagerActivity : AppCompatActivity() {
             handler.post { selectedMob.clear(); refreshMobile(); refreshReceiver(); Toast.makeText(this, if (move) "تم التحريك للرسيفر" else "تم النسخ للرسيفر", Toast.LENGTH_SHORT).show() }
         }.start()
     }
-
     private fun copyRecvToMob(move: Boolean) {
         if (selectedRecv.isEmpty()) { Toast.makeText(this, "اختار ملفات من الرسيفر بدوسة طويلة الأول", Toast.LENGTH_SHORT).show(); return }
         val list = selectedRecv.toList()
@@ -272,7 +223,6 @@ class FileManagerActivity : AppCompatActivity() {
             handler.post { selectedRecv.clear(); refreshMobile(); refreshReceiver(); Toast.makeText(this, if (move) "تم التحريك للموبايل" else "تم النسخ للموبايل", Toast.LENGTH_SHORT).show() }
         }.start()
     }
-
     private fun deleteSelected() {
         if (selectedRecv.isEmpty() && selectedMob.isEmpty()) { Toast.makeText(this, "اختار ملف بدوسة طويلة الأول", Toast.LENGTH_SHORT).show(); return }
         android.app.AlertDialog.Builder(this).setTitle("Delete?").setMessage("Delete ${selectedRecv.size + selectedMob.size} items?").setPositiveButton("Yes") { _, _ ->
